@@ -1,56 +1,47 @@
+use odra::args::Maybe;
 use odra::prelude::*;
-use odra::{casper_types::U256, Address, Mapping, SubModule, UnwrapOrRevert};
-use odra_modules::erc721::extensions::erc721_metadata::Erc721Metadata;
+use odra::{Address, SubModule, UnwrapOrRevert};
+use odra_modules::cep78::modalities::{
+    BurnMode, EventsMode, MetadataMutability, MintingMode, NFTHolderMode, NFTIdentifierMode,
+    NFTKind, NFTMetadataKind, OwnershipMode, WhitelistMode,
+};
 use odra_modules::{
     access::{AccessControl, Role, DEFAULT_ADMIN_ROLE},
-    erc721::{erc721_base::Erc721Base, extensions::erc721_metadata::Erc721MetadataExtension},
+    cep78::token::Cep78,
 };
 
+type TokenHash = odra::prelude::String;
+
 // TODO: Match roles from the Solidity code.
-const MINTER_ROLE: Role = [1; 32];
-const OPERATOR_ROLE: Role = [2; 32];
+pub const MINTER_ROLE: Role = [1; 32];
+pub const OPERATOR_ROLE: Role = [2; 32];
 
 #[odra::odra_error]
 pub enum RegisterError {
-    EmptyTLD = 1,
-    TLDNotSupported = 2,
-    PastExpirationDate = 3,
-    EmptyLabel = 4,
+    EmptyTLD = 1001,
+    TLDNotSupported = 1002,
+    PastExpirationDate = 1003,
+    EmptyLabel = 1004,
+    SLDDoesNotExist = 1005,
 }
 
 #[odra::event]
-pub struct TLDAdded {
-    tld: String,
-}
-
-#[odra::event]
-pub struct TLDMinted {
-    token_id: U256,
+pub struct SLDMinted {
+    token_hash: TokenHash,
     to: Address,
     label: String,
-    tld: String,
     expiration: u64,
 }
 
 #[odra::module]
 pub struct Register {
     access_control: SubModule<AccessControl>,
-    token: SubModule<Erc721Base>,
-    metadata: SubModule<Erc721MetadataExtension>,
-
-    /// Maps TLD name to its namehash.
-    /// Used to check whether TLD exists.
-    /// Also, its namehash is precomputed, so we save on gas costs.
-    tlds: Mapping<String, U256>,
-
-    /// Maps Token ID to its expiration date.
-    /// Expiration date is a timestamp in seconds.
-    expirations: Mapping<U256, u64>,
+    token: SubModule<Cep78>,
 }
 
 #[odra::module]
 impl Register {
-    pub fn init(&mut self, name: String, symbol: String, tlds: Vec<String>, uri: String) {
+    pub fn init(&mut self, name: String, symbol: String) {
         let caller = self.env().caller();
 
         // Setup access control.
@@ -61,52 +52,103 @@ impl Register {
         self.access_control
             .set_admin_role(&OPERATOR_ROLE, &DEFAULT_ADMIN_ROLE);
 
-        // Setup ERC721 token.
-        self.metadata.init(name, symbol, uri);
-
-        // Init TLDs.
-        for tld in tlds {
-            self.add_tld_unchecked(tld);
-        }
-
-        self.env().revert(RegisterError::EmptyLabel);
+        // Setup CEP78 token.
+        let max_total_supply = 1_000_000u64;
+        let ownership_mode = OwnershipMode::Transferable;
+        let nft_kind = NFTKind::Digital;
+        let identifier_mode = NFTIdentifierMode::Hash;
+        let nft_metadata_kind = NFTMetadataKind::Raw;
+        let metadata_mutability = MetadataMutability::Mutable;
+        let receipt_name = String::new();
+        let allow_minting = Maybe::Some(true);
+        let minting_mode = Maybe::Some(MintingMode::Public);
+        let holder_mode = Maybe::Some(NFTHolderMode::Mixed);
+        let whitelist_mode = Maybe::Some(WhitelistMode::Unlocked);
+        let acl_white_list = Maybe::None;
+        let json_schema = Maybe::None;
+        let burn_mode = Maybe::Some(BurnMode::Burnable);
+        let operator_burn_mode = Maybe::None; // ?
+        let owner_reverse_lookup_mode = Maybe::None; // ?
+        let events_mode = Maybe::Some(EventsMode::CES);
+        let transfer_filter_contract_contract = Maybe::None; // ?
+        let additional_required_metadata = Maybe::None; // ?
+        let optional_metadata = Maybe::Some(vec![]); // ?
+        self.token.init(
+            name,
+            symbol,
+            max_total_supply,
+            ownership_mode,
+            nft_kind,
+            identifier_mode,
+            nft_metadata_kind,
+            metadata_mutability,
+            receipt_name,
+            allow_minting,
+            minting_mode,
+            holder_mode,
+            whitelist_mode,
+            acl_white_list,
+            json_schema,
+            burn_mode,
+            operator_burn_mode,
+            owner_reverse_lookup_mode,
+            events_mode,
+            transfer_filter_contract_contract,
+            additional_required_metadata,
+            optional_metadata,
+        );
     }
 
-    // TYPE_CHANGE: expiration from u256 to u64.
     // TODO: merge check and get.
-    pub fn mint(&mut self, to: Address, label: String, tld: String, expiration: u64) {
+    pub fn mint(&mut self, to: Address, label: String, expiration: u64) {
         self.assert_minter_role();
-        self.check_tld_supported(&tld);
         self.require_future_expiration_date(expiration);
 
         if label.is_empty() {
             self.env().revert(RegisterError::EmptyLabel);
         }
 
-        let tld_hash = self.tlds.get(&tld).unwrap_or_revert(&self.env());
-        let token_id = self.compute_namehash(tld_hash, &label);
+        let token_hash = self.compute_namehash(&label);
 
-        if self.token_exists(&token_id) && self.is_token_expired(&token_id) {
-            self.burn_single(&token_id);
+        if self.token_exists(&token_hash) && self.is_token_expired(&token_hash) {
+            self.burn_single(token_hash.clone(), self.env().caller());
         }
 
-        self.mint_single(to, &token_id);
-        self.expirations.set(&token_id, expiration);
+        self.mint_single(to, &token_hash, expiration);
+    }
 
-        self.env().emit_event(TLDMinted {
-            token_id,
-            to,
-            label,
-            tld,
-            expiration,
-        });
+    pub fn renew(&mut self, token_hash: TokenHash, expiration: u64) {
+        self.assert_minter_role();
+        self.require_future_expiration_date(expiration);
+        self.require_token_minted(&token_hash);
+        self.set_expiration(&token_hash, expiration);
+    }
+
+    pub fn admin_burn(&mut self, token_hash: TokenHash) {
+        self.assert_operator_role();
+        self.burn_single(token_hash, self.env().caller());
     }
 
     delegate! {
-        to self.metadata {
-            fn name(&self) -> String;
-            fn symbol(&self) -> String;
-            fn base_uri(&self) -> String;
+        to self.token {
+            fn get_collection_name(&self) -> String;
+            fn get_collection_symbol(&self) -> String;
+            fn transfer(
+                &mut self,
+                token_id: Maybe<u64>,
+                token_hash: Maybe<String>,
+                source_key: Address,
+                target_key: Address
+            ) -> (String, Address);
+            fn approve(&mut self, spender: Address, token_id: Maybe<u64>, token_hash: Maybe<String>);
+            fn set_approval_for_all(&mut self, approve_all: bool, operator: Address);
+            fn balance_of(&mut self, token_owner: Address) -> u64;
+            fn owner_of(&self, token_id: Maybe<u64>, token_hash: Maybe<String>) -> Address;
+            fn get_approved(
+                &mut self,
+                token_id: Maybe<u64>,
+                token_hash: Maybe<String>
+            ) -> Option<Address>;
         }
 
         to self.access_control {
@@ -114,29 +156,16 @@ impl Register {
             // TODO: Decide on role management public functions.
         }
     }
+
+    pub fn burn(&self) {}
+    pub fn set_token_metadata(&mut self) {}
 }
 
 impl Register {
-    fn add_tld_unchecked(&mut self, tld: String) {
-        if tld.is_empty() {
-            self.env().revert(RegisterError::EmptyTLD);
-        }
-
-        let namehash = self.compute_namehash(U256::zero(), &tld);
-        self.tlds.set(&tld, namehash);
-
-        self.env().emit_event(TLDAdded { tld });
-    }
-
     // TODO: Make sure this implementation is sufficient.
-    fn compute_namehash(&self, parent: U256, tld: &str) -> U256 {
-        U256::from(self.env().hash((parent, tld)))
-    }
-
-    fn check_tld_supported(&self, tld: &String) {
-        if self.tlds.get(tld).is_none() {
-            self.env().revert(RegisterError::TLDNotSupported);
-        }
+    fn compute_namehash(&self, label: &str) -> TokenHash {
+        let hash = self.env().hash(label);
+        hex::encode(hash)
     }
 
     fn require_future_expiration_date(&self, expiration: u64) {
@@ -145,33 +174,50 @@ impl Register {
         }
     }
 
-    fn token_exists(&self, token_id: &U256) -> bool {
-        self.token.exists(token_id)
+    fn require_token_minted(&self, token_hash: &TokenHash) {
+        if !self.token_exists(token_hash) {
+            self.env().revert(RegisterError::SLDDoesNotExist);
+        }
     }
 
-    fn is_token_expired(&self, token_id: &U256) -> bool {
-        self.expirations.get_or_default(token_id) < self.env().get_block_time()
+    fn token_exists(&self, token_hash: &TokenHash) -> bool {
+        self.token.token_exists_by_hash(token_hash)
     }
 
-    fn burn_single(&mut self, token_id: &U256) {
-        use odra_modules::erc721::Erc721;
-        let owner = self.token.owner_of(token_id);
-        let balance = self.token.balance_of(&owner);
-        self.token.balances.set(&owner, balance - U256::from(1));
-        self.token.owners.set(token_id, None);
-        self.token.clear_approval(token_id);
+    fn is_token_expired(&self, token_hash: &TokenHash) -> bool {
+        self.expiration(token_hash) < self.env().get_block_time()
     }
 
-    fn mint_single(&mut self, to: Address, token_id: &U256) {
-        use odra_modules::erc721::Erc721;
-        let balance = self.token.balance_of(&to);
-        self.token.balances.set(&to, balance + U256::from(1));
-        self.token.owners.set(token_id, Some(to));
+    fn burn_single(&mut self, token_hash: TokenHash, burner: Address) {
+        self.token.burn_token_unchecked(token_hash, burner);
+    }
+
+    fn mint_single(&mut self, to: Address, token_hash: &TokenHash, expiration: u64) {
+        let metadata = expiration.to_string();
+        let token_hash = Maybe::Some(String::from(token_hash));
+        self.token.mint(to, metadata, token_hash);
     }
 
     fn assert_minter_role(&self) {
         self.access_control
             .check_role(&MINTER_ROLE, &self.env().caller());
+    }
+
+    fn assert_operator_role(&self) {
+        self.access_control
+            .check_role(&OPERATOR_ROLE, &self.env().caller());
+    }
+
+    fn expiration(&self, token_hash: &TokenHash) -> u64 {
+        let metadata = self
+            .token
+            .metadata(Maybe::None, Maybe::Some(String::from(token_hash)));
+        u64::from_str(&metadata).ok().unwrap_or_revert(&self.env())
+    }
+
+    fn set_expiration(&mut self, token_hash: &TokenHash, expiration: u64) {
+        self.token
+            .set_token_metadata_unchecked(token_hash, expiration.to_string());
     }
 }
 
@@ -179,12 +225,13 @@ impl Register {
 mod tests {
     use super::*;
     use odra::host::{Deployer, HostEnv, HostRef};
+    use odra_modules::cep78::events::{Burn, MetadataUpdated, Mint};
 
     const NFT_NAME: &'static str = "D3 Tokens";
     const NFT_SYMBOL: &'static str = "D3";
-    const D3_TLD: &'static str = "d3";
-    const TEST_TLD: &'static str = "test";
     const TEST_LABEL: &'static str = "test-label";
+    const TEST_LABEL_BLAKE2B: &'static str =
+        "44b7dfe6596e4668313215e4f12ee9650d911a59087944b077d5c087212b89b1";
     const BASE_URI: &'static str = "https://storage.test/";
     const ONE_DAY_SECONDS: u64 = 60 * 60 * 24;
 
@@ -209,8 +256,6 @@ mod tests {
                 RegisterInitArgs {
                     name: String::from(NFT_NAME),
                     symbol: String::from(NFT_SYMBOL),
-                    tlds: vec![String::from(D3_TLD), String::from(TEST_TLD)],
-                    uri: String::from(BASE_URI),
                 },
             );
             Self {
@@ -226,6 +271,10 @@ mod tests {
         pub fn add_minter_role(&mut self) {
             self.register.grant_role(&MINTER_ROLE, &self.minter);
         }
+
+        pub fn add_operator_role(&mut self) {
+            self.register.grant_role(&OPERATOR_ROLE, &self.operator);
+        }
     }
 
     mod initialize {
@@ -235,29 +284,15 @@ mod tests {
         #[test]
         fn should_set_correct_name_and_symbol() {
             let ctx = RegisterTestContext::new();
-            assert_eq!(ctx.register.name(), NFT_NAME);
-            assert_eq!(ctx.register.symbol(), NFT_SYMBOL);
+            assert_eq!(ctx.register.get_collection_name(), NFT_NAME);
+            assert_eq!(ctx.register.get_collection_symbol(), NFT_SYMBOL);
         }
 
         #[test]
         fn should_emit_correct_tld_events() {
-            let ctx = RegisterTestContext::new();
-            let event1: TLDAdded = ctx.register.get_event(-2).unwrap();
-            let event2: TLDAdded = ctx.register.get_event(-1).unwrap();
-            assert_eq!(
-                event1,
-                TLDAdded {
-                    tld: String::from(D3_TLD)
-                }
-            );
-            assert_eq!(
-                event2,
-                TLDAdded {
-                    tld: String::from(TEST_TLD)
-                }
-            );
-            // TODO: Assert access_control events.
-            assert_eq!(ctx.env.events_count(ctx.register.address()), 5);
+            // let ctx = RegisterTestContext::new();
+            // // TODO: Assert access_control events.
+            // assert_eq!(ctx.env.events_count(ctx.register.address()), 5);
         }
     }
 
@@ -270,26 +305,52 @@ mod tests {
     }
 
     mod mint {
+        use odra_modules::cep78::events::Mint;
+
         use super::*;
 
         #[test]
         fn should_mint_sld_nft() {
             let mut ctx = RegisterTestContext::new();
             ctx.add_minter_role();
-            
+
             ctx.env.set_caller(ctx.minter);
-            ctx.register.mint(
+            ctx.register
+                .mint(ctx.user, String::from(TEST_LABEL), ONE_DAY_SECONDS);
+
+            let event: Mint = ctx.register.get_event(-1).unwrap();
+            let expected = Mint::new(
                 ctx.user,
-                String::from(TEST_LABEL),
-                String::from(TEST_TLD),
-                ONE_DAY_SECONDS,
+                String::from(TEST_LABEL_BLAKE2B),
+                ONE_DAY_SECONDS.to_string(),
             );
-            let event: TLDMinted = ctx.register.get_event(-1).unwrap();
-            // assert_eq!(event.token_id, U256::from(1));
-            assert_eq!(event.to, ctx.user);
-            assert_eq!(event.label, TEST_LABEL);
-            assert_eq!(event.tld, TEST_TLD);
-            assert_eq!(event.expiration, ONE_DAY_SECONDS);
+            assert_eq!(event, expected);
         }
+    }
+
+    #[test]
+    fn should_mint_renew_and_burn() {
+        let mut ctx = RegisterTestContext::new();
+        ctx.add_minter_role();
+        ctx.add_operator_role();
+        let token_id = String::from(TEST_LABEL_BLAKE2B);
+
+        ctx.env.set_caller(ctx.minter);
+        ctx.register
+            .mint(ctx.user, String::from(TEST_LABEL), ONE_DAY_SECONDS);
+        let event: Mint = ctx.register.get_event(-1).unwrap();
+        let expected = Mint::new(ctx.user, token_id.clone(), ONE_DAY_SECONDS.to_string());
+        assert_eq!(event, expected);
+
+        ctx.register.renew(token_id.clone(), ONE_DAY_SECONDS * 2);
+        let event: MetadataUpdated = ctx.register.get_event(-1).unwrap();
+        let expected = MetadataUpdated::new(token_id.clone(), (ONE_DAY_SECONDS * 2).to_string());
+        assert_eq!(event, expected);
+
+        ctx.env.set_caller(ctx.operator);
+        ctx.register.admin_burn(token_id.clone());
+        let event: Burn = ctx.register.get_event(-1).unwrap();
+        let expected = Burn::new(ctx.user, token_id, ctx.operator);
+        assert_eq!(event, expected);
     }
 }

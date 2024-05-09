@@ -5,3 +5,5 @@ Cargo.lock
 .backend*
 .builder*
 /wasm
+.env
+.DS_Store

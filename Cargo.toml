@@ -1,17 +1,23 @@
 [package]
-name = "casper_name"
+name = "casper-name"
 version = "0.1.0"
 edition = "2021"
 
 [dependencies]
-odra = { version = "0.9.1", features = [], default-features = false }
-odra-modules = { version = "0.9.1", features = [], default-features = false }
+odra = { path = "../odra2/odra", features = [], default-features = false }
+odra-modules = { path = "../odra2/modules", features = [], default-features = false }
+hex = { version = "0.4.3", default-features = false }
+odra-casper-livenet-env = { path = "../odra2/odra-casper/livenet-env", optional = true }
 
 [dev-dependencies]
-odra-test = { version = "0.9.1", features = [], default-features = false }
+odra-test = { path = "../odra2/odra-test", features = [], default-features = false }
 
 [build-dependencies]
-odra-build = { version = "0.9.1", features = [], default-features = false }
+odra-build = { path = "../odra2/odra-build", features = [], default-features = false }
+
+[features]
+default = []
+livenet = ["odra-casper-livenet-env"]
 
 [[bin]]
 name = "casper_name_build_contract"
@@ -21,6 +27,12 @@ test = false
 [[bin]]
 name = "casper_name_build_schema"
 path = "bin/build_schema.rs"
+test = false
+
+[[bin]]
+name = "deploy-example"
+path = "bin/deploy_example.rs"
+required-features = ["livenet"]
 test = false
 
 [profile.release]

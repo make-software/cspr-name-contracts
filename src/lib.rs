@@ -3,3 +3,6 @@
 extern crate alloc;
 
 pub mod register;
+
+#[cfg(test)]
+mod register_tests;

@@ -4,16 +4,21 @@ version = "0.1.0"
 edition = "2021"
 
 [dependencies]
-odra = { path = "../odra2/odra", features = [], default-features = false }
-odra-modules = { path = "../odra2/modules", features = [], default-features = false }
+odra = { path = "../odra3/odra", features = [], default-features = false }
+odra-modules = { path = "../odra3/modules", features = [], default-features = false }
 hex = { version = "0.4.3", default-features = false }
-odra-casper-livenet-env = { path = "../odra2/odra-casper/livenet-env", optional = true }
+odra-casper-livenet-env = { path = "../odra3/odra-casper/livenet-env", optional = true }
+serde = { version = "1.0.80", default-features = false }
+serde_json = { version = "1.0.99", default-features = false }
+serde-json-wasm = { version = "1.0.1", default-features = false }
 
 [dev-dependencies]
-odra-test = { path = "../odra2/odra-test", features = [], default-features = false }
+odra-test = { path = "../odra3/odra-test", features = [], default-features = false }
+blake2 = "0.10.6"
+hex = "0.4.3"
 
 [build-dependencies]
-odra-build = { path = "../odra2/odra-build", features = [], default-features = false }
+odra-build = { path = "../odra3/odra-build", features = [], default-features = false }
 
 [features]
 default = []
@@ -35,9 +40,21 @@ path = "bin/deploy_example.rs"
 required-features = ["livenet"]
 test = false
 
+[[bin]]
+name = "test-schema"
+path = "bin/test_schema.rs"
+test = false
+
+[[test]]
+name = "test_register"
+path = "tests/test_register.rs"
+
 [profile.release]
 codegen-units = 1
 lto = true
+panic = "abort"
+opt-level = "z"
+strip = true
 
 [profile.dev.package."*"]
 opt-level = 3

@@ -1,0 +1,15 @@
+@startuml
+'https://plantuml.com/sequence-diagram
+
+'autonumber
+actor Admin
+participant "Registrar"
+
+== Whitelist controller contract ==
+
+Admin -> "Registrar": whitelist_controller()
+activate "Registrar"
+"Registrar" -> Admin
+deactivate "Registrar"
+
+@enduml

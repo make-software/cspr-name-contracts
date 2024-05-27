@@ -1,0 +1,22 @@
+@startuml
+'https://plantuml.com/sequence-diagram
+
+'autonumber
+actor User
+participant "Controller"
+participant "Registrar"
+participant "Registry"
+participant "Resolver"
+
+== Set resolver ==
+
+User -> Controller: Set resolver
+activate Controller
+
+Controller -> Registry: set_token_metadata()
+activate Registry
+Registry -> Controller
+deactivate Registry
+Controller -> User
+deactivate Controller
+@enduml

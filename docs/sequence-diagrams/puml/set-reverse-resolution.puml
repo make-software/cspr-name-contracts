@@ -1,0 +1,23 @@
+@startuml
+'https://plantuml.com/sequence-diagram
+
+'autonumber
+actor Owner
+participant "Controller"
+participant "Registrar"
+participant "Reverse Resolver"
+
+== Set reverse resolution ==
+
+Owner -> Controller: Set reverse resolution
+activate Controller
+Controller -> "Reverse Resolver": set_reverse_resolution()
+activate "Reverse Resolver"
+"Reverse Resolver" -> "Registrar": owner_of()
+Registrar -> "Reverse Resolver"
+"Reverse Resolver" -> "Reverse Resolver": update name resolver record
+"Reverse Resolver" -> "Controller"
+deactivate "Reverse Resolver"
+Controller -> Owner
+deactivate Controller
+@enduml

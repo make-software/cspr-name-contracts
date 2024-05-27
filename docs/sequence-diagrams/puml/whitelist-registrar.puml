@@ -1,0 +1,15 @@
+@startuml
+'https://plantuml.com/sequence-diagram
+
+'autonumber
+actor Admin
+participant "Registry"
+
+== Whitelist registrar contract ==
+
+Admin -> "Registry": set_variables()
+activate "Registry"
+"Registry" -> Admin
+deactivate "Registry"
+
+@enduml

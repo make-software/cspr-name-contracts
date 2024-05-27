@@ -1,0 +1,30 @@
+@startuml
+'https://plantuml.com/sequence-diagram
+
+'autonumber
+actor User
+participant "d3.app" as d3
+participant "Registrar"
+participant "Registry"
+participant "Resolver"
+
+== Offchain renewal ==
+
+User -> d3: Renew
+activate d3
+d3 -> d3: Process fiat payment
+d3 -> User
+deactivate d3
+
+d3 -> Registrar: Renew
+activate Registrar
+Registrar -> Registry: set_token_metadata()
+activate Registry
+Registry -> Registry: update metadata
+Registry -> Registrar
+deactivate Registry
+Registrar -> d3
+deactivate Registrar
+deactivate d3
+
+@enduml

@@ -1,0 +1,28 @@
+@startuml
+'https://plantuml.com/sequence-diagram
+
+'autonumber
+actor Owner
+participant "Controller"
+participant "Registrar"
+participant "Registry"
+participant "Resolver"
+
+== Onchain renewal ==
+
+Owner -> Controller: Renew
+activate Controller
+Controller -> Controller: Process CSPR payment
+Controller -> Registrar: Renew
+activate Registrar
+Registrar -> Registry: set_token_metadata()
+activate Registry
+Registry -> Registry: update metadata
+Registry -> Registrar
+deactivate Registry
+Registrar -> Controller
+deactivate Registrar
+Controller -> Owner
+deactivate Controller
+
+@enduml

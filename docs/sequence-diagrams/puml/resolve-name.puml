@@ -1,0 +1,19 @@
+@startuml
+'https://plantuml.com/sequence-diagram
+
+'autonumber
+actor User
+participant "Registry"
+participant "Resolver"
+
+== Resolve name ==
+
+User -> Registry: metadata()
+Registry -> User
+
+User -> User: Extract "Resolver"
+
+User -> Resolver: get_address()
+Resolver -> User
+
+@enduml

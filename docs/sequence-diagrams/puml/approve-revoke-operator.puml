@@ -1,0 +1,24 @@
+@startuml
+'https://plantuml.com/sequence-diagram
+
+'autonumber
+actor Owner
+participant "Registry"
+
+== Approve operator (marketplace) ==
+
+Owner -> Registry: approve()
+activate Registry
+Registry -> Registry: set operator
+Registry -> Owner
+deactivate Registry
+
+== Revoke approval ==
+
+Owner -> Registry: revoke()
+activate Registry
+Registry -> Registry: clear operator
+Registry -> Owner
+deactivate Registry
+
+@enduml

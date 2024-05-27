@@ -1,0 +1,26 @@
+@startuml
+'https://plantuml.com/sequence-diagram
+
+'autonumber
+actor "Anyone"
+participant "Registrar"
+participant "Registry"
+participant "Resolver"
+
+== Expire the domain ==
+
+"Anyone" -> "Registrar": expire()
+activate Registrar
+Registrar -> Registry: metadata()
+Registry -> Registrar
+Registrar -> Registrar: Check expiry date
+group expiry date > blocktime
+    Registrar -> Registry: burn()
+    activate Registry
+    Registry -> Registry: burn token
+    Registry -> Registrar
+    deactivate Registry
+end
+Registrar -> "Anyone"
+
+@enduml

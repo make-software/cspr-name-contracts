@@ -1,0 +1,30 @@
+@startuml
+'https://plantuml.com/sequence-diagram
+
+'autonumber
+actor User
+participant "d3.app" as d3
+participant "Registrar"
+participant "Registry"
+participant "Resolver"
+
+== Offchain purchase ==
+
+User -> d3: Buy
+activate d3
+d3 -> d3: Process fiat payment
+d3 -> User
+deactivate d3
+
+d3 -> Registrar: Register
+activate Registrar
+Registrar -> Registry: mint()
+activate Registry
+Registry -> Registry: mint token
+Registry -> Registrar
+deactivate Registry
+Registrar -> d3
+deactivate Registrar
+deactivate d3
+
+@enduml

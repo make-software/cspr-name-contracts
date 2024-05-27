@@ -1,0 +1,15 @@
+@startuml
+'https://plantuml.com/sequence-diagram
+
+'autonumber
+actor Admin
+participant "Registrar"
+
+== Delist controller contract ==
+
+Admin -> "Registrar": delist_controller()
+activate "Registrar"
+"Registrar" -> Admin
+deactivate "Registrar"
+
+@enduml

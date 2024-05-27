@@ -1,0 +1,23 @@
+@startuml
+'https://plantuml.com/sequence-diagram
+
+'autonumber
+actor "D3 admin"
+participant "Registrar"
+participant "Registry"
+participant "Resolver"
+
+== Burn a domain ==
+
+"D3 admin" -> "Registrar": admin_burn()
+activate Registrar
+Registrar -> Registry: burn()
+activate Registry
+Registry -> Registry: Clear resolver
+Registry -> Registry: burn token
+Registry -> Registrar
+deactivate Registry
+Registrar -> "D3 admin"
+deactivate Registrar
+
+@enduml

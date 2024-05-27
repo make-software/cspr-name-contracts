@@ -1,0 +1,29 @@
+@startuml
+'https://plantuml.com/sequence-diagram
+
+'autonumber
+actor Owner
+actor Operator
+participant "Registry"
+
+== Transfer token ==
+
+Owner -> Registry: transfer()
+activate Registry
+Registry -> Registry: Clear resolver
+Registry -> Registry: Clear operator
+Registry -> Registry : Set new owner
+Registry -> Owner
+deactivate Registry
+
+== Transfer token by operator ==
+
+Operator -> Registry: transfer_from()
+activate Registry
+Registry -> Registry: Clear resolver
+Registry -> Registry: Clear operator
+Registry -> Registry : Set new owner
+Registry -> Operator
+deactivate Registry
+
+@enduml

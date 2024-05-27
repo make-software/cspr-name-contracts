@@ -3,7 +3,7 @@
 
 'autonumber
 actor User
-participant "d3.app" as d3
+participant "d3.app" as d3 #lightblue
 participant "Registrar"
 participant "Registry"
 participant "Resolver"

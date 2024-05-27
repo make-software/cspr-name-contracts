@@ -4,11 +4,13 @@
 'autonumber
 actor Admin
 participant "Registry"
+boundary "Events"
 
 == Whitelist registrar contract ==
 
 Admin -> "Registry": set_variables()
 activate "Registry"
+Registry -> "Events": VariablesSet event
 "Registry" -> Admin
 deactivate "Registry"
 

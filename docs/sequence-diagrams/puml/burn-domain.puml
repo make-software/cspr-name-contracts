@@ -5,7 +5,7 @@
 actor "D3 admin"
 participant "Registrar"
 participant "Registry"
-participant "Resolver"
+boundary "Events"
 
 == Burn a domain ==
 
@@ -14,7 +14,9 @@ activate Registrar
 Registrar -> Registry: burn()
 activate Registry
 Registry -> Registry: Clear resolver
+Registry -> "Events": MetadataUpdated event
 Registry -> Registry: burn token
+Registry -> "Events": Burn event
 Registry -> Registrar
 deactivate Registry
 Registrar -> "D3 admin"

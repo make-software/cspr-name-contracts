@@ -6,18 +6,20 @@ actor Owner
 participant "Controller"
 participant "Registrar"
 participant "Registry"
-participant "Resolver"
+boundary "Events"
 
 == Onchain renewal ==
 
 Owner -> Controller: Renew
 activate Controller
 Controller -> Controller: Process CSPR payment
+Controller -> "Events": Payment event
 Controller -> Registrar: Renew
 activate Registrar
 Registrar -> Registry: set_token_metadata()
 activate Registry
 Registry -> Registry: update metadata
+Registry -> "Events": MetadataUpdated event
 Registry -> Registrar
 deactivate Registry
 Registrar -> Controller

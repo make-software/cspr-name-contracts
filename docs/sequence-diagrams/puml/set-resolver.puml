@@ -6,7 +6,7 @@ actor User
 participant "Controller"
 participant "Registrar"
 participant "Registry"
-participant "Resolver"
+boundary "Events"
 
 == Set resolver ==
 
@@ -15,6 +15,7 @@ activate Controller
 
 Controller -> Registry: set_token_metadata()
 activate Registry
+Registry -> "Events": MetadataUpdated event
 Registry -> Controller
 deactivate Registry
 Controller -> User

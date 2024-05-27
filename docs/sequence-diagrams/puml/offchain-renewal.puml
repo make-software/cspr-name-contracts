@@ -6,7 +6,7 @@ actor User
 participant "d3.app" as d3
 participant "Registrar"
 participant "Registry"
-participant "Resolver"
+boundary "Events"
 
 == Offchain renewal ==
 
@@ -21,6 +21,7 @@ activate Registrar
 Registrar -> Registry: set_token_metadata()
 activate Registry
 Registry -> Registry: update metadata
+Registry -> "Events": MetadataUpdated event
 Registry -> Registrar
 deactivate Registry
 Registrar -> d3

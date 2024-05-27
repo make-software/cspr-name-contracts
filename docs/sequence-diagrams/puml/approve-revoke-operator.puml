@@ -4,12 +4,14 @@
 'autonumber
 actor Owner
 participant "Registry"
+boundary "Events"
 
 == Approve operator (marketplace) ==
 
 Owner -> Registry: approve()
 activate Registry
 Registry -> Registry: set operator
+Registry -> "Events": Approval event
 Registry -> Owner
 deactivate Registry
 
@@ -18,6 +20,7 @@ deactivate Registry
 Owner -> Registry: revoke()
 activate Registry
 Registry -> Registry: clear operator
+Registry -> "Events": ApprovalRevoked event
 Registry -> Owner
 deactivate Registry
 

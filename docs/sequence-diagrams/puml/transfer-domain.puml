@@ -5,6 +5,7 @@
 actor Owner
 actor Operator
 participant "Registry"
+boundary "Events"
 
 == Transfer token ==
 
@@ -13,6 +14,7 @@ activate Registry
 Registry -> Registry: Clear resolver
 Registry -> Registry: Clear operator
 Registry -> Registry : Set new owner
+Registry -> "Events": Transfer event
 Registry -> Owner
 deactivate Registry
 
@@ -23,6 +25,7 @@ activate Registry
 Registry -> Registry: Clear resolver
 Registry -> Registry: Clear operator
 Registry -> Registry : Set new owner
+Registry -> "Events": Transfer event
 Registry -> Operator
 deactivate Registry
 

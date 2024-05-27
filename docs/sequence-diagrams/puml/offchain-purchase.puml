@@ -7,6 +7,7 @@ participant "d3.app" as d3
 participant "Registrar"
 participant "Registry"
 participant "Resolver"
+boundary "Events"
 
 == Offchain purchase ==
 
@@ -21,6 +22,7 @@ activate Registrar
 Registrar -> Registry: mint()
 activate Registry
 Registry -> Registry: mint token
+Registry -> "Events": Mint event
 Registry -> Registrar
 deactivate Registry
 Registrar -> d3

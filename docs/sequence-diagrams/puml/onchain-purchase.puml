@@ -7,17 +7,20 @@ participant "Controller"
 participant "Registrar"
 participant "Registry"
 participant "Resolver"
+boundary "Events"
 
 == Onchain purchase ==
 
 User -> Controller: Buy
 activate Controller
 Controller -> Controller: Process CSPR payment
+Controller -> "Events": Payment event
 Controller -> Registrar: Register
 activate Registrar
 Registrar -> Registry: mint()
 activate Registry
 Registry -> Registry: mint token
+Registry -> "Events": Mint event
 Registry -> Registrar
 deactivate Registry
 Registrar -> Controller

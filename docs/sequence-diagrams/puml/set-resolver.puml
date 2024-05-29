@@ -2,7 +2,7 @@
 'https://plantuml.com/sequence-diagram
 
 'autonumber
-actor User
+actor "Domain owner"
 participant "Controller"
 participant "Registrar"
 participant "Registry"
@@ -10,7 +10,7 @@ boundary "Events"
 
 == Set resolver ==
 
-User -> Controller: Set resolver
+"Domain owner" -> Controller: Set resolver
 activate Controller
 
 Controller -> Registry: set_token_metadata()
@@ -18,6 +18,6 @@ activate Registry
 Registry -> "Events": MetadataUpdated event
 Registry -> Controller
 deactivate Registry
-Controller -> User
+Controller -> "Domain owner"
 deactivate Controller
 @enduml

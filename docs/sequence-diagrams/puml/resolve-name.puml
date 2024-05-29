@@ -3,17 +3,28 @@
 
 'autonumber
 actor User
-participant "Registry"
-participant "Resolver"
-
+participant "Resolution API"
+box Casper Node
+participant "Registry state"
+participant "Resolver state"
+end box
 == Resolve name ==
 
-User -> Registry: metadata()
-Registry -> User
+User -> "Resolution API": /resolve xyz*cspr
+activate "Resolution API"
+"Resolution API" -> "Registry state": [RPC call] Get xyz*cspr metadata
+"Registry state" -> "Resolution API"
 
-User -> User: Extract "Resolver"
+"Resolution API" -> "Resolution API": Check expiry date
 
-User -> Resolver: get_address()
-Resolver -> User
+group blocktime < expiry date
+"Resolution API" -> "Resolution API": Extract resolver address
+"Resolution API" -> "Resolver state": [RPC call] ]Get xyz*cspr account address
+"Resolver state" -> "Resolution API"
+"Resolution API" -> User: resolved address
+else "blocktime > expiry date"
+"Resolution API" -> User: token expired
+end
+deactivate "Resolution API"
 
 @enduml

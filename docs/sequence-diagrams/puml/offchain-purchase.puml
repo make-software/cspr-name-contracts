@@ -11,15 +11,16 @@ boundary "Events"
 
 == Offchain purchase ==
 
-User -> d3: Buy
+User -> d3: Buy *cspr name
 activate d3
 d3 -> d3: Process fiat payment
 d3 -> User
 deactivate d3
 
-d3 -> Registrar: Register
+d3 -> Registrar: register(PaymentVoucher)
 activate Registrar
-Registrar -> Registry: mint()
+Registrar -> Registrar: verify voucher
+Registrar -> Registry: mint(to, metadata)
 activate Registry
 Registry -> Registry: mint token
 Registry -> "Events": Mint event

@@ -1,0 +1,24 @@
+@startuml
+'https://plantuml.com/sequence-diagram
+
+'autonumber
+participant "Contract" #lightblue
+participant "Registry"
+participant "Resolver"
+
+== On-chain name resolution ==
+
+activate "Contract"
+"Contract" -> "Registry": metadata(name_hash)
+"Registry" -> "Contract": token metadata
+Contract -> Contract: Check expiry date
+
+group blocktime < expiry date
+"Contract" -> Resolver: address_of(name)
+Resolver -> Contract: account address for name
+end
+== ==
+
+deactivate Contract
+
+@enduml

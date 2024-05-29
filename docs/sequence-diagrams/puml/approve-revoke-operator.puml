@@ -10,7 +10,7 @@ boundary "Events"
 
 Owner -> Registry: approve()
 activate Registry
-Registry -> Registry: set operator
+Registry -> Registry: set token operator
 Registry -> "Events": Approval event
 Registry -> Owner
 deactivate Registry
@@ -19,7 +19,7 @@ deactivate Registry
 
 Owner -> Registry: revoke()
 activate Registry
-Registry -> Registry: clear operator
+Registry -> Registry: clear token operator
 Registry -> "Events": ApprovalRevoked event
 Registry -> Owner
 deactivate Registry

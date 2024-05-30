@@ -1,5 +1,6 @@
 name: generate plantuml images
 on:
+  workflow_dispatch:
   push:
     paths:
       - 'docs/**/*.puml'

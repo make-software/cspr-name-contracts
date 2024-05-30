@@ -13,7 +13,7 @@ jobs:
     name: plantuml
     steps:
       - name: checkout
-        uses: actions/checkout@v1
+        uses: actions/checkout@v4
         with:
           fetch-depth: 1
 
@@ -22,6 +22,6 @@ jobs:
           docker run --rm -v ${{ github.workspace }}/docs/sequence-diagrams/puml:/workspace plantuml/plantuml -tpng /workspace/*.puml
 
       - name: Update Repo
-        uses: stefanzweifel/git-auto-commit-action@v4
+        uses: stefanzweifel/git-auto-commit-action@v5
         with:
           commit_message: "Render PlantUML files"

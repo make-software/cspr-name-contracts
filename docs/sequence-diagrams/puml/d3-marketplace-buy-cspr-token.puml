@@ -38,4 +38,6 @@ Registrar -> d3
 deactivate Registrar
 deactivate d3
 
+== ==
+
 @enduml

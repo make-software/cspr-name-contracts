@@ -3,20 +3,26 @@
 
 'autonumber
 actor Owner
+participant "d3.app" as d3 #lightblue
 participant "Controller"
 participant "Registrar"
 participant "Registry"
 boundary "Events"
 
-== Onchain renewal ==
+== Renew a *cspr name with CSPR token payment ==
 
-Owner -> Controller: Renew
+Owner -> d3: Buy *cspr name with CSPR
+activate d3
+d3 -> Owner: signed RenewalVoucher
+deactivate d3
+
+Owner -> Controller: renew(RenewalVoucher, sig)
 activate Controller
 Controller -> Controller: Process CSPR payment
 Controller -> "Events": Payment event
-Controller -> Registrar: Renew
+Controller -> Registrar: renew(RenewalVoucher, sig)
 activate Registrar
-Registrar -> Registry: set_token_metadata()
+Registrar -> Registry: set_token_metadata(new_metadata)
 activate Registry
 Registry -> Registry: update metadata
 Registry -> "Events": MetadataUpdated event

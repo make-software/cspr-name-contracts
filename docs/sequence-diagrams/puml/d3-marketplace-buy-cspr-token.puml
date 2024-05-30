@@ -10,30 +10,32 @@ participant "Registry"
 participant "Resolver"
 boundary "Events"
 
-== Buy a *cspr name with CSPR token ==
+== Buy a *cspr name from D3 Marketplace with fiat payment ==
 
-User -> d3: Buy *cspr name with CSPR
+User -> d3: Buy *cspr name
 activate d3
-d3 -> User: signed PaymentVoucher
+d3 -> User: signed SecondarySaleVoucher
 deactivate d3
 
-User -> Controller: buy(PaymentVoucher, sig)
+User -> Controller: secondarySale(SecondarySaleVoucher, sig)
 activate Controller
 Controller -> Controller: verify voucher
 Controller -> Controller: Process CSPR payment
 Controller -> "Events": Payment event
-Controller -> Registrar: register(PaymentVoucher, sig)
+Controller -> Registrar: secondarySale(PaymentVoucher, sig)
+
 activate Registrar
 Registrar -> Registrar: verify voucher
-Registrar -> Registry: mint(buyer, metadata)
+Registrar -> Registry: transfer(seller, buyer, cspr_name_token_id)
 activate Registry
-Registry -> Registry: mint token
-Registry -> "Events": Mint event
+Registry -> Registry: Clear Resolver
+Registry -> "Events": MetadataUpdated event
+Registry -> Registry: transfer token
+Registry -> "Events": Transfer event
 Registry -> Registrar
 deactivate Registry
-Registrar -> Controller
+Registrar -> d3
 deactivate Registrar
-Controller -> User
-deactivate Controller
+deactivate d3
 
 @enduml

@@ -2,23 +2,23 @@
 'https://plantuml.com/sequence-diagram
 
 'autonumber
-actor User
+actor Owner
 participant "d3.app" as d3 #lightblue
 participant "Registrar"
 participant "Registry"
 boundary "Events"
 
-== Offchain renewal ==
+== Renew a *cspr name with fiat currency ==
 
-User -> d3: Renew
+Owner -> d3: Renew *cspr name
 activate d3
 d3 -> d3: Process fiat payment
-d3 -> User
+d3 -> Owner
 deactivate d3
 
-d3 -> Registrar: Renew
+d3 -> Registrar: renew(RenewalVoucher, sig)
 activate Registrar
-Registrar -> Registry: set_token_metadata()
+Registrar -> Registry: set_token_metadata(new_metadata)
 activate Registry
 Registry -> Registry: update metadata
 Registry -> "Events": MetadataUpdated event

@@ -2,16 +2,17 @@
 'https://plantuml.com/sequence-diagram
 
 'autonumber
-actor Admin
+actor "Registry Admin"
 participant "Registry"
 boundary "Events"
 
 == Whitelist registrar contract ==
 
-Admin -> "Registry": set_variables()
+"Registry Admin" -> "Registry": set_variables(registrars_package_hashes[])
 activate "Registry"
+Registry -> Registry: Update ACL
 Registry -> "Events": VariablesSet event
-"Registry" -> Admin
+"Registry" -> "Registry Admin"
 deactivate "Registry"
 
 @enduml

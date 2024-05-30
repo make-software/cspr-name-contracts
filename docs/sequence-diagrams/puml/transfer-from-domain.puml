@@ -2,20 +2,20 @@
 'https://plantuml.com/sequence-diagram
 
 'autonumber
-actor Owner
+actor Operator
 participant "Registry"
 boundary "Events"
 
-== Transfer token ==
+== Transfer token by operator ==
 
-Owner -> Registry: transfer(new_owner, cspr_name_token_id)
+Operator -> Registry: transfer(old_owner, new_owner, cspr_name_token_id)
 activate Registry
 Registry -> Registry: Clear resolver
 Registry -> "Events": MetadataUpdated event
 Registry -> Registry: Clear operator
 Registry -> Registry : Set new owner
 Registry -> "Events": Transfer event
-Registry -> Owner
+Registry -> Operator
 deactivate Registry
 
 == ==

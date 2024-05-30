@@ -2,14 +2,15 @@
 'https://plantuml.com/sequence-diagram
 
 'autonumber
-actor Admin
+actor "Registrar admin"
 participant "Registrar"
 
 == Whitelist controller contract ==
 
-Admin -> "Registrar": whitelist_controller()
+"Registrar admin" -> "Registrar": whitelist_controller(controller_package_hashes[])
 activate "Registrar"
-"Registrar" -> Admin
+"Registrar" -> "Registrar": Update ACL
+"Registrar" -> "Registrar admin"
 deactivate "Registrar"
 
 @enduml

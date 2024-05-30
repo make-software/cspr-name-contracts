@@ -1,0 +1,26 @@
+@startuml
+'https://plantuml.com/sequence-diagram
+
+'autonumber
+actor Owner
+participant "d3.app" as d3 #lightblue
+participant "Registry"
+boundary "Events"
+
+== Buy a *cspr name from D3 Marketplace with fiat payment ==
+
+Owner -> d3: List *cspr name
+activate d3
+d3 -> Owner
+
+Owner -> Registry: approve(cspr_name_token_id, registrar_package_hash)
+activate "Registry"
+Registry -> Registry: set token operator
+Registry -> "Events": Approval event
+Registry -> Owner
+deactivate "Registry"
+d3 -> d3: list *cspr name
+== ==
+deactivate d3
+
+@enduml

@@ -1,0 +1,25 @@
+name: generate plantuml images
+on:
+  push:
+    paths:
+      - 'docs/puml/**'
+  pull_request:
+    paths:
+      - 'docs/puml/**'
+jobs:
+  generate_plantuml:
+    runs-on: ubuntu-latest
+    name: plantuml
+    steps:
+      - name: checkout
+        uses: actions/checkout@v1
+        with:
+          fetch-depth: 1
+      - name: plantuml
+        id: plantuml
+        uses: grassedge/generate-plantuml-action@v1.5
+      - name: Update Repo
+        uses: stefanzweifel/git-auto-commit-action@v4
+        with:
+          commit_message: "Render PlantUML files"
+

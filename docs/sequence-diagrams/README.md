@@ -2,8 +2,8 @@
 
 ## Index
 
-* [Buy a *cspr name](./Register%20a%20domain.md)
-* [Renew a domain](./Renew%20a%20domain.md)
+* [Buy a *cspr name](./Buy%20a%20cspr%20name.md)
+* [Renew a *cspr name](./Renew%20a%20cspr%20name.md)
 * [Resolution](./Resolution.md)
-* [Second-sale market](./Second-sale market.md)
+* [Second-sale market](./Secondary-sale market.md)
 * [Admin functions](./Admin%20functions.md)

@@ -9,9 +9,9 @@ boundary "Events"
 
 == Burn a domain ==
 
-"D3 admin" -> "Registrar": admin_burn()
+"D3 admin" -> "Registrar": admin_burn(cspr_name)
 activate Registrar
-Registrar -> Registry: burn()
+Registrar -> Registry: burn(cspr_name_token_id)
 activate Registry
 Registry -> Registry: Clear resolver
 Registry -> "Events": MetadataUpdated event

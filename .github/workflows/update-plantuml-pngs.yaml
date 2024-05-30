@@ -2,10 +2,10 @@ name: generate plantuml images
 on:
   push:
     paths:
-      - 'docs/puml/**'
+      - 'docs/**/*.puml'
   pull_request:
     paths:
-      - 'docs/puml/**'
+      - 'docs/**/*.puml'
 jobs:
   generate_plantuml:
     runs-on: ubuntu-latest

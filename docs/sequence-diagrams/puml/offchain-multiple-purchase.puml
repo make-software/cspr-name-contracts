@@ -1,0 +1,35 @@
+@startuml
+'https://plantuml.com/sequence-diagram
+
+'autonumber
+actor User
+participant "d3.app" as d3 #lightblue
+participant "Registrar"
+participant "Registry"
+participant "Resolver"
+boundary "Events"
+
+== Buy multiple (N) *cspr names with fiat currency ==
+
+User -> d3: Buy N *cspr names
+activate d3
+d3 -> d3: Process fiat payment
+d3 -> User
+deactivate d3
+
+d3 -> Registrar: register(PaymentVoucher, sig)
+activate Registrar
+Registrar -> Registrar: verify voucher
+    loop N times
+        Registrar -> Registry: mint(buyer, metadata)
+        activate Registry
+        Registry -> Registry: mint token
+        Registry -> "Events": Mint event
+        Registry -> Registrar
+        deactivate Registry
+    end loop
+Registrar -> d3
+deactivate Registrar
+deactivate d3
+
+@enduml

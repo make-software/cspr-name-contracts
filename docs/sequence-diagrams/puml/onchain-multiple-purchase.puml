@@ -1,0 +1,41 @@
+@startuml
+'https://plantuml.com/sequence-diagram
+
+'autonumber
+actor User
+participant "d3.app" as d3 #lightblue
+participant "Controller"
+participant "Registrar"
+participant "Registry"
+participant "Resolver"
+boundary "Events"
+
+== Buy multiple *cspr names with CSPR token ==
+
+User -> d3: Buy N *cspr names with CSPR
+activate d3
+d3 -> User: signed PaymentVoucher
+deactivate d3
+
+User -> Controller: buy(PaymentVoucher, sig)
+activate Controller
+Controller -> Controller: verify voucher
+Controller -> Controller: Process CSPR payment
+Controller -> "Events": Payment event
+Controller -> Registrar: register(PaymentVoucher, sig)
+activate Registrar
+Registrar -> Registrar: verify voucher
+    loop N times
+        Registrar -> Registry: mint(buyer, metadata)
+        activate Registry
+        Registry -> Registry: mint token
+        Registry -> "Events": Mint event
+        Registry -> Registrar
+        deactivate Registry
+    end loop
+Registrar -> Controller
+deactivate Registrar
+Controller -> User
+deactivate Controller
+
+@enduml

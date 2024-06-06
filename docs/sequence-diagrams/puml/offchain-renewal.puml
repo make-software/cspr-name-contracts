@@ -18,6 +18,7 @@ deactivate d3
 
 d3 -> Registrar: renew(RenewalVoucher, sig)
 activate Registrar
+Registrar -> Registrar: verify voucher
 Registrar -> Registry: set_token_metadata(new_metadata)
 activate Registry
 Registry -> Registry: update metadata

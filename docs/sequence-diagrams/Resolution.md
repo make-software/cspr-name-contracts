@@ -35,7 +35,7 @@ The logic could be wrapped in a stored session call:
 
 # Reverse resolution
 
-TBC. Let's decide if we want to include reverse resolution in the first iteration. Or we postpone it for a later version.
+24-06-04: Decided to skip on-chain reverse resolution flows from first version of CSPR.name.
 
 ## Set reverse resolution
 

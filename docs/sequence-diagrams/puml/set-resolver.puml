@@ -10,10 +10,10 @@ boundary "Events"
 
 == Set resolver ==
 
-"Domain owner" -> Controller: Set resolver
+"Domain owner" -> Controller: set_resolver(cspr_name,resolver_hash)
 activate Controller
 
-Controller -> Registry: set_token_metadata()
+Controller -> Registry: set_token_metadata(new_metadata)
 activate Registry
 Registry -> "Events": MetadataUpdated event
 Registry -> Controller

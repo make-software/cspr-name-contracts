@@ -18,11 +18,24 @@ deactivate d3
 
 Owner -> Controller: renew(RenewalVoucher, sig)
 activate Controller
-Controller -> Controller: Process CSPR payment
+Controller -> Controller: verify voucher\nexpiration
+Controller -> Controller: verify voucher\nsignature
+Controller -> Controller: process CSPR payment
 Controller -> "Events": Payment event
 Controller -> Registrar: renew(RenewalVoucher, sig)
 activate Registrar
-Registrar -> Registrar: verify voucher
+Registrar -> Registrar: verify voucher\nexpiration
+Registrar -> Registry: get_token_metadata(name_hash)
+Registry -> Registrar
+Registrar -> Registrar: check expiration date
+alt expiration+grace_period < blocktime
+    Registrar -> Registry: burn(name_hash)
+    Registry -> Registry: Clear resolver
+    Registry -> "Events": MetadataUpdated event
+    Registry -> Registry: burn token
+    Registry -> "Events": Burn event
+    Registrar ->x d3: Revert with\ngrace_period_expired\nerror
+end
 Registrar -> Registry: set_token_metadata(new_metadata)
 activate Registry
 Registry -> Registry: update metadata

@@ -10,10 +10,15 @@ boundary "Events"
 
 Operator -> Registry: transfer(old_owner, new_owner, cspr_name_token_id)
 activate Registry
+Registry -> Registrar: can_transfer(cspr_name_token_id)
+Registrar -> Registry
+alt Cannot transfer
+    Registry ->X Operator: Revert with cannot_transfer error
+end
 Registry -> Registry: Clear resolver
 Registry -> "Events": MetadataUpdated event
-Registry -> Registry: Clear operator
-Registry -> Registry : Set new owner
+Registry -> Registry: clear operator
+Registry -> Registry : set new owner
 Registry -> "Events": Transfer event
 Registry -> Operator
 deactivate Registry

@@ -9,7 +9,7 @@ participant "Reverse Resolver"
 
 == Set reverse resolution ==
 
-Owner -> Controller: Set reverse resolution
+Owner -> Controller: set reverse resolution
 activate Controller
 Controller -> "Reverse Resolver": set_reverse_resolution()
 activate "Reverse Resolver"

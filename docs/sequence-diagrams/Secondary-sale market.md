@@ -2,6 +2,8 @@
 
 ## D3 Marketplace
 
+_These flows are valid also for CSPR.market and other marketplaces._
+
 ### List a *cspr name in the D3 Marketplace
 
 > As a *cspr name owner, I should be able to list my token in the D3 marketplace
@@ -9,16 +11,9 @@
 ![](puml/d3-marketplace-list.png)
 [🔗](puml/d3-marketplace-list.puml)
 
-### Buy a *cspr name from D3 Marketplace with fiat payment
-
-> As a user, I should be able to buy a *cspr name listed in the D3 marketplace with a fiat payment
-
-![](puml/d3-marketplace-buy-fiat.png)
-[🔗](puml/d3-marketplace-buy-fiat.puml)
-
 ### Buy a *cspr name from D3 Marketplace with CSPR token payment
 
-> As a user, I should be able to buy a *cspr name listed in the D3 marketplace with a CSPR token payment
+> As a user, I should be able to buy one or more *cspr name listed in the D3 marketplace with a CSPR token payment
 
 ![](puml/d3-marketplace-buy-cspr-token.png)
 [🔗](puml/d3-marketplace-buy-cspr-token.puml)

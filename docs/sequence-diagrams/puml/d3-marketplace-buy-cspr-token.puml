@@ -4,38 +4,41 @@
 'autonumber
 actor User
 participant "d3.app" as d3 #lightblue
-participant "Controller"
-participant "Registrar"
+participant "D3 Operator" as d3Op
 participant "Registry"
-participant "Resolver"
+participant "Registrar"
 boundary "Events"
 
-== Buy a *cspr name from D3 Marketplace with fiat payment ==
+== Buy *cspr names from D3 Marketplace with CSPR payment ==
 
 User -> d3: Buy *cspr name
 activate d3
 d3 -> User: signed SecondarySaleVoucher
 deactivate d3
 
-User -> Controller: secondarySale(SecondarySaleVoucher, sig)
-activate Controller
-Controller -> Controller: verify voucher
-Controller -> Controller: Process CSPR payment
-Controller -> "Events": Payment event
-Controller -> Registrar: secondarySale(PaymentVoucher, sig)
-
-activate Registrar
-Registrar -> Registrar: verify voucher
-Registrar -> Registry: transfer(seller, buyer, cspr_name_token_id)
-activate Registry
-Registry -> Registry: Clear Resolver
-Registry -> "Events": MetadataUpdated event
-Registry -> Registry: transfer token
-Registry -> "Events": Transfer event
-Registry -> Registrar
-deactivate Registry
-Registrar -> d3
-deactivate Registrar
+User -> d3Op: secondarySale(SecondarySaleVoucher, sig)
+activate d3Op
+d3Op -> d3Op: verify voucher expiration
+d3Op -> d3Op: verify voucher signature
+d3Op -> d3Op: process CSPR payment
+d3Op -> "Events": Payment event
+loop N times
+    d3Op -> Registry: transfer(seller, buyer, cspr_name_token_id)
+    activate Registry
+    Registry -> Registrar: can_transfer(cspr_name_token_id)
+    Registrar -> Registry
+    alt Cannot transfer
+        Registry ->X d3Op: Revert with cannot_transfer error
+    end
+    Registry -> Registry: clear Resolver
+    Registry -> "Events": MetadataUpdated event
+    Registry -> Registry: clear operator
+    Registry -> Registry : set new owner
+    Registry -> "Events": Transfer event
+    Registry -> d3Op
+    deactivate Registry
+end
+d3Op -> User
 deactivate d3
 
 == ==

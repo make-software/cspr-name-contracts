@@ -7,20 +7,23 @@ participant "d3.app" as d3 #lightblue
 participant "Registry"
 boundary "Events"
 
-== Buy a *cspr name from D3 Marketplace with fiat payment ==
+== List a *cspr name on D3 Marketplace ==
 
 Owner -> d3: List *cspr name
 activate d3
-d3 -> Owner
-
-Owner -> Registry: approve(cspr_name_token_id, registrar_package_hash)
-activate "Registry"
-Registry -> Registry: set token operator
-Registry -> "Events": Approval event
-Registry -> Owner
-deactivate "Registry"
+d3 -> Registry: is_approved_for_all(owner, d3operator_package_hash)
+Registry -> d3
+alt Not approved
+    Owner -> Registry: set_approval_for_all(owner, d3operator_package_hash)
+    activate "Registry"
+    Registry -> Registry: set token operator
+    Registry -> "Events": ApprovalForAll event
+    Registry -> Owner
+    deactivate "Registry"
+end
 d3 -> d3: list *cspr name
-== ==
+d3 -> Owner
 deactivate d3
+== ==
 
 @enduml

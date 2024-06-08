@@ -4,7 +4,7 @@
 
 ### Whitelist registrar contract
 
-> As the Registry contract admin, I should be able to whitelist a Registrar contract, so that it can min new *cspr name 
+> As the Registry contract admin, I should be able to whitelist a Registrar contract, so that it can mint new *cspr name 
 > tokens in the registry.
 > 
 ![](puml/whitelist-registrar.png)
@@ -12,29 +12,53 @@
 
 _used also to delist a registrar_
 
+### Set transfer filter contract
+
+> As the Registry contract admin, I should be able to set a transfer filter contract, 
+> so that its `can_transfer` method is called before a transfer can be executed.
+
+![](puml/set-transfer-filter.png)
+[🔗](puml/set-transfer-filter.puml)
 ## Registrar admin functions
 
-### Expire a domain
+### Whitelist a controller contract or admin address
 
-> As the registrar contract, I should burn expired tokens upon request.
+> As a Registrar admin, I should be able to whitelist a controller contract or admin account address,
+> so that they can mint and renew cspr name tokens, and call admin contract methods.
+
+![](puml/whitelist-controller.png)
+[🔗](puml/whitelist-controller.puml)
+
+### Set grace period time span
+
+> As a registrar admin, I should be able to set the duration of the grace period.
+
+![](puml/set-grace-period.png)
+[🔗](puml/set-grace-period.puml)
+
+### Expire domains
+
+> As the registrar contract, I should burn expired tokens in batches upon request.
 
 ![](puml/expire-domain.png)
 [🔗](puml/expire-domain.puml)
 
-### Burn a domain
 
-> As a D3 admin, I should be able to burn a cspr name token.
+### Transfer domains
+
+> As a D3 admin, I should be able to transfer a batch of cspr name tokens.
+
+![](puml/admin-transfer-domain.png)
+[🔗](puml/admin-transfer-domain.puml)
+
+### Burn domains
+
+> As a D3 admin, I should be able to burn a batch of cspr name tokens.
 
 ![](puml/burn-domain.png)
 [🔗](puml/burn-domain.puml)
 
-### Whitelist a controller contract
 
-> As a Registrar admin, I should be able to whitelist a controller contract, 
-> so that it can mint and renew cspr name tokens.
-
-![](puml/whitelist-controller.png)
-[🔗](puml/whitelist-controller.puml)
 
 _used also to delist a controller._
 

@@ -7,17 +7,18 @@ participant "Registrar"
 participant "Registry"
 boundary "Events"
 
-== [Admin] Burn a domain ==
+== [Admin] Transfer a domain ==
 
-"D3 admin" -> "Registrar": admin_burn(cspr_names[])
+"D3 admin" -> "Registrar": admin_transfer(new_owner, cspr_names[])
 activate Registrar
 loop N times
-    Registrar -> Registry: burn(cspr_name_token_id)
+    Registrar -> Registry: transfer(new_oner, cspr_name_token_id)
     activate Registry
     Registry -> Registry: clear resolver
     Registry -> "Events": MetadataUpdated event
-    Registry -> Registry: burn token
-    Registry -> "Events": Burn event
+    Registry -> Registry: clear operator
+    Registry -> Registry : set new owner
+    Registry -> "Events": Transfer event
     Registry -> Registrar
     deactivate Registry
 end

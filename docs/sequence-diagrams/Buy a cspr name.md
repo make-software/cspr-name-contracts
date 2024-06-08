@@ -12,7 +12,6 @@
 ![](puml/offchain-multiple-purchase.png)
 [🔗](puml/offchain-multiple-purchase.puml)
 
-
 ## Buy with CSPR token
 
 > As a user, I must be able to buy a *cspr name with CSPR token on D3 web application 

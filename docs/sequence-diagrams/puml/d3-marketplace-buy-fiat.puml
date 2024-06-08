@@ -13,7 +13,7 @@ boundary "Events"
 
 User -> d3: Buy *cspr name
 activate d3
-d3 -> d3: Process fiat payment
+d3 -> d3: process fiat payment
 d3 -> User
 deactivate d3
 
@@ -22,7 +22,7 @@ activate Registrar
 Registrar -> Registrar: verify voucher
 Registrar -> Registry: transfer(seller, buyer, cspr_name_token_id)
 activate Registry
-Registry -> Registry: Clear Resolver
+Registry -> Registry: clear Resolver
 Registry -> "Events": MetadataUpdated event
 Registry -> Registry: transfer token
 Registry -> "Events": Transfer event

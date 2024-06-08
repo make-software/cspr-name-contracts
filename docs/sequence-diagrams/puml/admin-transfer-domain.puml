@@ -14,6 +14,11 @@ activate Registrar
 loop N times
     Registrar -> Registry: transfer(new_oner, cspr_name_token_id)
     activate Registry
+    Registry -> Registrar: can_transfer(cspr_name_token_id)
+    Registrar -> Registry
+    alt Cannot transfer
+        Registry ->X "D3 admin": Revert with cannot_transfer error
+    end
     Registry -> Registry: clear resolver
     Registry -> "Events": MetadataUpdated event
     Registry -> Registry: clear operator

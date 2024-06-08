@@ -15,7 +15,7 @@ loop N times
     Registrar -> Registry: metadata(cspr_name_token_id)
     Registry -> Registrar
     Registrar -> Registrar: Check expiry date
-    group expiration + grace_period > blocktime
+    group expiration + grace_period < blocktime
         Registrar -> Registry: burn(cspr_name_token_id)
         activate Registry
         Registry -> Registry: clear resolver

@@ -29,6 +29,8 @@ _used also to delist a registrar_
 ![](puml/whitelist-controller.png)
 [🔗](puml/whitelist-controller.puml)
 
+_used also to delist a controller or admin address._
+
 ### Set grace period time span
 
 > As a registrar admin, I should be able to set the duration of the grace period.
@@ -58,7 +60,4 @@ _used also to delist a registrar_
 ![](puml/burn-domain.png)
 [🔗](puml/burn-domain.puml)
 
-
-
-_used also to delist a controller._
 

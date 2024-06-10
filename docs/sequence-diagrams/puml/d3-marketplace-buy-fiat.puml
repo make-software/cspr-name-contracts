@@ -20,7 +20,7 @@ deactivate d3
 d3 -> Registrar: secondarySale(SecondarySaleVoucher, sig)
 activate Registrar
 Registrar -> Registrar: verify voucher
-Registrar -> Registry: transfer(seller, buyer, cspr_name_token_id)
+Registrar -> Registry: transfer(seller, buyer, name_hash)
 activate Registry
 Registry -> Registry: clear Resolver
 Registry -> "Events": MetadataUpdated event

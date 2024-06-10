@@ -12,7 +12,7 @@ boundary "Events"
 "D3 admin" -> "Registrar": admin_burn(cspr_names[])
 activate Registrar
 loop N times
-    Registrar -> Registry: burn(cspr_name_token_id)
+    Registrar -> Registry: burn(name_hash)
     activate Registry
     Registry -> Registry: clear resolver
     Registry -> "Events": MetadataUpdated event

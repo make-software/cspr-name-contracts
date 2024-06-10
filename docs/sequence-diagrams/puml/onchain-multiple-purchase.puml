@@ -26,13 +26,13 @@ Controller -> Registrar: register(TokenizationVoucher)
 activate Registrar
 Registrar -> Registrar: verify voucher\nexpiration
     loop N times
-        Registrar -> Registry: get_token_metadata(name_hash)
+        Registrar -> Registry: metadata(name_hash)
         Registry -> Registrar
         alt Token exists
-            Registrar -> Registrar: Check expiration date
+            Registrar -> Registrar: check expiration date
             alt expiration+grace_period < blocktime
                 Registrar -> Registry: burn(name_hash)
-                Registry -> Registry: Clear resolver
+                Registry -> Registry: clear resolver
                 Registry -> "Events": MetadataUpdated event
                 Registry -> Registry: burn token
                 Registry -> "Events": Burn event

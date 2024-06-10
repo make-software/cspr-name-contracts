@@ -12,11 +12,11 @@ boundary "Events"
 "Anyone" -> "Registrar": expire(cspr_names[])
 activate Registrar
 loop N times
-    Registrar -> Registry: metadata(cspr_name_token_id)
+    Registrar -> Registry: metadata(name_hash)
     Registry -> Registrar
-    Registrar -> Registrar: Check expiry date
+    Registrar -> Registrar: check expiry date
     group expiration + grace_period < blocktime
-        Registrar -> Registry: burn(cspr_name_token_id)
+        Registrar -> Registry: burn(name_hash)
         activate Registry
         Registry -> Registry: clear resolver
         Registry -> "Events": MetadataUpdated event

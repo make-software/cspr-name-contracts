@@ -8,7 +8,7 @@ boundary "Events"
 
 == Approve operator (marketplace) ==
 
-Owner -> Registry: approve(cspr_name_token_id, operator)
+Owner -> Registry: approve(name_hash, operator)
 activate Registry
 Registry -> Registry: set token operator
 Registry -> "Events": Approval event
@@ -17,7 +17,7 @@ deactivate Registry
 
 == Revoke approval ==
 
-Owner -> Registry: revoke(cspr_name_token_id, operator)
+Owner -> Registry: revoke(name_hash, operator)
 activate Registry
 Registry -> Registry: clear token operator
 Registry -> "Events": ApprovalRevoked event

@@ -12,14 +12,14 @@ end box
 
 User -> "Resolution API": /resolve xyz*cspr
 activate "Resolution API"
-"Resolution API" -> "Registry state": [RPC call] Get xyz*cspr metadata
+"Resolution API" -> "Registry state": [RPC call] get xyz*cspr metadata
 "Registry state" -> "Resolution API"
 
-"Resolution API" -> "Resolution API": Check expiry date
+"Resolution API" -> "Resolution API": check expiry date
 
 group blocktime < expiry date
-"Resolution API" -> "Resolution API": Extract resolver address
-"Resolution API" -> "Resolver state": [RPC call] ]Get xyz*cspr account address
+"Resolution API" -> "Resolution API": extract resolver address
+"Resolution API" -> "Resolver state": [RPC call] get xyz*cspr account address
 "Resolver state" -> "Resolution API"
 "Resolution API" -> User: resolved address
 else "blocktime > expiry date"

@@ -11,10 +11,10 @@ participant "Resolver"
 activate "Contract"
 "Contract" -> "Registry": metadata(name_hash)
 "Registry" -> "Contract": token metadata
-Contract -> Contract: Check expiry date
+Contract -> Contract: check expiry date
 
 group blocktime < expiry date
-"Contract" -> Resolver: address_of(name)
+"Contract" -> Resolver: address_of(name_hash)
 Resolver -> Contract: account address for name
 end
 == ==

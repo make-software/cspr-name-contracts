@@ -9,7 +9,7 @@ boundary "Events"
 
 == List a *cspr name on D3 Marketplace ==
 
-Owner -> d3: List *cspr name
+Owner -> d3: list *cspr name
 activate d3
 d3 -> Registry: is_approved_for_all(owner, d3operator_package_hash)
 Registry -> d3

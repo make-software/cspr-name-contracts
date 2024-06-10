@@ -12,9 +12,9 @@ boundary "Events"
 "D3 admin" -> "Registrar": admin_transfer(new_owner, cspr_names[])
 activate Registrar
 loop N times
-    Registrar -> Registry: transfer(new_oner, cspr_name_token_id)
+    Registrar -> Registry: transfer(new_oner, name_hash)
     activate Registry
-    Registry -> Registrar: can_transfer(cspr_name_token_id)
+    Registry -> Registrar: can_transfer(name_hash)
     Registrar -> Registry
     alt Cannot transfer
         Registry ->X "D3 admin": Revert with cannot_transfer error

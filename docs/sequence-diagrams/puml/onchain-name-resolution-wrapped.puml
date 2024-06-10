@@ -14,10 +14,10 @@ Contract -> "CSPR.name helper": resolve('xyz*cspr')
 activate "CSPR.name helper"
 "CSPR.name helper" -> "Registry": metadata(name_hash)
 "Registry" -> "CSPR.name helper": token metadata
-"CSPR.name helper" -> "CSPR.name helper": Check expiry date
+"CSPR.name helper" -> "CSPR.name helper": check expiry date
 
 group blocktime < expiry date
-    "CSPR.name helper" -> Resolver: address_of(name)
+    "CSPR.name helper" -> Resolver: address_of(name_hash)
     Resolver -> "CSPR.name helper": account address for name
     "CSPR.name helper" -> Contract: account address for name
 end

@@ -1,5 +1,15 @@
 # Secondary-sale market
 
+## can_transfer filter
+
+> As the transfer filter contract for the Registry, I should verify token expiration date,
+> so that a name token can not be transferred during the renewal grace period.
+
+_The transfer filter contract functionality can be added to the Registrar or to another contract._
+
+![](puml/transfer-filter-contract.png)
+[🔗](puml/transfer-filter-contract.puml)
+
 ## D3 Marketplace
 
 _These flows are valid also for CSPR.market and other marketplaces._

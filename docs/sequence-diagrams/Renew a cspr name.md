@@ -7,8 +7,6 @@
 ![](puml/offchain-renewal.png)
 [🔗](puml/offchain-renewal.puml)
 
-NOTE: lightblue color indicates off-chain system
-
 ## Renew with CSPR token
 
 > As a domain owner, I should be able to renew the domain with a CSPR token payment, so that the expiration date is extended.

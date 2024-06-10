@@ -1,0 +1,1123 @@
+FILE: Admin functions.md
+
+# Admin functions
+
+## Registry admin functions
+
+### Whitelist registrar contract
+
+> As the Registry contract admin, I should be able to whitelist a Registrar contract, so that it can mint new *cspr name 
+> tokens in the registry.
+> 
+
+```puml
+@startuml
+'https://plantuml.com/sequence-diagram
+
+'autonumber
+actor "Registry Admin"
+participant "Registry"
+boundary "Events"
+
+== Whitelist registrar contract ==
+
+"Registry Admin" -> "Registry": set_variables(registrars_package_hashes[])
+activate "Registry"
+Registry -> Registry: Update ACL
+Registry -> "Events": VariablesSet event
+"Registry" -> "Registry Admin"
+deactivate "Registry"
+
+@enduml
+```
+
+
+_used also to delist a registrar_
+
+### Set transfer filter contract
+
+> As the Registry contract admin, I should be able to set a transfer filter contract, 
+> so that its `can_transfer` method is called before a transfer can be executed.
+
+
+```puml
+@startuml
+'https://plantuml.com/sequence-diagram
+
+'autonumber
+actor "Registry Admin"
+participant "Registry"
+boundary "Events"
+
+== Set transfer filter contract ==
+
+"Registry Admin" -> "Registry": set_transfer_filter(contract_package_hash)
+activate "Registry"
+Registry -> Registry: set filter contract
+Registry -> "Events": VariablesSet event
+"Registry" -> "Registry Admin"
+deactivate "Registry"
+
+@enduml
+```
+
+## Registrar admin functions
+
+### Whitelist a controller contract or admin address
+
+> As a Registrar admin, I should be able to whitelist a controller contract or admin account address,
+> so that they can mint and renew cspr name tokens, and call admin contract methods.
+
+
+```puml
+@startuml
+'https://plantuml.com/sequence-diagram
+
+'autonumber
+actor "Registrar admin"
+participant "Registrar"
+
+== Whitelist controller contract / admin address ==
+
+"Registrar admin" -> "Registrar": whitelist_controller(hash_key[])
+activate "Registrar"
+"Registrar" -> "Registrar": Update ACL
+"Registrar" -> "Registrar admin"
+deactivate "Registrar"
+
+@enduml
+```
+
+
+_used also to delist a controller or admin address._
+
+### Set grace period time span
+
+> As a registrar admin, I should be able to set the duration of the grace period.
+
+
+```puml
+@startuml
+'https://plantuml.com/sequence-diagram
+
+'autonumber
+actor "Registrar admin"
+participant "Registrar"
+
+== Set grace period time span ==
+
+"Registrar admin" -> "Registrar": set_grace_period(timespan)
+activate "Registrar"
+"Registrar" -> "Registrar": Update grace_period
+"Registrar" -> "Registrar admin"
+deactivate "Registrar"
+
+@enduml
+```
+
+
+### Expire domains
+
+> As the registrar contract, I should burn expired tokens in batches upon request.
+
+
+```puml
+@startuml
+'https://plantuml.com/sequence-diagram
+
+'autonumber
+actor "Anyone"
+participant "Registrar"
+participant "Registry"
+boundary "Events"
+
+== Expire a domain ==
+
+"Anyone" -> "Registrar": expire(cspr_names[])
+activate Registrar
+loop N times
+    Registrar -> Registry: metadata(name_hash)
+    Registry -> Registrar
+    Registrar -> Registrar: check expiry date
+    group expiration + grace_period < blocktime
+        Registrar -> Registry: burn(name_hash)
+        activate Registry
+        Registry -> Registry: clear resolver
+        Registry -> "Events": MetadataUpdated event
+        Registry -> Registry: burn token
+        Registry -> "Events": Burn event
+        Registry -> Registrar
+        deactivate Registry
+    end
+end
+
+Registrar -> "Anyone"
+
+@enduml
+```
+
+
+
+### Transfer domains
+
+> As a D3 admin, I should be able to transfer a batch of cspr name tokens.
+
+
+```puml
+@startuml
+'https://plantuml.com/sequence-diagram
+
+'autonumber
+actor "D3 admin"
+participant "Registrar"
+participant "Registry"
+boundary "Events"
+
+== [Admin] Transfer a domain ==
+
+"D3 admin" -> "Registrar": admin_transfer(new_owner, cspr_names[])
+activate Registrar
+loop N times
+    Registrar -> Registry: transfer(new_oner, name_hash)
+    activate Registry
+    Registry -> Registrar: can_transfer(name_hash)
+    Registrar -> Registry
+    alt Cannot transfer
+        Registry ->X "D3 admin": Revert with cannot_transfer error
+    end
+    Registry -> Registry: clear resolver
+    Registry -> "Events": MetadataUpdated event
+    Registry -> Registry: clear operator
+    Registry -> Registry : set new owner
+    Registry -> "Events": Transfer event
+    Registry -> Registrar
+    deactivate Registry
+end
+Registrar -> "D3 admin"
+deactivate Registrar
+
+@enduml
+```
+
+
+### Burn domains
+
+> As a D3 admin, I should be able to burn a batch of cspr name tokens.
+
+
+```puml
+@startuml
+'https://plantuml.com/sequence-diagram
+
+'autonumber
+actor "D3 admin"
+participant "Registrar"
+participant "Registry"
+boundary "Events"
+
+== [Admin] Burn a domain ==
+
+"D3 admin" -> "Registrar": admin_burn(cspr_names[])
+activate Registrar
+loop N times
+    Registrar -> Registry: burn(name_hash)
+    activate Registry
+    Registry -> Registry: clear resolver
+    Registry -> "Events": MetadataUpdated event
+    Registry -> Registry: burn token
+    Registry -> "Events": Burn event
+    Registry -> Registrar
+    deactivate Registry
+end
+Registrar -> "D3 admin"
+deactivate Registrar
+
+@enduml
+```
+
+
+
+FILE: Buy a cspr name.md
+
+# Buy a *cspr name
+
+## Buy with fiat currency
+
+> As a user, I must be able to buy a *cspr name with a fiat currency on D3 web application
+ 
+
+```puml
+@startuml
+'https://plantuml.com/sequence-diagram
+
+'autonumber
+actor User
+participant "d3.app" as d3 #lightblue
+participant "Registrar"
+participant "Registry"
+boundary "Events"
+
+== Buy a *cspr name with fiat currency ==
+
+User -> d3: Buy *cspr name
+activate d3
+d3 -> d3: process fiat payment
+d3 -> User
+deactivate d3
+
+d3 -> Registrar: register(TokenizationVoucher)
+activate Registrar
+Registrar -> Registrar: verify voucher\nexpiration
+Registrar -> Registry: metadata(name_hash)
+Registry -> Registrar
+alt Token exists
+    Registrar -> Registrar: check expiration date
+    alt expiration+grace_period < blocktime
+        Registrar -> Registry: burn(name_hash)
+        Registry -> Registry: clear resolver
+        Registry -> "Events": MetadataUpdated event
+        Registry -> Registry: burn token
+        Registry -> "Events": Burn event
+    else expiration+grace_period > blocktime
+        Registrar ->x d3: Revert with\nnot expired token error
+    end
+end
+Registrar -> Registry: mint(buyer, metadata)
+activate Registry
+Registry -> Registry: mint token
+Registry -> "Events": Mint event
+Registry -> Registrar
+deactivate Registry
+Registrar -> d3
+deactivate Registrar
+deactivate d3
+
+== ==
+@enduml
+```
+
+
+> As a user, I must be able to buy multiple *cspr name with a fiat currency in one transaction on D3 web application
+
+
+```puml
+@startuml
+'https://plantuml.com/sequence-diagram
+
+'autonumber
+actor User
+participant "d3.app" as d3 #lightblue
+participant "Registrar"
+participant "Registry"
+boundary "Events"
+
+== Buy multiple (N) *cspr names with fiat currency ==
+
+User -> d3: Buy N *cspr names
+activate d3
+d3 -> d3: process fiat payment
+d3 -> User
+deactivate d3
+
+d3 -> Registrar: register(TokenizationVoucher)
+activate Registrar
+Registrar -> Registrar: verify voucher\nexpiration
+    loop N times
+    Registrar -> Registry: metadata(name_hash)
+    Registry -> Registrar
+        alt Token exists
+            Registrar -> Registrar: check expiration date
+            alt expiration+grace_period < blocktime
+                Registrar -> Registry: burn(name_hash)
+                Registry -> Registry: clear resolver
+                Registry -> "Events": MetadataUpdated event
+                Registry -> Registry: burn token
+                Registry -> "Events": Burn event
+            else expiration+grace_period > blocktime
+                Registrar ->x d3: Revert with\nnot expired token error
+            end
+        end
+        Registrar -> Registry: mint(buyer, metadata)
+        activate Registry
+        Registry -> Registry: mint token
+        Registry -> "Events": Mint event
+        Registry -> Registrar
+        deactivate Registry
+    end loop
+Registrar -> d3
+deactivate Registrar
+deactivate d3
+
+@enduml
+```
+
+
+## Buy with CSPR token
+
+> As a user, I must be able to buy a *cspr name with CSPR token on D3 web application 
+
+
+```puml
+@startuml
+'https://plantuml.com/sequence-diagram
+
+'autonumber
+actor User
+participant "d3.app" as d3 #lightblue
+participant "Controller"
+participant "Registrar"
+participant "Registry"
+boundary "Events"
+
+== Buy a *cspr name with CSPR token ==
+
+User -> d3: Buy *cspr name with CSPR
+activate d3
+d3 -> User: signed PaymentVoucher
+deactivate d3
+
+User -> Controller: buy(PaymentVoucher, sig)
+activate Controller
+Controller -> Controller: verify voucher\nexpiration
+Controller -> Controller: verify voucher\nsignature
+Controller -> Controller: process CSPR payment
+Controller -> "Events": Payment event
+Controller -> Registrar: register(TokenizationVoucher)
+activate Registrar
+Registrar -> Registrar: verify voucher\nexpiration
+Registrar -> Registry: metadata(name_hash)
+Registry -> Registrar
+alt Token exists
+    Registrar -> Registrar: check expiration date
+    alt expiration+grace_period < blocktime
+        Registrar -> Registry: burn(name_hash)
+        Registry -> Registry: clear resolver
+        Registry -> "Events": MetadataUpdated event
+        Registry -> Registry: burn token
+        Registry -> "Events": Burn event
+    else expiration+grace_period > blocktime
+        Registrar ->x d3: Revert with\nnot expired token error
+    end
+end
+Registrar -> Registry: mint(buyer, metadata)
+activate Registry
+Registry -> Registry: mint token
+Registry -> "Events": Mint event
+Registry -> Registrar
+deactivate Registry
+Registrar -> Controller
+deactivate Registrar
+Controller -> User
+deactivate Controller
+
+@enduml
+```
+
+
+> As a user, I must be able to buy multiple *cspr names with CSPR token in one transaction on D3 web application
+
+
+```puml
+@startuml
+'https://plantuml.com/sequence-diagram
+
+'autonumber
+actor User
+participant "d3.app" as d3 #lightblue
+participant "Controller"
+participant "Registrar"
+participant "Registry"
+boundary "Events"
+
+== Buy multiple *cspr names with CSPR token ==
+
+User -> d3: Buy N *cspr names with CSPR
+activate d3
+d3 -> User: signed PaymentVoucher
+deactivate d3
+
+User -> Controller: buy(PaymentVoucher, sig)
+activate Controller
+Controller -> Controller: verify voucher\nexpiration
+Controller -> Controller: verify voucher\nsignature
+Controller -> Controller: process CSPR payment
+Controller -> "Events": Payment event
+Controller -> Registrar: register(TokenizationVoucher)
+activate Registrar
+Registrar -> Registrar: verify voucher\nexpiration
+    loop N times
+        Registrar -> Registry: metadata(name_hash)
+        Registry -> Registrar
+        alt Token exists
+            Registrar -> Registrar: check expiration date
+            alt expiration+grace_period < blocktime
+                Registrar -> Registry: burn(name_hash)
+                Registry -> Registry: clear resolver
+                Registry -> "Events": MetadataUpdated event
+                Registry -> Registry: burn token
+                Registry -> "Events": Burn event
+            else expiration+grace_period > blocktime
+                Registrar ->x d3: Revert with\nnot expired token error
+            end
+        end
+        Registrar -> Registry: mint(buyer, metadata)
+        activate Registry
+        Registry -> Registry: mint token
+        Registry -> "Events": Mint event
+        Registry -> Registrar
+        deactivate Registry
+    end loop
+Registrar -> Controller
+deactivate Registrar
+Controller -> User
+deactivate Controller
+
+@enduml
+```
+
+FILE: Renew a cspr name.md
+
+# Renew a domain
+
+## Renew with fiat currency
+
+> As a domain owner, I should be able to renew the domain with a fiat payment, so that the expiration date is extended.
+
+
+```puml
+@startuml
+'https://plantuml.com/sequence-diagram
+
+'autonumber
+actor Owner
+participant "d3.app" as d3 #lightblue
+participant "Registrar"
+participant "Registry"
+boundary "Events"
+
+== Renew a *cspr name with fiat currency ==
+
+Owner -> d3: Renew *cspr name
+activate d3
+d3 -> d3: process fiat payment
+d3 -> Owner
+deactivate d3
+
+d3 -> Registrar: renew(RenewalVoucher)
+activate Registrar
+Registrar -> Registrar: verify voucher\nexpiration
+Registrar -> Registry: metadata(name_hash)
+Registry -> Registrar
+Registrar -> Registrar: check expiration date
+alt expiration+grace_period < blocktime
+    Registrar -> Registry: burn(name_hash)
+    Registry -> Registry: clear resolver
+    Registry -> "Events": MetadataUpdated event
+    Registry -> Registry: burn token
+    Registry -> "Events": Burn event
+    Registrar ->x d3: Revert with\ngrace_period_expired\nerror
+end
+Registrar -> Registry: set_token_metadata(name_hash, new_metadata)
+activate Registry
+Registry -> Registry: update metadata
+Registry -> "Events": MetadataUpdated event
+Registry -> Registrar
+deactivate Registry
+Registrar -> d3
+deactivate Registrar
+deactivate d3
+
+@enduml
+```
+
+
+## Renew with CSPR token
+
+> As a domain owner, I should be able to renew the domain with a CSPR token payment, so that the expiration date is extended.
+
+
+```puml
+@startuml
+'https://plantuml.com/sequence-diagram
+
+'autonumber
+actor Owner
+participant "d3.app" as d3 #lightblue
+participant "Controller"
+participant "Registrar"
+participant "Registry"
+boundary "Events"
+
+== Renew a *cspr name with CSPR token payment ==
+
+Owner -> d3: Buy *cspr name with CSPR
+activate d3
+d3 -> Owner: signed RenewalVoucher
+deactivate d3
+
+Owner -> Controller: renew(RenewalVoucher, sig)
+activate Controller
+Controller -> Controller: verify voucher\nexpiration
+Controller -> Controller: verify voucher\nsignature
+Controller -> Controller: process CSPR payment
+Controller -> "Events": Payment event
+Controller -> Registrar: renew(RenewalVoucher, sig)
+activate Registrar
+Registrar -> Registrar: verify voucher\nexpiration
+Registrar -> Registry: metadata(name_hash)
+Registry -> Registrar
+Registrar -> Registrar: check expiration date
+alt expiration+grace_period < blocktime
+    Registrar -> Registry: burn(name_hash)
+    Registry -> Registry: clear resolver
+    Registry -> "Events": MetadataUpdated event
+    Registry -> Registry: burn token
+    Registry -> "Events": Burn event
+    Registrar ->x d3: Revert with\ngrace_period_expired\nerror
+end
+Registrar -> Registry: set_token_metadata(name_hash, new_metadata)
+activate Registry
+Registry -> Registry: update metadata
+Registry -> "Events": MetadataUpdated event
+Registry -> Registrar
+deactivate Registry
+Registrar -> Controller
+deactivate Registrar
+Controller -> Owner
+deactivate Controller
+
+@enduml
+```
+
+
+FILE: Resolution.md
+
+# Resolution
+
+## Set a resolver
+
+> As a domain owner, I must be able to set a resolver contract address for my domain.
+
+
+```puml
+@startuml
+'https://plantuml.com/sequence-diagram
+
+'autonumber
+actor "Domain owner"
+participant "Controller"
+participant "Registrar"
+participant "Registry"
+boundary "Events"
+
+== Set resolver ==
+
+"Domain owner" -> Controller: set_resolver(cspr_name,resolver_hash)
+activate Controller
+
+Controller -> Registry: set_token_metadata(name_hash, new_metadata)
+activate Registry
+Registry -> "Events": MetadataUpdated event
+Registry -> Controller
+deactivate Registry
+Controller -> "Domain owner"
+deactivate Controller
+
+== ==
+
+@enduml
+```
+
+
+## Set account address record
+
+> As a domain owner, I must be able to set a record that resolves my domain name to an account address.
+
+
+```puml
+@startuml
+'https://plantuml.com/sequence-diagram
+
+'autonumber
+actor "Domain owner"
+participant "Resolver"
+participant "Registry"
+boundary "Events"
+
+== Set account address record ==
+
+"Domain owner" -> Resolver: set_address(name_hash, address)
+activate Resolver
+Resolver -> Registry: owner_of(name_hash)
+Registry -> Resolver: owner address
+group caller == owner
+    Resolver -> Resolver: set record
+    Resolver -> Events: SetAccountAddress event
+end
+Resolver -> "Domain owner"
+deactivate Resolver
+
+== ==
+
+@enduml
+```
+
+
+## Resolve name
+
+> As a external contract, I should be able to resolve the account address for a name.
+
+
+```puml
+@startuml
+'https://plantuml.com/sequence-diagram
+
+'autonumber
+participant "Contract" #lightblue
+participant "Registry"
+participant "Resolver"
+
+== On-chain name resolution ==
+
+activate "Contract"
+"Contract" -> "Registry": metadata(name_hash)
+"Registry" -> "Contract": token metadata
+Contract -> Contract: check expiry date
+
+group blocktime < expiry date
+"Contract" -> Resolver: address_of(name_hash)
+Resolver -> Contract: account address for name
+end
+== ==
+
+deactivate Contract
+
+@enduml
+```
+
+
+The logic could be wrapped in a stored session call:
+
+
+```puml
+@startuml
+'https://plantuml.com/sequence-diagram
+
+'autonumber
+participant "Contract" #lightblue
+participant "CSPR.name helper"
+participant "Registry"
+participant "Resolver"
+
+== On-chain name resolution (wrapped) ==
+
+activate "Contract"
+Contract -> "CSPR.name helper": resolve('xyz*cspr')
+activate "CSPR.name helper"
+"CSPR.name helper" -> "Registry": metadata(name_hash)
+"Registry" -> "CSPR.name helper": token metadata
+"CSPR.name helper" -> "CSPR.name helper": check expiry date
+
+group blocktime < expiry date
+    "CSPR.name helper" -> Resolver: address_of(name_hash)
+    Resolver -> "CSPR.name helper": account address for name
+    "CSPR.name helper" -> Contract: account address for name
+end
+
+deactivate "CSPR.name helper"
+
+== ==
+
+deactivate Contract
+
+@enduml
+```
+
+
+## Resolve name using RPC
+
+> As a user, I can call a Resolution API to resolve the account address for a name.
+
+
+```puml
+@startuml
+'https://plantuml.com/sequence-diagram
+
+'autonumber
+actor User
+participant "Resolution API"
+box Casper Node
+participant "Registry state"
+participant "Resolver state"
+end box
+== Resolve name ==
+
+User -> "Resolution API": /resolve xyz*cspr
+activate "Resolution API"
+"Resolution API" -> "Registry state": [RPC call] get xyz*cspr metadata
+"Registry state" -> "Resolution API"
+
+"Resolution API" -> "Resolution API": check expiry date
+
+group blocktime < expiry date
+"Resolution API" -> "Resolution API": extract resolver address
+"Resolution API" -> "Resolver state": [RPC call] get xyz*cspr account address
+"Resolver state" -> "Resolution API"
+"Resolution API" -> User: resolved address
+else "blocktime > expiry date"
+"Resolution API" -> User: token expired
+end
+deactivate "Resolution API"
+
+@enduml
+```
+
+
+# Reverse resolution
+
+24-06-04: Decided to skip on-chain reverse resolution flows from first version of CSPR.name.
+
+## Set reverse resolution
+
+
+```puml
+@startuml
+'https://plantuml.com/sequence-diagram
+
+'autonumber
+actor Owner
+participant "Controller"
+participant "Registrar"
+participant "Reverse Resolver"
+
+== Set reverse resolution ==
+
+Owner -> Controller: set reverse resolution
+activate Controller
+Controller -> "Reverse Resolver": set_reverse_resolution()
+activate "Reverse Resolver"
+"Reverse Resolver" -> "Registrar": owner_of()
+Registrar -> "Reverse Resolver"
+"Reverse Resolver" -> "Reverse Resolver": update name resolver record
+"Reverse Resolver" -> "Controller"
+deactivate "Reverse Resolver"
+Controller -> Owner
+deactivate Controller
+@enduml
+```
+
+
+## Look up account name
+
+
+```puml
+@startuml
+'https://plantuml.com/sequence-diagram
+
+'autonumber
+actor Anyone
+participant "Reverse Resolver"
+
+== Lookup account name ==
+
+Anyone -> "Reverse Resolver": name()
+activate "Reverse Resolver"
+"Reverse Resolver" -> Anyone
+deactivate "Reverse Resolver"
+
+@enduml
+```
+
+FILE: Secondary-sale market.md
+
+# Secondary-sale market
+
+## can_transfer filter
+
+> As the transfer filter contract for the Registry, I should verify token expiration date,
+> so that a name token can not be transferred during the renewal grace period.
+
+_The transfer filter contract functionality can be added to the Registrar or to another contract._
+
+
+```puml
+@startuml
+'https://plantuml.com/sequence-diagram
+
+'autonumber
+participant "Registry"
+participant "Registrar"
+
+== Transfer filter contract ==
+
+Registry -> Registrar: can_transfer(name_hash, old_owner, new_owner)
+activate Registrar
+Registrar -> Registry: metadata(name_hash)
+Registry -> Registrar: token metadata
+Registrar -> Registrar: check expiration date
+alt expiration > blocktime
+ Registrar -> Registry: transfer allowed
+else
+ Registrar -> Registry: cannot transfer
+end
+deactivate Registrar
+
+== ==
+
+@enduml
+```
+
+
+## D3 Marketplace
+
+_These flows are valid also for CSPR.market and other marketplaces._
+
+### List a *cspr name in the D3 Marketplace
+
+> As a *cspr name owner, I should be able to list my token in the D3 marketplace
+
+
+```puml
+@startuml
+'https://plantuml.com/sequence-diagram
+
+'autonumber
+actor Owner
+participant "d3.app" as d3 #lightblue
+participant "Registry"
+boundary "Events"
+
+== List a *cspr name on D3 Marketplace ==
+
+Owner -> d3: list *cspr name
+activate d3
+d3 -> Registry: is_approved_for_all(owner, d3operator_package_hash)
+Registry -> d3
+alt Not approved
+    Owner -> Registry: set_approval_for_all(owner, d3operator_package_hash)
+    activate "Registry"
+    Registry -> Registry: set token operator
+    Registry -> "Events": ApprovalForAll event
+    Registry -> Owner
+    deactivate "Registry"
+end
+d3 -> d3: list *cspr name
+d3 -> Owner
+deactivate d3
+== ==
+
+@enduml
+```
+
+
+### Buy a *cspr name from D3 Marketplace with CSPR token payment
+
+> As a user, I should be able to buy one or more *cspr name listed in the D3 marketplace with a CSPR token payment
+
+
+```puml
+@startuml
+'https://plantuml.com/sequence-diagram
+
+'autonumber
+actor User
+participant "d3.app" as d3 #lightblue
+participant "D3 Operator" as d3Op
+participant "Registry"
+participant "Registrar"
+boundary "Events"
+
+== Buy *cspr names from D3 Marketplace with CSPR payment ==
+
+User -> d3: Buy *cspr name
+activate d3
+d3 -> User: signed SecondarySaleVoucher
+deactivate d3
+
+User -> d3Op: secondarySale(SecondarySaleVoucher, sig)
+activate d3Op
+d3Op -> d3Op: verify voucher expiration
+d3Op -> d3Op: verify voucher signature
+d3Op -> d3Op: process CSPR payment
+d3Op -> "Events": Payment event
+loop N times
+    d3Op -> Registry: transfer(seller, buyer, name_hash)
+    activate Registry
+    Registry -> Registrar: can_transfer(name_hash)
+    Registrar -> Registry
+    alt Cannot transfer
+        Registry ->X d3Op: Revert with cannot_transfer error
+    end
+    Registry -> Registry: clear Resolver
+    Registry -> "Events": MetadataUpdated event
+    Registry -> Registry: clear operator
+    Registry -> Registry : set new owner
+    Registry -> "Events": Transfer event
+    Registry -> d3Op
+    deactivate Registry
+end
+d3Op -> User
+deactivate d3
+
+== ==
+
+@enduml
+```
+
+
+## Private actions
+
+### Approve / revoke an operator
+
+> As a *cspr name owner, I should be able to approve an operator, so that it can transfer the token on my behalf
+
+> As a *cspr name owner, I should be able to revoke the operator's permission
+
+
+```puml
+@startuml
+'https://plantuml.com/sequence-diagram
+
+'autonumber
+actor Owner
+participant "Registry"
+boundary "Events"
+
+== Approve operator (marketplace) ==
+
+Owner -> Registry: approve(name_hash, operator)
+activate Registry
+Registry -> Registry: set token operator
+Registry -> "Events": Approval event
+Registry -> Owner
+deactivate Registry
+
+== Revoke approval ==
+
+Owner -> Registry: revoke(name_hash, operator)
+activate Registry
+Registry -> Registry: clear token operator
+Registry -> "Events": ApprovalRevoked event
+Registry -> Owner
+deactivate Registry
+
+== ==
+
+@enduml
+```
+
+
+### Approve for all
+
+> As an owner of one or more *cspr names, I should be able to approve an operator, so that it can transfer any of my tokens on my behalf
+
+> As an owner of one or more *cspr names, I should be able to revoke the operator's permission
+
+
+```puml
+@startuml
+'https://plantuml.com/sequence-diagram
+
+'autonumber
+actor Owner
+participant "Registry"
+boundary "Events"
+
+== Approve operator for all tokens owned by caller ==
+
+Owner -> Registry: set_approval_for_all(true, operator)
+activate Registry
+Registry -> Registry: set owner operator
+Registry -> "Events": ApprovalForAll event
+Registry -> Owner
+deactivate Registry
+
+== Revoke approval for all ==
+
+Owner -> Registry: set_approval_for_all(false, operator)
+activate Registry
+Registry -> Registry: clear owner operator
+Registry -> "Events": RevokedForAll event
+Registry -> Owner
+deactivate Registry
+
+== ==
+
+@enduml
+```
+
+
+### Transfer
+
+> As a *cspr name owner, I should be able to transfer the ownership of the token to another account
+
+
+```puml
+@startuml
+'https://plantuml.com/sequence-diagram
+
+'autonumber
+actor Owner
+participant "Registry"
+boundary "Events"
+
+== Transfer token ==
+
+Owner -> Registry: transfer(new_owner, name_hash)
+activate Registry
+Registry -> Registrar: can_transfer(name_hash)
+Registrar -> Registry
+alt Cannot transfer
+    Registry ->X Owner: Revert with cannot_transfer error
+end
+Registry -> Registry: clear resolver
+Registry -> "Events": MetadataUpdated event
+Registry -> Registry: clear operator
+Registry -> Registry : set new owner
+Registry -> "Events": Transfer event
+Registry -> Owner
+deactivate Registry
+
+== ==
+
+@enduml
+```
+
+
+### Transfer from operator
+
+> As a token operator, I should be able to transfer the ownership of the token to another account
+
+
+```puml
+@startuml
+'https://plantuml.com/sequence-diagram
+
+'autonumber
+actor Operator
+participant "Registry"
+boundary "Events"
+
+== Transfer token by operator ==
+
+Operator -> Registry: transfer(old_owner, new_owner, name_hash)
+activate Registry
+Registry -> Registrar: can_transfer(name_hash)
+Registrar -> Registry
+alt Cannot transfer
+    Registry ->X Operator: Revert with cannot_transfer error
+end
+Registry -> Registry: clear resolver
+Registry -> "Events": MetadataUpdated event
+Registry -> Registry: clear operator
+Registry -> Registry : set new owner
+Registry -> "Events": Transfer event
+Registry -> Operator
+deactivate Registry
+
+== ==
+
+@enduml
+```
+
+

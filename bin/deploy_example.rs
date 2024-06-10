@@ -1,6 +1,6 @@
 use std::str::FromStr;
 
-use casper_name::register::*;
+use casper_name::name_token::*;
 use odra::host::HostEnv;
 use odra::{
     host::{Deployer, HostRef, HostRefLoader},

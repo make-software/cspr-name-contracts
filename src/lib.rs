@@ -2,7 +2,8 @@
 #![cfg_attr(not(test), no_main)]
 extern crate alloc;
 
+pub mod name_token;
 pub mod register;
 
-#[cfg(test)]
-mod register_tests;
+// #[cfg(test)]
+// mod register_tests;

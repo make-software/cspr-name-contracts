@@ -1,0 +1,27 @@
+name: generate plantuml images
+on:
+  workflow_dispatch:
+  push:
+    paths:
+      - 'docs/**/*.puml'
+  pull_request:
+    paths:
+      - 'docs/**/*.puml'
+jobs:
+  generate_plantuml:
+    runs-on: ubuntu-latest
+    name: plantuml
+    steps:
+      - name: checkout
+        uses: actions/checkout@v4
+        with:
+          fetch-depth: 1
+
+      - name: Generate UML diagrams
+        run: |
+          docker run --rm -v ${{ github.workspace }}/docs/sequence-diagrams/puml:/workspace plantuml/plantuml -tpng /workspace/*.puml
+
+      - name: Update Repo
+        uses: stefanzweifel/git-auto-commit-action@v5
+        with:
+          commit_message: "Render PlantUML files"

@@ -1,0 +1,28 @@
+@startuml
+'https://plantuml.com/sequence-diagram
+
+'autonumber
+actor Operator
+participant "Registry"
+boundary "Events"
+
+== Transfer token by operator ==
+
+Operator -> Registry: transfer(old_owner, new_owner, name_hash)
+activate Registry
+Registry -> Registrar: can_transfer(name_hash)
+Registrar -> Registry
+alt Cannot transfer
+    Registry ->X Operator: Revert with cannot_transfer error
+end
+Registry -> Registry: clear resolver
+Registry -> "Events": MetadataUpdated event
+Registry -> Registry: clear operator
+Registry -> Registry : set new owner
+Registry -> "Events": Transfer event
+Registry -> Operator
+deactivate Registry
+
+== ==
+
+@enduml

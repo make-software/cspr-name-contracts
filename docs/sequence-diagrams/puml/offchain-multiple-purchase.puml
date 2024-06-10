@@ -1,0 +1,48 @@
+@startuml
+'https://plantuml.com/sequence-diagram
+
+'autonumber
+actor User
+participant "d3.app" as d3 #lightblue
+participant "Registrar"
+participant "Registry"
+boundary "Events"
+
+== Buy multiple (N) *cspr names with fiat currency ==
+
+User -> d3: Buy N *cspr names
+activate d3
+d3 -> d3: process fiat payment
+d3 -> User
+deactivate d3
+
+d3 -> Registrar: register(TokenizationVoucher)
+activate Registrar
+Registrar -> Registrar: verify voucher\nexpiration
+    loop N times
+    Registrar -> Registry: metadata(name_hash)
+    Registry -> Registrar
+        alt Token exists
+            Registrar -> Registrar: check expiration date
+            alt expiration+grace_period < blocktime
+                Registrar -> Registry: burn(name_hash)
+                Registry -> Registry: clear resolver
+                Registry -> "Events": MetadataUpdated event
+                Registry -> Registry: burn token
+                Registry -> "Events": Burn event
+            else expiration+grace_period > blocktime
+                Registrar ->x d3: Revert with\nnot expired token error
+            end
+        end
+        Registrar -> Registry: mint(buyer, metadata)
+        activate Registry
+        Registry -> Registry: mint token
+        Registry -> "Events": Mint event
+        Registry -> Registrar
+        deactivate Registry
+    end loop
+Registrar -> d3
+deactivate Registrar
+deactivate d3
+
+@enduml

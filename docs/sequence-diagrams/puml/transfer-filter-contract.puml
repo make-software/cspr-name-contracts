@@ -1,0 +1,24 @@
+@startuml
+'https://plantuml.com/sequence-diagram
+
+'autonumber
+participant "Registry"
+participant "Registrar"
+
+== Transfer filter contract ==
+
+Registry -> Registrar: can_transfer(name_hash, old_owner, new_owner)
+activate Registrar
+Registrar -> Registry: metadata(name_hash)
+Registry -> Registrar: token metadata
+Registrar -> Registrar: check expiration date
+alt expiration > blocktime
+ Registrar -> Registry: transfer allowed
+else
+ Registrar -> Registry: cannot transfer
+end
+deactivate Registrar
+
+== ==
+
+@enduml

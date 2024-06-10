@@ -1,0 +1,46 @@
+@startuml
+'https://plantuml.com/sequence-diagram
+
+'autonumber
+actor User
+participant "d3.app" as d3 #lightblue
+participant "D3 Operator" as d3Op
+participant "Registry"
+participant "Registrar"
+boundary "Events"
+
+== Buy *cspr names from D3 Marketplace with CSPR payment ==
+
+User -> d3: Buy *cspr name
+activate d3
+d3 -> User: signed SecondarySaleVoucher
+deactivate d3
+
+User -> d3Op: secondarySale(SecondarySaleVoucher, sig)
+activate d3Op
+d3Op -> d3Op: verify voucher expiration
+d3Op -> d3Op: verify voucher signature
+d3Op -> d3Op: process CSPR payment
+d3Op -> "Events": Payment event
+loop N times
+    d3Op -> Registry: transfer(seller, buyer, name_hash)
+    activate Registry
+    Registry -> Registrar: can_transfer(name_hash)
+    Registrar -> Registry
+    alt Cannot transfer
+        Registry ->X d3Op: Revert with cannot_transfer error
+    end
+    Registry -> Registry: clear Resolver
+    Registry -> "Events": MetadataUpdated event
+    Registry -> Registry: clear operator
+    Registry -> Registry : set new owner
+    Registry -> "Events": Transfer event
+    Registry -> d3Op
+    deactivate Registry
+end
+d3Op -> User
+deactivate d3
+
+== ==
+
+@enduml

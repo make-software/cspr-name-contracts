@@ -1,0 +1,32 @@
+@startuml
+'https://plantuml.com/sequence-diagram
+
+'autonumber
+actor "Anyone"
+participant "Registrar"
+participant "Registry"
+boundary "Events"
+
+== Expire a domain ==
+
+"Anyone" -> "Registrar": expire(cspr_names[])
+activate Registrar
+loop N times
+    Registrar -> Registry: metadata(name_hash)
+    Registry -> Registrar
+    Registrar -> Registrar: check expiry date
+    group expiration + grace_period < blocktime
+        Registrar -> Registry: burn(name_hash)
+        activate Registry
+        Registry -> Registry: clear resolver
+        Registry -> "Events": MetadataUpdated event
+        Registry -> Registry: burn token
+        Registry -> "Events": Burn event
+        Registry -> Registrar
+        deactivate Registry
+    end
+end
+
+Registrar -> "Anyone"
+
+@enduml

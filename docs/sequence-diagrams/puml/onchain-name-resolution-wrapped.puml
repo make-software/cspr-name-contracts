@@ -1,0 +1,31 @@
+@startuml
+'https://plantuml.com/sequence-diagram
+
+'autonumber
+participant "Contract" #lightblue
+participant "CSPR.name helper"
+participant "Registry"
+participant "Resolver"
+
+== On-chain name resolution (wrapped) ==
+
+activate "Contract"
+Contract -> "CSPR.name helper": resolve('xyz*cspr')
+activate "CSPR.name helper"
+"CSPR.name helper" -> "Registry": metadata(name_hash)
+"Registry" -> "CSPR.name helper": token metadata
+"CSPR.name helper" -> "CSPR.name helper": check expiry date
+
+group blocktime < expiry date
+    "CSPR.name helper" -> Resolver: address_of(name_hash)
+    Resolver -> "CSPR.name helper": account address for name
+    "CSPR.name helper" -> Contract: account address for name
+end
+
+deactivate "CSPR.name helper"
+
+== ==
+
+deactivate Contract
+
+@enduml

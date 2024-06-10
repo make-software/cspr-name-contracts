@@ -1,0 +1,30 @@
+@startuml
+'https://plantuml.com/sequence-diagram
+
+'autonumber
+actor User
+participant "Resolution API"
+box Casper Node
+participant "Registry state"
+participant "Resolver state"
+end box
+== Resolve name ==
+
+User -> "Resolution API": /resolve xyz*cspr
+activate "Resolution API"
+"Resolution API" -> "Registry state": [RPC call] get xyz*cspr metadata
+"Registry state" -> "Resolution API"
+
+"Resolution API" -> "Resolution API": check expiry date
+
+group blocktime < expiry date
+"Resolution API" -> "Resolution API": extract resolver address
+"Resolution API" -> "Resolver state": [RPC call] get xyz*cspr account address
+"Resolver state" -> "Resolution API"
+"Resolution API" -> User: resolved address
+else "blocktime > expiry date"
+"Resolution API" -> User: token expired
+end
+deactivate "Resolution API"
+
+@enduml

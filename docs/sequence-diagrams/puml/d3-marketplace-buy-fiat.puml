@@ -1,0 +1,36 @@
+@startuml
+'https://plantuml.com/sequence-diagram
+
+'autonumber
+actor User
+participant "d3.app" as d3 #lightblue
+participant "Registrar"
+participant "Registry"
+participant "Resolver"
+boundary "Events"
+
+== Buy a *cspr name from D3 Marketplace with fiat payment ==
+
+User -> d3: Buy *cspr name
+activate d3
+d3 -> d3: process fiat payment
+d3 -> User
+deactivate d3
+
+d3 -> Registrar: secondarySale(SecondarySaleVoucher, sig)
+activate Registrar
+Registrar -> Registrar: verify voucher
+Registrar -> Registry: transfer(seller, buyer, name_hash)
+activate Registry
+Registry -> Registry: clear Resolver
+Registry -> "Events": MetadataUpdated event
+Registry -> Registry: transfer token
+Registry -> "Events": Transfer event
+Registry -> Registrar
+deactivate Registry
+Registrar -> d3
+deactivate Registrar
+deactivate d3
+
+== ==
+@enduml

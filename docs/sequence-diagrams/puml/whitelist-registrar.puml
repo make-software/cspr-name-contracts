@@ -1,0 +1,18 @@
+@startuml
+'https://plantuml.com/sequence-diagram
+
+'autonumber
+actor "Registry Admin"
+participant "Registry"
+boundary "Events"
+
+== Whitelist registrar contract ==
+
+"Registry Admin" -> "Registry": set_variables(registrars_package_hashes[])
+activate "Registry"
+Registry -> Registry: Update ACL
+Registry -> "Events": VariablesSet event
+"Registry" -> "Registry Admin"
+deactivate "Registry"
+
+@enduml

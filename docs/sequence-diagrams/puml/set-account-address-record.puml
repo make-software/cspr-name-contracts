@@ -1,0 +1,25 @@
+@startuml
+'https://plantuml.com/sequence-diagram
+
+'autonumber
+actor "Domain owner"
+participant "Resolver"
+participant "Registry"
+boundary "Events"
+
+== Set account address record ==
+
+"Domain owner" -> Resolver: set_address(name_hash, address)
+activate Resolver
+Resolver -> Registry: owner_of(name_hash)
+Registry -> Resolver: owner address
+group caller == owner
+    Resolver -> Resolver: set record
+    Resolver -> Events: SetAccountAddress event
+end
+Resolver -> "Domain owner"
+deactivate Resolver
+
+== ==
+
+@enduml

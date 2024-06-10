@@ -1,0 +1,29 @@
+@startuml
+'https://plantuml.com/sequence-diagram
+
+'autonumber
+actor Owner
+participant "Registry"
+boundary "Events"
+
+== Approve operator (marketplace) ==
+
+Owner -> Registry: approve(name_hash, operator)
+activate Registry
+Registry -> Registry: set token operator
+Registry -> "Events": Approval event
+Registry -> Owner
+deactivate Registry
+
+== Revoke approval ==
+
+Owner -> Registry: revoke(name_hash, operator)
+activate Registry
+Registry -> Registry: clear token operator
+Registry -> "Events": ApprovalRevoked event
+Registry -> Owner
+deactivate Registry
+
+== ==
+
+@enduml

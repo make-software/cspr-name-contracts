@@ -1,0 +1,26 @@
+@startuml
+'https://plantuml.com/sequence-diagram
+
+'autonumber
+actor "Domain owner"
+participant "Controller"
+participant "Registrar"
+participant "Registry"
+boundary "Events"
+
+== Set resolver ==
+
+"Domain owner" -> Controller: set_resolver(cspr_name,resolver_hash)
+activate Controller
+
+Controller -> Registry: set_token_metadata(name_hash, new_metadata)
+activate Registry
+Registry -> "Events": MetadataUpdated event
+Registry -> Controller
+deactivate Registry
+Controller -> "Domain owner"
+deactivate Controller
+
+== ==
+
+@enduml

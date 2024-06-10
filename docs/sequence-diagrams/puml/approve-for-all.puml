@@ -1,0 +1,29 @@
+@startuml
+'https://plantuml.com/sequence-diagram
+
+'autonumber
+actor Owner
+participant "Registry"
+boundary "Events"
+
+== Approve operator for all tokens owned by caller ==
+
+Owner -> Registry: set_approval_for_all(true, operator)
+activate Registry
+Registry -> Registry: set owner operator
+Registry -> "Events": ApprovalForAll event
+Registry -> Owner
+deactivate Registry
+
+== Revoke approval for all ==
+
+Owner -> Registry: set_approval_for_all(false, operator)
+activate Registry
+Registry -> Registry: clear owner operator
+Registry -> "Events": RevokedForAll event
+Registry -> Owner
+deactivate Registry
+
+== ==
+
+@enduml

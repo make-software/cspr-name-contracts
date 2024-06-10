@@ -1,0 +1,27 @@
+@startuml
+'https://plantuml.com/sequence-diagram
+
+'autonumber
+actor "D3 admin"
+participant "Registrar"
+participant "Registry"
+boundary "Events"
+
+== [Admin] Burn a domain ==
+
+"D3 admin" -> "Registrar": admin_burn(cspr_names[])
+activate Registrar
+loop N times
+    Registrar -> Registry: burn(name_hash)
+    activate Registry
+    Registry -> Registry: clear resolver
+    Registry -> "Events": MetadataUpdated event
+    Registry -> Registry: burn token
+    Registry -> "Events": Burn event
+    Registry -> Registrar
+    deactivate Registry
+end
+Registrar -> "D3 admin"
+deactivate Registrar
+
+@enduml

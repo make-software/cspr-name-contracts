@@ -1,0 +1,53 @@
+@startuml
+'https://plantuml.com/sequence-diagram
+
+'autonumber
+actor User
+participant "d3.app" as d3 #lightblue
+participant "Controller"
+participant "Registrar"
+participant "Registry"
+boundary "Events"
+
+== Buy a *cspr name with CSPR token ==
+
+User -> d3: Buy *cspr name with CSPR
+activate d3
+d3 -> User: signed PaymentVoucher
+deactivate d3
+
+User -> Controller: buy(PaymentVoucher, sig)
+activate Controller
+Controller -> Controller: verify voucher\nexpiration
+Controller -> Controller: verify voucher\nsignature
+Controller -> Controller: process CSPR payment
+Controller -> "Events": Payment event
+Controller -> Registrar: register(TokenizationVoucher)
+activate Registrar
+Registrar -> Registrar: verify voucher\nexpiration
+Registrar -> Registry: metadata(name_hash)
+Registry -> Registrar
+alt Token exists
+    Registrar -> Registrar: check expiration date
+    alt expiration+grace_period < blocktime
+        Registrar -> Registry: burn(name_hash)
+        Registry -> Registry: clear resolver
+        Registry -> "Events": MetadataUpdated event
+        Registry -> Registry: burn token
+        Registry -> "Events": Burn event
+    else expiration+grace_period > blocktime
+        Registrar ->x d3: Revert with\nnot expired token error
+    end
+end
+Registrar -> Registry: mint(buyer, metadata)
+activate Registry
+Registry -> Registry: mint token
+Registry -> "Events": Mint event
+Registry -> Registrar
+deactivate Registry
+Registrar -> Controller
+deactivate Registrar
+Controller -> User
+deactivate Controller
+
+@enduml

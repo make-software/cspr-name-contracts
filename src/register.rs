@@ -77,6 +77,35 @@ pub struct Register {
 
 #[odra::module]
 impl Register {
+    delegate! {
+        to self.token {
+            fn get_collection_name(&self) -> String;
+            fn get_collection_symbol(&self) -> String;
+            fn transfer(
+                &mut self,
+                token_id: Maybe<u64>,
+                token_hash: Maybe<String>,
+                source_key: Address,
+                target_key: Address
+            );
+            fn approve(&mut self, spender: Address, token_id: Maybe<u64>, token_hash: Maybe<String>);
+            fn set_approval_for_all(&mut self, approve_all: bool, operator: Address);
+            fn balance_of(&mut self, token_owner: Address) -> u64;
+            fn owner_of(&self, token_id: Maybe<u64>, token_hash: Maybe<String>) -> Address;
+            fn get_approved(
+                &mut self,
+                token_id: Maybe<u64>,
+                token_hash: Maybe<String>
+            ) -> Option<Address>;
+            fn metadata(&self, token_id: Maybe<u64>, token_hash: Maybe<String>) -> String;
+        }
+
+        to self.access_control {
+            fn grant_role(&mut self, role: &Role, address: &Address);
+            // TODO: Decide on role management public functions.
+        }
+    }
+
     pub fn init(&mut self, name: String, symbol: String) {
         let caller = self.env().caller();
 
@@ -165,40 +194,6 @@ impl Register {
         self.require_future_expiration_date(expiration);
         self.require_token_minted(&token_hash);
         self.set_expiration(&token_hash, expiration);
-    }
-
-    pub fn admin_burn(&mut self, token_hash: TokenHash) {
-        self.assert_operator_role();
-        self.burn_single(token_hash, self.env().caller());
-    }
-
-    delegate! {
-        to self.token {
-            fn get_collection_name(&self) -> String;
-            fn get_collection_symbol(&self) -> String;
-            fn transfer(
-                &mut self,
-                token_id: Maybe<u64>,
-                token_hash: Maybe<String>,
-                source_key: Address,
-                target_key: Address
-            ) -> (String, Address);
-            fn approve(&mut self, spender: Address, token_id: Maybe<u64>, token_hash: Maybe<String>);
-            fn set_approval_for_all(&mut self, approve_all: bool, operator: Address);
-            fn balance_of(&mut self, token_owner: Address) -> u64;
-            fn owner_of(&self, token_id: Maybe<u64>, token_hash: Maybe<String>) -> Address;
-            fn get_approved(
-                &mut self,
-                token_id: Maybe<u64>,
-                token_hash: Maybe<String>
-            ) -> Option<Address>;
-            fn metadata(&self, token_id: Maybe<u64>, token_hash: Maybe<String>) -> String;
-        }
-
-        to self.access_control {
-            fn grant_role(&mut self, role: &Role, address: &Address);
-            // TODO: Decide on role management public functions.
-        }
     }
 
     pub fn burn(&self) {}

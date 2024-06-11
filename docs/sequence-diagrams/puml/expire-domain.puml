@@ -4,7 +4,7 @@
 'autonumber
 actor "Anyone"
 participant "Registrar"
-participant "Registry"
+participant "NameToken"
 boundary "Events"
 
 == Expire a domain ==
@@ -12,8 +12,8 @@ boundary "Events"
 "Anyone" -> "Registrar": expire(cspr_names[])
 activate Registrar
 loop N times
-    Registrar -> Registry: metadata(name_hash)
-    Registry -> Registrar
+    Registrar -> NameToken: metadata(name_hash)
+    NameToken -> Registrar
     Registrar -> Registrar: check expiry date
     group expiration + grace_period < blocktime
         Registrar -> Registry: burn(name_hash)

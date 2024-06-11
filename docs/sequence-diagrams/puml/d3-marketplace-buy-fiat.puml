@@ -5,7 +5,7 @@
 actor User
 participant "d3.app" as d3 #lightblue
 participant "Registrar"
-participant "Registry"
+participant "NameToken"
 participant "Resolver"
 boundary "Events"
 
@@ -20,14 +20,14 @@ deactivate d3
 d3 -> Registrar: secondarySale(SecondarySaleVoucher, sig)
 activate Registrar
 Registrar -> Registrar: verify voucher
-Registrar -> Registry: transfer(seller, buyer, name_hash)
-activate Registry
-Registry -> Registry: clear Resolver
-Registry -> "Events": MetadataUpdated event
-Registry -> Registry: transfer token
-Registry -> "Events": Transfer event
-Registry -> Registrar
-deactivate Registry
+Registrar -> NameToken: transfer(seller, buyer, name_hash)
+activate NameToken
+NameToken -> NameToken: clear Resolver
+NameToken -> "Events": MetadataUpdated event
+NameToken -> NameToken: transfer token
+NameToken -> "Events": Transfer event
+NameToken -> Registrar
+deactivate NameToken
 Registrar -> d3
 deactivate Registrar
 deactivate d3

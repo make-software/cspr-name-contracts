@@ -4,7 +4,7 @@
 'autonumber
 actor Owner
 participant "d3.app" as d3 #lightblue
-participant "Registry"
+participant "NameToken"
 boundary "Events"
 
 == List a *cspr name on D3 Marketplace ==

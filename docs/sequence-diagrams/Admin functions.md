@@ -1,10 +1,10 @@
 # Admin functions
 
-## Registry admin functions
+## NameToken admin functions
 
 ### Whitelist registrar contract
 
-> As the Registry contract admin, I should be able to whitelist a Registrar contract, so that it can mint new *cspr name 
+> As the NameToken contract admin, I should be able to whitelist a Registrar contract, so that it can mint new *cspr name 
 > tokens in the registry.
 > 
 ![](puml/whitelist-registrar.png)
@@ -14,7 +14,7 @@ _used also to delist a registrar_
 
 ### Set transfer filter contract
 
-> As the Registry contract admin, I should be able to set a transfer filter contract, 
+> As the NameToken contract admin, I should be able to set a transfer filter contract, 
 > so that its `can_transfer` method is called before a transfer can be executed.
 
 ![](puml/set-transfer-filter.png)

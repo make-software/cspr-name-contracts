@@ -2,7 +2,7 @@
 
 ## can_transfer filter
 
-> As the transfer filter contract for the Registry, I should verify token expiration date,
+> As the transfer filter contract for the NameToken, I should verify token expiration date,
 > so that a name token can not be transferred during the renewal grace period.
 
 _The transfer filter contract functionality can be added to the Registrar or to another contract._

@@ -3,14 +3,14 @@
 
 'autonumber
 participant "Contract" #lightblue
-participant "Registry"
+participant "NameToken"
 participant "Resolver"
 
 == On-chain name resolution ==
 
 activate "Contract"
-"Contract" -> "Registry": metadata(name_hash)
-"Registry" -> "Contract": token metadata
+"Contract" -> "NameToken": metadata(name_hash)
+"NameToken" -> "Contract": token metadata
 Contract -> Contract: check expiry date
 
 group blocktime < expiry date

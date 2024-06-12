@@ -12,13 +12,6 @@
 
 _used also to delist a registrar_
 
-### Set transfer filter contract
-
-> As the NameToken contract admin, I should be able to set a transfer filter contract, 
-> so that its `can_transfer` method is called before a transfer can be executed.
-
-![](puml/set-transfer-filter.png)
-[🔗](puml/set-transfer-filter.puml)
 ## Registrar admin functions
 
 ### Whitelist a controller contract or admin address

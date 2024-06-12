@@ -25,9 +25,8 @@ d3Op -> "Events": Payment event
 loop N times
     d3Op -> NameToken: transfer(seller, buyer, name_hash)
     activate NameToken
-    NameToken -> Registrar: can_transfer(name_hash)
-    Registrar -> NameToken
-    alt Cannot transfer
+    NameToken -> NameToken: check expiration date
+    alt expiration < blocktime
         NameToken ->X d3Op: Revert with cannot_transfer error
     end
     NameToken -> NameToken: clear Resolver

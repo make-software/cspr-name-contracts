@@ -10,9 +10,8 @@ boundary "Events"
 
 Owner -> NameToken: transfer(new_owner, name_hash)
 activate NameToken
-NameToken -> Registrar: can_transfer(name_hash)
-Registrar -> NameToken
-alt Cannot transfer
+NameToken -> NameToken: check expiration date
+alt expiration < blocktime
     NameToken ->X Owner: Revert with cannot_transfer error
 end
 NameToken -> NameToken: clear resolver

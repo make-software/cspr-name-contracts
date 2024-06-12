@@ -14,11 +14,10 @@ activate Registrar
 loop N times
     Registrar -> NameToken: transfer(new_oner, name_hash)
     activate NameToken
-    NameToken -> Registrar: can_transfer(name_hash)
-    Registrar -> NameToken
-    alt Cannot transfer
-        NameToken ->X "D3 admin": Revert with cannot_transfer error
-    end
+NameToken -> NameToken: check expiration date
+alt expiration < blocktime
+    NameToken ->X "D3 admin": Revert with cannot_transfer error
+end
     NameToken -> NameToken: clear resolver
     NameToken -> "Events": MetadataUpdated event
     NameToken -> NameToken: clear operator

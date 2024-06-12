@@ -40,11 +40,11 @@ alt Token exists
     end
 end
 Registrar -> NameToken: mint(buyer, metadata)
-activate Registry
-Registry -> Registry: mint token
-Registry -> "Events": Mint event
-Registry -> Registrar
-deactivate Registry
+activate NameToken
+NameToken -> NameToken: mint token
+NameToken -> "Events": Mint event
+NameToken -> Registrar
+deactivate NameToken
 Registrar -> Controller
 deactivate Registrar
 Controller -> User

@@ -13,7 +13,7 @@ activate "Contract"
 Contract -> "CSPR.name helper": resolve('xyz*cspr')
 activate "CSPR.name helper"
 "CSPR.name helper" -> "NameToken": metadata(name_hash)
-"Registry" -> "CSPR.name helper": token metadata
+"NameToken" -> "CSPR.name helper": token metadata
 "CSPR.name helper" -> "CSPR.name helper": check expiry date
 
 group blocktime < expiry date

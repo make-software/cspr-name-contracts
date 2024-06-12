@@ -3,25 +3,25 @@
 
 'autonumber
 actor Operator
-participant "Registry"
+participant "NameToken"
 boundary "Events"
 
 == Transfer token by operator ==
 
-Operator -> Registry: transfer(old_owner, new_owner, name_hash)
-activate Registry
-Registry -> Registrar: can_transfer(name_hash)
-Registrar -> Registry
+Operator -> NameToken: transfer(old_owner, new_owner, name_hash)
+activate NameToken
+NameToken -> Registrar: can_transfer(name_hash)
+Registrar -> NameToken
 alt Cannot transfer
-    Registry ->X Operator: Revert with cannot_transfer error
+    NameToken ->X Operator: Revert with cannot_transfer error
 end
-Registry -> Registry: clear resolver
-Registry -> "Events": MetadataUpdated event
-Registry -> Registry: clear operator
-Registry -> Registry : set new owner
-Registry -> "Events": Transfer event
-Registry -> Operator
-deactivate Registry
+NameToken -> NameToken: clear resolver
+NameToken -> "Events": MetadataUpdated event
+NameToken -> NameToken: clear operator
+NameToken -> NameToken : set new owner
+NameToken -> "Events": Transfer event
+NameToken -> Operator
+deactivate NameToken
 
 == ==
 

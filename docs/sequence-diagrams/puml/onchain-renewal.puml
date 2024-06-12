@@ -41,7 +41,7 @@ activate NameToken
 NameToken -> NameToken: update metadata
 NameToken -> "Events": MetadataUpdated event
 NameToken -> Registrar
-deactivate Registry
+deactivate NameToken
 Registrar -> Controller
 deactivate Registrar
 Controller -> Owner

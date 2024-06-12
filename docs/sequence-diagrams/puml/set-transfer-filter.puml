@@ -8,11 +8,11 @@ boundary "Events"
 
 == Set transfer filter contract ==
 
-"NameToken Admin" -> "Registry": set_transfer_filter(contract_package_hash)
-activate "Registry"
-Registry -> Registry: set filter contract
-Registry -> "Events": VariablesSet event
-"Registry" -> "Registry Admin"
-deactivate "Registry"
+"NameToken Admin" -> "NameToken": set_transfer_filter(contract_package_hash)
+activate "NameToken"
+NameToken -> NameToken: set filter contract
+NameToken -> "Events": VariablesSet event
+"NameToken" -> "NameToken Admin"
+deactivate "NameToken"
 
 @enduml

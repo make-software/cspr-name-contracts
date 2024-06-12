@@ -19,23 +19,23 @@ deactivate d3
 d3 -> Registrar: renew(RenewalVoucher)
 activate Registrar
 Registrar -> Registrar: verify voucher\nexpiration
-Registrar -> Registry: metadata(name_hash)
-Registry -> Registrar
+Registrar -> NameToken: metadata(name_hash)
+NameToken -> Registrar
 Registrar -> Registrar: check expiration date
 alt expiration+grace_period < blocktime
-    Registrar -> Registry: burn(name_hash)
-    Registry -> Registry: clear resolver
-    Registry -> "Events": MetadataUpdated event
-    Registry -> Registry: burn token
-    Registry -> "Events": Burn event
+    Registrar -> NameToken: burn(name_hash)
+    NameToken -> NameToken: clear resolver
+    NameToken -> "Events": MetadataUpdated event
+    NameToken -> NameToken: burn token
+    NameToken -> "Events": Burn event
     Registrar ->x d3: Revert with\ngrace_period_expired\nerror
 end
-Registrar -> Registry: set_token_metadata(name_hash, new_metadata)
-activate Registry
-Registry -> Registry: update metadata
-Registry -> "Events": MetadataUpdated event
-Registry -> Registrar
-deactivate Registry
+Registrar -> NameToken: set_token_metadata(name_hash, new_metadata)
+activate NameToken
+NameToken -> NameToken: update metadata
+NameToken -> "Events": MetadataUpdated event
+NameToken -> Registrar
+deactivate NameToken
 Registrar -> d3
 deactivate Registrar
 deactivate d3

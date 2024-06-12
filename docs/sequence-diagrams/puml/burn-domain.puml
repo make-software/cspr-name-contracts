@@ -4,7 +4,7 @@
 'autonumber
 actor "D3 admin"
 participant "Registrar"
-participant "Registry"
+participant "NameToken"
 boundary "Events"
 
 == [Admin] Burn a domain ==
@@ -12,14 +12,14 @@ boundary "Events"
 "D3 admin" -> "Registrar": admin_burn(cspr_names[])
 activate Registrar
 loop N times
-    Registrar -> Registry: burn(name_hash)
-    activate Registry
-    Registry -> Registry: clear resolver
-    Registry -> "Events": MetadataUpdated event
-    Registry -> Registry: burn token
-    Registry -> "Events": Burn event
-    Registry -> Registrar
-    deactivate Registry
+    Registrar -> NameToken: burn(name_hash)
+    activate NameToken
+    NameToken -> NameToken: clear resolver
+    NameToken -> "Events": MetadataUpdated event
+    NameToken -> NameToken: burn token
+    NameToken -> "Events": Burn event
+    NameToken -> Registrar
+    deactivate NameToken
 end
 Registrar -> "D3 admin"
 deactivate Registrar

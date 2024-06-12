@@ -35,11 +35,11 @@ Registrar -> Registrar: verify voucher\nexpiration
             end
         end
         Registrar -> NameToken: mint(buyer, metadata)
-        activate Registry
-        Registry -> Registry: mint token
-        Registry -> "Events": Mint event
-        Registry -> Registrar
-        deactivate Registry
+        activate NameToken
+        NameToken -> NameToken: mint token
+        NameToken -> "Events": Mint event
+        NameToken -> Registrar
+        deactivate NameToken
     end loop
 Registrar -> d3
 deactivate Registrar

@@ -19,10 +19,10 @@ deactivate NameToken
 
 Owner -> NameToken: revoke(name_hash, operator)
 activate NameToken
-Registry -> Registry: clear token operator
-Registry -> "Events": ApprovalRevoked event
-Registry -> Owner
-deactivate Registry
+NameToken -> NameToken: clear token operator
+NameToken -> "Events": ApprovalRevoked event
+NameToken -> Owner
+deactivate NameToken
 
 == ==
 

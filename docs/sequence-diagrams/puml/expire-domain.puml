@@ -16,14 +16,14 @@ loop N times
     NameToken -> Registrar
     Registrar -> Registrar: check expiry date
     group expiration + grace_period < blocktime
-        Registrar -> Registry: burn(name_hash)
-        activate Registry
-        Registry -> Registry: clear resolver
-        Registry -> "Events": MetadataUpdated event
-        Registry -> Registry: burn token
-        Registry -> "Events": Burn event
-        Registry -> Registrar
-        deactivate Registry
+        Registrar -> NameToken: burn(name_hash)
+        activate NameToken
+        NameToken -> NameToken: clear resolver
+        NameToken -> "Events": MetadataUpdated event
+        NameToken -> NameToken: burn token
+        NameToken -> "Events": Burn event
+        NameToken -> Registrar
+        deactivate NameToken
     end
 end
 

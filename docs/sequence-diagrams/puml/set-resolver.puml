@@ -5,7 +5,7 @@
 actor "Domain owner"
 participant "Controller"
 participant "Registrar"
-participant "Registry"
+participant "NameToken"
 boundary "Events"
 
 == Set resolver ==
@@ -13,11 +13,11 @@ boundary "Events"
 "Domain owner" -> Controller: set_resolver(cspr_name,resolver_hash)
 activate Controller
 
-Controller -> Registry: set_token_metadata(name_hash, new_metadata)
-activate Registry
-Registry -> "Events": MetadataUpdated event
-Registry -> Controller
-deactivate Registry
+Controller -> NameToken: set_token_metadata(name_hash, new_metadata)
+activate NameToken
+NameToken -> "Events": MetadataUpdated event
+NameToken -> Controller
+deactivate NameToken
 Controller -> "Domain owner"
 deactivate Controller
 

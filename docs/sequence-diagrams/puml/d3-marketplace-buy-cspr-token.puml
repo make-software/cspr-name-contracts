@@ -32,11 +32,11 @@ loop N times
     end
     NameToken -> NameToken: clear Resolver
     NameToken -> "Events": MetadataUpdated event
-    Registry -> Registry: clear operator
-    Registry -> Registry : set new owner
-    Registry -> "Events": Transfer event
-    Registry -> d3Op
-    deactivate Registry
+    NameToken -> NameToken: clear operator
+    NameToken -> NameToken : set new owner
+    NameToken -> "Events": Transfer event
+    NameToken -> d3Op
+    deactivate NameToken
 end
 d3Op -> User
 deactivate d3

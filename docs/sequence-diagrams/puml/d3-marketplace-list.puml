@@ -11,15 +11,15 @@ boundary "Events"
 
 Owner -> d3: list *cspr name
 activate d3
-d3 -> Registry: is_approved_for_all(owner, d3operator_package_hash)
-Registry -> d3
+d3 -> NameToken: is_approved_for_all(owner, d3operator_package_hash)
+NameToken -> d3
 alt Not approved
-    Owner -> Registry: set_approval_for_all(owner, d3operator_package_hash)
-    activate "Registry"
-    Registry -> Registry: set token operator
-    Registry -> "Events": ApprovalForAll event
-    Registry -> Owner
-    deactivate "Registry"
+    Owner -> NameToken: set_approval_for_all(owner, d3operator_package_hash)
+    activate "NameToken"
+    NameToken -> NameToken: set token operator
+    NameToken -> "Events": ApprovalForAll event
+    NameToken -> Owner
+    deactivate "NameToken"
 end
 d3 -> d3: list *cspr name
 d3 -> Owner

@@ -38,9 +38,9 @@ alt expiration+grace_period < blocktime
 end
 Registrar -> NameToken: set_token_metadata(name_hash, new_metadata)
 activate NameToken
-NameToken -> Registry: update metadata
-Registry -> "Events": MetadataUpdated event
-Registry -> Registrar
+NameToken -> NameToken: update metadata
+NameToken -> "Events": MetadataUpdated event
+NameToken -> Registrar
 deactivate Registry
 Registrar -> Controller
 deactivate Registrar

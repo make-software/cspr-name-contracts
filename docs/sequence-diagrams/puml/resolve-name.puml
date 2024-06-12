@@ -5,15 +5,15 @@
 actor User
 participant "Resolution API"
 box Casper Node
-participant "Registry state"
+participant "NameToken state"
 participant "Resolver state"
 end box
 == Resolve name ==
 
 User -> "Resolution API": /resolve xyz*cspr
 activate "Resolution API"
-"Resolution API" -> "Registry state": [RPC call] get xyz*cspr metadata
-"Registry state" -> "Resolution API"
+"Resolution API" -> "NameToken state": [RPC call] get xyz*cspr metadata
+"NameToken state" -> "Resolution API"
 
 "Resolution API" -> "Resolution API": check expiry date
 

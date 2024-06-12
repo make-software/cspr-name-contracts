@@ -22,7 +22,7 @@ activate NameToken
 NameToken -> NameToken: clear owner operator
 NameToken -> "Events": RevokedForAll event
 NameToken -> Owner
-deactivate Registry
+deactivate NameToken
 
 == ==
 

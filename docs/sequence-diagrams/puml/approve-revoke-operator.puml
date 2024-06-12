@@ -11,14 +11,14 @@ boundary "Events"
 Owner -> NameToken: approve(name_hash, operator)
 activate NameToken
 NameToken -> NameToken: set token operator
-Registry -> "Events": Approval event
-Registry -> Owner
-deactivate Registry
+NameToken -> "Events": Approval event
+NameToken -> Owner
+deactivate NameToken
 
 == Revoke approval ==
 
-Owner -> Registry: revoke(name_hash, operator)
-activate Registry
+Owner -> NameToken: revoke(name_hash, operator)
+activate NameToken
 Registry -> Registry: clear token operator
 Registry -> "Events": ApprovalRevoked event
 Registry -> Owner

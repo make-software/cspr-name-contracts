@@ -2,13 +2,13 @@
 'https://plantuml.com/sequence-diagram
 
 'autonumber
-actor "Registry Admin"
-participant "Registry"
+actor "NameToken Admin"
+participant "NameToken"
 boundary "Events"
 
 == Set transfer filter contract ==
 
-"Registry Admin" -> "Registry": set_transfer_filter(contract_package_hash)
+"NameToken Admin" -> "Registry": set_transfer_filter(contract_package_hash)
 activate "Registry"
 Registry -> Registry: set filter contract
 Registry -> "Events": VariablesSet event

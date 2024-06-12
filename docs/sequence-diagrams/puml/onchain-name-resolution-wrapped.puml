@@ -4,7 +4,7 @@
 'autonumber
 participant "Contract" #lightblue
 participant "CSPR.name helper"
-participant "Registry"
+participant "NameToken"
 participant "Resolver"
 
 == On-chain name resolution (wrapped) ==
@@ -12,7 +12,7 @@ participant "Resolver"
 activate "Contract"
 Contract -> "CSPR.name helper": resolve('xyz*cspr')
 activate "CSPR.name helper"
-"CSPR.name helper" -> "Registry": metadata(name_hash)
+"CSPR.name helper" -> "NameToken": metadata(name_hash)
 "Registry" -> "CSPR.name helper": token metadata
 "CSPR.name helper" -> "CSPR.name helper": check expiry date
 

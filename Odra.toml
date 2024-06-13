@@ -1,2 +1,5 @@
 [[contracts]]
-fqn = "casper_name::register::Register"
+fqn = "casper_name::registrar::Registrar"
+
+[[contracts]]
+fqn = "casper_name::name_token::NameToken"

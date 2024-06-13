@@ -91,18 +91,8 @@ impl RegisterTestContext {
         let now = self.env.block_time();
         now + ONE_DAY
     }
-
 }
 
-fn blake2b<T: AsRef<[u8]>>(data: T) -> String {
-    let mut result = [0u8; 32];
-    let mut hasher = <Blake2bVar as VariableOutput>::new(32).expect("should create hasher");
-    let _ = hasher.write(data.as_ref());
-    hasher
-        .finalize_variable(&mut result)
-        .expect("should copy hash to the result array");
-    hex::encode(result)
-}
 
 mod initialize {
 
@@ -145,12 +135,6 @@ mod initialize {
 
         assert_eq!(ctx.env.events_count(ctx.register.address()), 3);
     }
-}
-
-mod supports_interface {
-    #[test]
-    #[ignore]
-    fn should_support_erc721() {}
 }
 
 mod mint {

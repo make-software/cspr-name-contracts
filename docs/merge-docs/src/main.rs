@@ -12,7 +12,7 @@ fn read_doc_file(file_name: &str) -> String {
 }
 
 // For every expression in the content that looks like:
-// 
+//
 // [🔗](puml/set-transfer-filter.puml)
 //
 // Read the content of the puml file and embed it in the content.
@@ -38,7 +38,7 @@ fn embed_pulm(content: &str) -> String {
         result.push_str("\n");
     }
 
-    result    
+    result
 }
 
 fn main() {
@@ -48,7 +48,7 @@ fn main() {
     content.push_str(&read_doc_file("Renew a cspr name.md"));
     content.push_str(&read_doc_file("Resolution.md"));
     content.push_str(&read_doc_file("Secondary-sale market.md"));
-    
+
     // Write the content to a file
     std::fs::write("casper-name-sequence-diagrams.txt", content).unwrap();
 }

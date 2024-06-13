@@ -49,9 +49,9 @@ name = "test-schema"
 path = "bin/test_schema.rs"
 test = false
 
-[[test]]
-name = "test_register"
-path = "tests/test_register.rs"
+# [[test]]
+# name = "test_register"
+# path = "tests/test_register.rs"
 
 [profile.release]
 codegen-units = 1

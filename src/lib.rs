@@ -2,8 +2,8 @@
 #![cfg_attr(not(test), no_main)]
 extern crate alloc;
 
-pub mod name_token;
-pub mod register;
+pub mod contracts;
+pub mod data_structures;
 
-// #[cfg(test)]
-// mod register_tests;
+#[cfg(not(target_arch = "wasm32"))]
+pub mod test_context;

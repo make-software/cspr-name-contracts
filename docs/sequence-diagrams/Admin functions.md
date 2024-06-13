@@ -53,4 +53,38 @@ _used also to delist a controller or admin address._
 ![](puml/burn-domain.png)
 [🔗](puml/burn-domain.puml)
 
+## Controller admin functions
 
+### Set voucher signer key
+
+> As a Controller contract owner, I should be able to set the public key used to verify
+> the voucher signatures
+
+![](puml/set-signer.png)
+[🔗](puml/set-signer.puml)
+
+### Set treasury account
+
+> As a Controller contract owner, I should be able to set the treasury account hash where payments
+> send the paid amounts to
+
+![](puml/set-treasury-account.png)
+[🔗](puml/set-treasury-account.puml)
+
+## D3 operator admin functions
+
+### Set voucher signer key
+
+> As a D3 operator contract owner, I should be able to set the public key used to verify
+> the voucher signatures
+
+![](puml/d3operator-set-signer.png)
+[🔗](puml/d3operator-set-signer.puml)
+
+### Set treasury account
+
+> As a D3 operator contract owner, I should be able to set the treasury account hash where payments
+> send the paid amounts to
+
+![](puml/d3operator-set-treasury-account.png)
+[🔗](puml/d3operator-set-treasury-account.puml)

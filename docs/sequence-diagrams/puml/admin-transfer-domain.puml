@@ -9,7 +9,7 @@ boundary "Events"
 
 == [Admin] Transfer a domain ==
 
-"D3 admin" -> "Registrar": admin_transfer(new_owner, cspr_names[])
+"D3 admin" -> "Registrar": admin_transfer(new_owner, name_hashes[])
 activate Registrar
 loop N times
     Registrar -> NameToken: transfer(new_oner, name_hash)

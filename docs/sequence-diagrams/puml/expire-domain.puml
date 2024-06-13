@@ -9,7 +9,7 @@ boundary "Events"
 
 == Expire a domain ==
 
-"Anyone" -> "Registrar": expire(cspr_names[])
+"Anyone" -> "Registrar": expire(name_hashes[])
 activate Registrar
 loop N times
     Registrar -> NameToken: metadata(name_hash)

@@ -9,7 +9,7 @@ boundary "Events"
 
 == [Admin] Burn a domain ==
 
-"D3 admin" -> "Registrar": admin_burn(cspr_names[])
+"D3 admin" -> "Registrar": admin_burn(name_hashes[])
 activate Registrar
 loop N times
     Registrar -> NameToken: burn(name_hash)

@@ -1,25 +1,28 @@
 # TODO
 
 ## Name Token
-- [ ] - Cleanup resolver on burn
+- [ ] - Cleanup resolver on burn and transfer
 - [ ] - Approve for all
 - [ ] - Transfer
 - [ ] - Transfer from operator
+- [ ] - Prevent transfer of expired domains
 
 ## Registrar
 - [x] - Whitelist registrar contract
 - [x] - Whitelist a controller contract or admin address
 - [x] - Set grace period time span
-- [ ] - Expire domains
-- [ ] - Transfer domains
-- [ ] - Burn domains
+- [x] - Expire domains
+- [x] - Transfer domains
+- [x] - Burn domains
 - [x] - Buy with fiat currency
-- [ ] - Renew with fiat currency
+- [x] - Renew with fiat currency
 
 ## Controller
 - [ ] - Buy with CSPR token
 - [ ] - Renew with CSPR token
 - [ ] - Set a resolver
+- [ ] - Set Treasury
+- [ ] - Set Verification Key
 
 ## Resolver
 - [ ] - Set account address record

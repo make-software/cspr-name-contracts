@@ -49,12 +49,12 @@ impl NameToken {
                 token_hash: Maybe<String>
             ) -> Option<Address>;
             fn metadata(&self, token_id: Maybe<u64>, token_hash: Maybe<String>) -> String;
-            fn set_token_metadata(
-                &mut self,
-                token_id: Maybe<u64>,
-                token_hash: Maybe<String>,
-                token_meta_data: String
-            );
+            // fn set_token_metadata(
+            //     &mut self,
+            //     token_id: Maybe<u64>,
+            //     token_hash: Maybe<String>,
+            //     token_meta_data: String
+            // );
             fn balance_of(&mut self, token_owner: Address) -> u64;
             fn register_owner(&mut self, token_owner: Maybe<Address>) -> String;
         }
@@ -124,9 +124,51 @@ impl NameToken {
         let token_id = token_identifier.to_string();
         self.token.burn_token_unchecked(token_id, caller);
     }
+
+    // TODO: Test this function.
+    pub fn admin_transfer(&mut self, reciepient: Address, token_hashes: Vec<String>) {
+        let spender = self.env().caller();
+        if !self.token.is_whitelisted(&spender) {
+            self.env().revert(NameTokenError::NotWhitelisted);
+        }
+        for token_hash in token_hashes {
+            let owner = self.token.owner_of_by_id(&token_hash);
+            self.token
+                .transfer_unchecked(token_hash, owner, Some(spender), reciepient);
+        }
+    }
+
+    // TODO: Test this function.
+    pub fn set_token_metadata(
+        &mut self,
+        token_id: Maybe<u64>,
+        token_hash: Maybe<String>,
+        token_meta_data: String,
+    ) {
+        let caller = self.env().caller();
+        if !self.token.is_whitelisted(&caller) {
+            self.env().revert(NameTokenError::NotWhitelisted);
+        }
+        let token_id = self.token.token_id(token_id, token_hash);
+        self.token
+            .set_token_metadata_unchecked(&token_id, token_meta_data);
+    }
 }
 
 #[odra::odra_error]
 pub enum NameTokenError {
     NotWhitelisted = 3001,
+}
+
+impl NameTokenContractRef {
+    pub fn metadata_by_hash(&self, token_hash: String) -> String {
+        self.metadata(Maybe::None, Maybe::Some(token_hash))
+    }
+}
+
+#[cfg(not(target_arch = "wasm32"))]
+impl NameTokenHostRef {
+    pub fn metadata_by_hash(&self, token_hash: String) -> String {
+        self.metadata(Maybe::None, Maybe::Some(token_hash))
+    }
 }

@@ -66,6 +66,6 @@ mod tests {
         let bytes2: Bytes = voucher2.to_bytes().unwrap().into();
         let signature2 = ctx.sign(&bytes2);
 
-        ctx.controller.buy(voucher2, signature);
+        let _ = ctx.controller.try_buy(voucher2, signature);
     }
 }

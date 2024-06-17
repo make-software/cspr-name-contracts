@@ -73,3 +73,8 @@ impl PaymentVoucher {
         }
     }
 }
+
+pub struct RenewalVoucher {
+    pub token_hash: String,
+    pub expiration: u64,
+}

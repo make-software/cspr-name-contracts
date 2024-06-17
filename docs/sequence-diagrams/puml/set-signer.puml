@@ -1,0 +1,18 @@
+@startuml
+'https://plantuml.com/sequence-diagram
+
+'autonumber
+actor "Contract owner"
+participant "Controller"
+
+== Set voucher signer ==
+
+"Contract owner" -> Controller: set_signer(public_key)
+activate Controller
+Controller -> Controller: set signer key
+"Controller" -> "Contract owner"
+deactivate Controller
+
+== ==
+
+@enduml

@@ -5,5 +5,5 @@ extern crate alloc;
 pub mod contracts;
 pub mod data_structures;
 
-#[cfg(not(target_arch = "wasm32"))]
+#[cfg(test)]
 pub mod test_context;

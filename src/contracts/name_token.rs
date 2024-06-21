@@ -1,11 +1,13 @@
 use odra::args::Maybe;
-use odra::prelude::*;
+use odra::{prelude::*, UnwrapOrRevert};
 use odra::{Address, SubModule};
 use odra_modules::cep78::modalities::{
     BurnMode, EventsMode, MetadataMutability, MintingMode, NFTHolderMode, NFTIdentifierMode,
     NFTKind, NFTMetadataKind, OwnershipMode, WhitelistMode,
 };
 use odra_modules::cep78::token::Cep78;
+
+use crate::data_structures::NameTokenMetadata;
 
 #[odra::module]
 pub struct NameToken {
@@ -153,22 +155,14 @@ impl NameToken {
         self.token
             .set_token_metadata_unchecked(&token_id, token_meta_data);
     }
+
+    pub fn metadata_by_hash(&self, token_hash: &String) -> NameTokenMetadata {
+        let metadata = self.metadata(Maybe::None, Maybe::Some(token_hash.clone()));
+        NameTokenMetadata::from_json(&metadata).unwrap_or_revert(&self.env())
+    }
 }
 
 #[odra::odra_error]
 pub enum NameTokenError {
     NotWhitelisted = 3001,
-}
-
-impl NameTokenContractRef {
-    pub fn metadata_by_hash(&self, token_hash: String) -> String {
-        self.metadata(Maybe::None, Maybe::Some(token_hash))
-    }
-}
-
-#[cfg(not(target_arch = "wasm32"))]
-impl NameTokenHostRef {
-    pub fn metadata_by_hash(&self, token_hash: String) -> String {
-        self.metadata(Maybe::None, Maybe::Some(token_hash))
-    }
 }

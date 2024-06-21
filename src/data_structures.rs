@@ -13,7 +13,8 @@ pub enum NameTokenError {
     DeserializationError = 1007,
 }
 
-#[derive(Serialize, Deserialize, Debug, Clone, PartialEq, Eq)]
+#[odra::odra_type]
+#[derive(Serialize, Deserialize)]
 pub struct NameTokenMetadata {
     pub label: String,
     pub expiration: u64,
@@ -77,4 +78,27 @@ impl PaymentVoucher {
 pub struct RenewalVoucher {
     pub token_hash: String,
     pub expiration: u64,
+}
+
+#[cfg(test)]
+mod tests {
+    use super::*;
+
+    #[test]
+    fn test_metadata_serialization() {
+        let expected = r#"{
+            "label": "test-label",
+            "expiration": 86400
+        }"#
+        .replace(" ", "")
+        .replace("\n", "");
+
+        // Test metadata to_json.
+        let metadata = NameTokenMetadata::new("test-label", 86400);
+        assert_eq!(expected, metadata.to_json().unwrap());
+
+        // Test metadata from_json.
+        let deserialized = NameTokenMetadata::from_json(&expected).unwrap();
+        assert_eq!(metadata, deserialized);
+    }
 }

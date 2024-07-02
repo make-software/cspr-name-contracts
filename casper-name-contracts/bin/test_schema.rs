@@ -1,4 +1,4 @@
-use casper_name::contracts::name_token::NameToken;
+use casper_name_contracts::contracts::name_token::NameToken;
 
 fn main() {
     let events = <NameToken as odra::contract_def::HasEvents>::event_schemas();

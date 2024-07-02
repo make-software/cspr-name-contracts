@@ -1,8 +1,8 @@
 [[contracts]]
-fqn = "casper_name::contracts::registrar::Registrar"
+fqn = "casper_name_contracts::contracts::registrar::Registrar"
 
 [[contracts]]
-fqn = "casper_name::contracts::name_token::NameToken"
+fqn = "casper_name_contracts::contracts::name_token::NameToken"
 
 [[contracts]]
-fqn = "casper_name::contracts::controller::Controller"
+fqn = "casper_name_contracts::contracts::controller::Controller"

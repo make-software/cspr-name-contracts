@@ -3,12 +3,12 @@ use std::io::Write;
 use blake2::digest::VariableOutput;
 use blake2::Blake2bVar;
 use odra::args::Maybe;
-use odra::casper_types::bytesrepr::Bytes;
+use odra::casper_types::bytesrepr::{Bytes, ToBytes};
 use odra::host::{Deployer, HostEnv, HostRef};
 use odra::{prelude::*, Address};
 
 use crate::contracts::controller::{self, ControllerHostRef};
-use crate::contracts::registrar::RegistrarInitArgs;
+use crate::contracts::registrar::{RegistrarInitArgs, CONTROLLER_ROLE};
 use crate::contracts::{
     name_token::{NameTokenHostRef, NameTokenInitArgs},
     registrar::RegistrarHostRef,
@@ -24,7 +24,6 @@ pub const EXPIRATION: u64 = ONE_DAY * 365;
 
 pub struct TestContext {
     pub env: HostEnv,
-    pub signer: Address,
     pub token: NameTokenHostRef,
     pub registrar: RegistrarHostRef,
     pub controller: ControllerHostRef,
@@ -32,12 +31,15 @@ pub struct TestContext {
     pub alice: Address,
     pub bob: Address,
     pub anyone: Address,
+    pub signer: Address,
+    pub treasury: Address,
 }
 
 impl TestContext {
     pub fn install_raw() -> TestContext {
         let env = odra_test::env();
         let signer = env.get_account(10);
+        let treasury = env.get_account(11);
 
         let name_token = NameTokenHostRef::deploy(
             &env,
@@ -56,7 +58,8 @@ impl TestContext {
             &env,
             controller::ControllerInitArgs {
                 registrar: registrar.address().clone(),
-                public_key: env.public_key(&signer),
+                signer: env.public_key(&signer),
+                treasury,
             },
         );
 
@@ -70,6 +73,7 @@ impl TestContext {
             alice: env.get_account(1),
             bob: env.get_account(2),
             anyone: env.get_account(3),
+            treasury,
         };
 
         // Set start time.
@@ -83,6 +87,7 @@ impl TestContext {
 
         // Setup access.
         contracts.whitelist_registrar_in_name_token();
+        contracts.set_controller_in_registrar();
 
         // Setup grace period.
         contracts.registrar.set_grace_period(GRACE_PERIOD);
@@ -98,8 +103,14 @@ impl TestContext {
         );
     }
 
-    pub fn sign(&self, data: &Bytes) -> Bytes {
-        self.env.sign_message(data, &self.signer)
+    pub fn set_controller_in_registrar(&mut self) {
+        self.registrar
+            .grant_role(&CONTROLLER_ROLE, self.controller.address());
+    }
+
+    pub fn sign<T: ToBytes>(&self, data: &T) -> Bytes {
+        let bytes: Bytes = data.to_bytes().unwrap().into();
+        self.env.sign_message(&bytes, &self.signer)
     }
 
     pub fn try_name_register(
@@ -129,7 +140,7 @@ impl TestContext {
         assert_eq!(&addr, owner, "Owner is not correct");
 
         let metadata = self.token.metadata_by_hash(&token_id);
-        let expected = NameTokenMetadata::new("test", self.expiration_time());
+        let expected = NameTokenMetadata::new(label, self.expiration_time());
         assert_eq!(metadata, expected);
     }
 

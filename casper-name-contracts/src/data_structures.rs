@@ -39,22 +39,23 @@ impl NameTokenMetadata {
 
 impl From<&TokenizationVoucher> for NameTokenMetadata {
     fn from(voucher: &TokenizationVoucher) -> Self {
-        Self::new(&voucher.label, voucher.expiration)
+        Self::new(&voucher.label, voucher.token_expiration)
     }
 }
 
 #[odra::odra_type]
 pub struct TokenizationVoucher {
     pub label: String,
-    pub expiration: u64,
+    pub token_expiration: u64,
     pub buyer: Address,
+    // pub voucher_expiration: u64, // TODO: support this, test it.
 }
 
 impl TokenizationVoucher {
     pub fn new(label: &str, expiration: u64, buyer: Address) -> Self {
         Self {
             label: String::from(label),
-            expiration,
+            token_expiration: expiration,
             buyer,
         }
     }
@@ -64,13 +65,21 @@ impl TokenizationVoucher {
 pub struct PaymentVoucher {
     pub tokenization_voucher: TokenizationVoucher,
     pub price: U512,
+    pub payment_id: String,
 }
 
 impl PaymentVoucher {
-    pub fn new(label: &str, expiration: u64, buyer: Address, price: U512) -> Self {
+    pub fn new(
+        label: &str,
+        expiration: u64,
+        buyer: Address,
+        price: U512,
+        payment_id: &str,
+    ) -> Self {
         Self {
             tokenization_voucher: TokenizationVoucher::new(label, expiration, buyer),
             price,
+            payment_id: String::from(payment_id),
         }
     }
 }

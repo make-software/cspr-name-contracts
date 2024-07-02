@@ -1,0 +1,9 @@
+time = "2024-06-24T07:33:57Z"
+
+[[contracts]]
+name = "NameToken"
+package_hash = "hash-bcca8e70929d03e02e19b2e710be05fd283a3fa0282c9d675f45f19ea79c6b68"
+
+[[contracts]]
+name = "Registrar"
+package_hash = "hash-ed1995d488fa63cec17d2232848069c7aa4fffebf966af67a92e408569bf1745"

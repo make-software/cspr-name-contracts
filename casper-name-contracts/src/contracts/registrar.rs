@@ -147,7 +147,7 @@ impl Registrar {
     }
 
     pub fn verify_voucher(&self, voucher: &TokenizationVoucher) {
-        if voucher.expiration < self.env().get_block_time() {
+        if voucher.token_expiration < self.env().get_block_time() {
             self.env().revert(RegistrarError::ExpirationDateInThePast);
         }
     }

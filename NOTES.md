@@ -1,11 +1,18 @@
 # TODO
 
+## CLI
+- [x] - Command: Deploy Contracts
+- [x] - Command: After deploy setup
+- [x] - Command: Registrar buy domain
+- [ ] - Command: Registrar renew domain
+- [ ] - Command: Registrar transfer domain
+- [ ] - Command: Registrar burn domain
+- [ ] - Command: Registrar expire domain
+
 ## Name Token
-- [ ] - Cleanup resolver on burn and transfer
-- [ ] - Approve for all
-- [ ] - Transfer
-- [ ] - Transfer from operator
+- [ ] - Cleanup resolver on burn and transfer [Maciek]
 - [ ] - Prevent transfer of expired domains
+- [ ] - Test overwritten functions
 
 ## Registrar
 - [x] - Whitelist registrar contract
@@ -16,18 +23,21 @@
 - [x] - Burn domains
 - [x] - Buy with fiat currency
 - [x] - Renew with fiat currency
+- [ ] - Validate voucher expiration time
+- [ ] - Merge single and multiple token/burn/renew functions [Maciek]
 
 ## Controller
-- [ ] - Buy with CSPR token
+- [x] - Buy with CSPR token
 - [ ] - Renew with CSPR token
-- [ ] - Set a resolver
+- [ ] - Set a resolver [Maciek]
 - [ ] - Set Treasury
-- [ ] - Set Verification Key
+- [ ] - Set Signer
 
 ## Resolver
-- [ ] - Set account address record
+- [ ] - Set account address record [Maciek]
+
+## Repo
+- [ ] - Enable CI tests
+- [ ] - Lints
 
 ### Questions
-- Should there be multiple registrar admins?
-- CEP78 total supply is not decremented when the tokens are burned.
-- How is the PublicKey maintained in the controller?

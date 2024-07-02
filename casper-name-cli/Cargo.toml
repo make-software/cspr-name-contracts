@@ -1,0 +1,20 @@
+[package]
+name = "casper-name-cli"
+version = "0.1.0"
+edition = "2021"
+
+[dependencies]
+casper-name-contracts = { path = "../casper-name-contracts" }
+clap = { version = "4.5.4", features = ["derive"] }
+prettycli = "0.1.1"
+odra = { path = "../../odra3/odra", features = [], default-features = false }
+odra-casper-livenet-env = { path = "../../odra3/odra-casper/livenet-env" }
+chrono = { version = "0.4", features = ["serde"] }
+serde = { version = "1.0", features = ["derive"] }
+serde_derive = { version = "1.0", features = ["default"] }
+serde_json = "1.0"
+toml = "0.8.13"
+
+[[bin]]
+name = "casper-name-cli"
+path = "bin/main.rs"

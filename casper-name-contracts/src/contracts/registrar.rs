@@ -1,4 +1,7 @@
-use odra::prelude::*;
+use core::ops::DerefMut;
+
+use odra::module::Revertible;
+use odra::{prelude::*, External};
 use odra::{args::Maybe, module::Module, Address, ContractRef, SubModule, UnwrapOrRevert, Var};
 use odra_modules::access::{AccessControl, Role, DEFAULT_ADMIN_ROLE};
 
@@ -11,7 +14,7 @@ pub const CONTROLLER_ROLE: Role = [2u8; 32];
 
 #[odra::module]
 pub struct Registrar {
-    name_token: Var<Address>,
+    name_token: External<NameTokenContractRef>,
     access_control: SubModule<AccessControl>,
     grace_period: Var<u64>,
 }
@@ -61,12 +64,12 @@ impl Registrar {
 
     pub fn admin_transfer(&mut self, new_owner: Address, token_hashes: Vec<String>) {
         self.assert_caller_is_admin();
-        self.name_token().admin_transfer(new_owner, token_hashes);
+        self.name_token.admin_transfer(new_owner, token_hashes);
     }
 
     pub fn admin_burn(&mut self, token_hashes: Vec<String>) {
         self.assert_caller_is_admin();
-        let mut name_token = self.name_token();
+        let mut name_token = self.name_token.deref_mut();
         for token_hash in token_hashes {
             name_token.burn(Maybe::None, Maybe::Some(token_hash));
         }
@@ -82,23 +85,22 @@ impl Registrar {
         let token_hash = self.compute_namehash(&voucher.label);
 
         // Check if token already exists.
-        let mut name_token = self.name_token();
         let token_exists = name_token.token_exists(&token_hash);
 
         // If token exists and is expired and grace period is over, burn it.
         if token_exists {
             let metadata = name_token.metadata_by_hash(&token_hash);
             if metadata.expiration + self.grace_period() <= self.env().get_block_time() {
-                name_token.burn(Maybe::None, Maybe::Some(token_hash.clone()));
+                self.name_token.burn(Maybe::None, Maybe::Some(token_hash.clone()));
             } else {
-                self.env().revert(RegistrarError::TokenNotExpired);
+                self.revert(RegistrarError::TokenNotExpired);
             }
         }
 
         // Mint token.
         let metadata = NameTokenMetadata::from(&voucher);
-        let metadata = metadata.to_json().unwrap_or_revert(&self.env());
-        self.name_token()
+        let metadata = metadata.to_json().unwrap_or_revert(self);
+        self.name_token
             .mint(voucher.buyer, metadata, Maybe::Some(token_hash));
     }
 
@@ -112,12 +114,11 @@ impl Registrar {
 
     pub fn renew(&mut self, token_hash: String, expiration: u64) {
         self.assert_caller_is_controller();
-        let mut name_token = self.name_token();
-        let metadata = name_token.metadata_by_hash(&token_hash);
+        let metadata = self.name_token.metadata_by_hash(&token_hash);
         self.assert_in_grace_period(metadata.expiration);
         let new_metadata = NameTokenMetadata::new(&metadata.label, expiration);
-        let new_metadata = new_metadata.to_json().unwrap_or_revert(&self.env());
-        name_token.set_token_metadata(Maybe::None, Maybe::Some(token_hash), new_metadata);
+        let new_metadata = new_metadata.to_json().unwrap_or_revert(self);
+        self.name_token.set_token_metadata(Maybe::None, Maybe::Some(token_hash), new_metadata);
     }
 }
 
@@ -140,12 +141,6 @@ impl Registrar {
         }
     }
 
-    pub fn name_token(&self) -> NameTokenContractRef {
-        let env = self.env();
-        let address = self.name_token.get().unwrap_or_revert(&env);
-        NameTokenContractRef::new(env, address)
-    }
-
     pub fn verify_voucher(&self, voucher: &TokenizationVoucher) {
         if voucher.token_expiration < self.env().get_block_time() {
             self.env().revert(RegistrarError::ExpirationDateInThePast);
@@ -153,10 +148,9 @@ impl Registrar {
     }
 
     pub fn expire_single(&mut self, token_hash: String, block_time: u64, grace_period: u64) {
-        let mut name_token = self.name_token();
         let metadata = name_token.metadata_by_hash(&token_hash);
         if metadata.expiration + grace_period < block_time {
-            name_token.burn(Maybe::None, Maybe::Some(token_hash));
+            self.name_token.burn(Maybe::None, Maybe::Some(token_hash));
         }
     }
 

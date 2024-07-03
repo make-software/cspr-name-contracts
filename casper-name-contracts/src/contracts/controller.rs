@@ -2,10 +2,7 @@ use odra::{
     casper_types::{
         bytesrepr::{Bytes, ToBytes},
         PublicKey, U512,
-    },
-    module::Module,
-    prelude::*,
-    Address, SubModule, UnwrapOrRevert, Var,
+    }, module::{Module, Revertible}, prelude::*, Address, External, SubModule, UnwrapOrRevert, Var
 };
 use odra_modules::access::{AccessControl, Role, DEFAULT_ADMIN_ROLE};
 
@@ -23,7 +20,7 @@ pub struct PaymentFulfilled {
 #[odra::module]
 pub struct Controller {
     signer_public_key: Var<PublicKey>,
-    registrar: Var<Address>,
+    registrar: External<RegistrarContractRef>,
     treasury: Var<Address>,
     access_control: SubModule<AccessControl>,
 }
@@ -50,7 +47,7 @@ impl Controller {
     }
 
     pub fn signer_public_key(&self) -> PublicKey {
-        self.signer_public_key.get().unwrap_or_revert(&self.env())
+        self.signer_public_key.get().unwrap_or_revert(self)
     }
 
     #[odra(payable)]
@@ -58,7 +55,12 @@ impl Controller {
         self.assert_caller_is_buyer(&voucher);
         self.verify_signature(&voucher, &signature);
         self.collect_cspr_payment(&voucher);
-        self.register(&voucher);
+        self.registrar.register(voucher.tokenization_voucher);
+    }
+
+    #[odra(payable)]
+    pub fn renew(&self, voucher: PaymentVoucher, signature: Bytes) {
+        self._assert_caller_is_admin()
     }
 }
 
@@ -70,7 +72,7 @@ impl Controller {
 
     fn assert_caller_is_buyer(&self, voucher: &PaymentVoucher) {
         if self.env().caller() != voucher.tokenization_voucher.buyer {
-            self.env().revert(ControllerError::BuyerMustBeCaller);
+            self.revert(ControllerError::BuyerMustBeCaller);
         }
     }
 
@@ -88,23 +90,11 @@ impl Controller {
 
     fn verify_signature<T: ToBytes>(&self, data: &T, signature: &Bytes) {
         let public_key = self.signer_public_key();
-        let bytes: Bytes = data.to_bytes().unwrap_or_revert(&self.env()).into();
+        let bytes: Bytes = data.to_bytes().unwrap_or_revert(self).into();
         let verified = self.env().verify_signature(&bytes, signature, &public_key);
         if !verified {
-            self.env().revert(ControllerError::InvalidSignature);
+            self.revert(ControllerError::InvalidSignature);
         }
-    }
-
-    fn register(&self, voucher: &PaymentVoucher) {
-        self.registrar()
-            .register(voucher.tokenization_voucher.clone());
-    }
-
-    fn registrar(&self) -> RegistrarContractRef {
-        let addr = self
-            .registrar
-            .get_or_revert_with(ControllerError::RegistrarNotSet);
-        RegistrarContractRef::new(self.env(), addr)
     }
 }
 
@@ -118,16 +108,12 @@ pub enum ControllerError {
 
 #[cfg(test)]
 mod tests {
-    // use odra::casper_types::U512;
-
     use odra::{casper_types::U512, host::HostRef};
 
     use crate::{
         data_structures::{PaymentVoucher, TokenizationVoucher},
         test_context::TestContext,
     };
-
-    // use super::*;
 
     #[test]
     fn test_controller() {

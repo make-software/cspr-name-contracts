@@ -1,4 +1,5 @@
 use odra::args::Maybe;
+use odra::module::Revertible;
 use odra::{prelude::*, UnwrapOrRevert};
 use odra::{Address, SubModule};
 use odra_modules::cep78::modalities::{
@@ -119,7 +120,7 @@ impl NameToken {
     pub fn burn(&mut self, token_id: Maybe<u64>, token_hash: Maybe<String>) {
         let caller = self.env().caller();
         if !self.token.is_whitelisted(&caller) {
-            self.env().revert(NameTokenError::NotWhitelisted);
+            self.revert(NameTokenError::NotWhitelisted);
         }
 
         let token_identifier = self.token.token_identifier(token_id, token_hash);
@@ -131,7 +132,7 @@ impl NameToken {
     pub fn admin_transfer(&mut self, reciepient: Address, token_hashes: Vec<String>) {
         let spender = self.env().caller();
         if !self.token.is_whitelisted(&spender) {
-            self.env().revert(NameTokenError::NotWhitelisted);
+            self.revert(NameTokenError::NotWhitelisted);
         }
         for token_hash in token_hashes {
             let owner = self.token.owner_of_by_id(&token_hash);
@@ -149,7 +150,7 @@ impl NameToken {
     ) {
         let caller = self.env().caller();
         if !self.token.is_whitelisted(&caller) {
-            self.env().revert(NameTokenError::NotWhitelisted);
+            self.revert(NameTokenError::NotWhitelisted);
         }
         let token_id = self.token.token_id(token_id, token_hash);
         self.token
@@ -158,7 +159,7 @@ impl NameToken {
 
     pub fn metadata_by_hash(&self, token_hash: &String) -> NameTokenMetadata {
         let metadata = self.metadata(Maybe::None, Maybe::Some(token_hash.clone()));
-        NameTokenMetadata::from_json(&metadata).unwrap_or_revert(&self.env())
+        NameTokenMetadata::from_json(&metadata).unwrap_or_revert(self)
     }
 }
 

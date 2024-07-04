@@ -2,11 +2,14 @@ use odra::{
     casper_types::{
         bytesrepr::{Bytes, ToBytes},
         PublicKey, U512,
-    }, module::{Module, Revertible}, prelude::*, Address, External, SubModule, UnwrapOrRevert, Var
+    },
+    module::{Module, Revertible},
+    prelude::*,
+    Address, External, SubModule, UnwrapOrRevert, Var,
 };
 use odra_modules::access::{AccessControl, Role, DEFAULT_ADMIN_ROLE};
 
-use crate::data_structures::PaymentVoucher;
+use crate::data_structures::{assert_not_expired, Payment, PaymentVoucher, RenewalPaymentVoucher};
 
 use super::registrar::RegistrarContractRef;
 
@@ -52,15 +55,20 @@ impl Controller {
 
     #[odra(payable)]
     pub fn buy(&mut self, voucher: PaymentVoucher, signature: Bytes) {
+        assert_not_expired(&voucher, &self.env());
         self.assert_caller_is_buyer(&voucher);
         self.verify_signature(&voucher, &signature);
         self.collect_cspr_payment(&voucher);
-        self.registrar.register(voucher.tokenization_voucher);
+        self.registrar.register(voucher.tokenization_vouchers);
     }
 
     #[odra(payable)]
-    pub fn renew(&self, voucher: PaymentVoucher, signature: Bytes) {
-        self._assert_caller_is_admin()
+    pub fn renew(&self, voucher: RenewalPaymentVoucher, signature: Bytes) {
+        assert_not_expired(&voucher, &self.env());
+        self.assert_caller_is_buyer(&voucher);
+        self.verify_signature(&voucher, &signature);
+        self.collect_cspr_payment(&voucher);
+        self.registrar.renew(voucher.renewal_vouchers);
     }
 }
 
@@ -70,21 +78,22 @@ impl Controller {
             .check_role(&DEFAULT_ADMIN_ROLE, &self.env().caller());
     }
 
-    fn assert_caller_is_buyer(&self, voucher: &PaymentVoucher) {
-        if self.env().caller() != voucher.tokenization_voucher.buyer {
+    fn assert_caller_is_buyer<P: Payment>(&self, voucher: &P) {
+        if self.env().caller() != voucher.buyer() {
             self.revert(ControllerError::BuyerMustBeCaller);
         }
     }
 
-    fn collect_cspr_payment(&self, voucher: &PaymentVoucher) {
+    fn collect_cspr_payment<P: Payment>(&self, voucher: &P) {
         let fee_collector = self
             .treasury
             .get_or_revert_with(ControllerError::FeeCollectorNotSet);
-        self.env().transfer_tokens(&fee_collector, &voucher.price);
+        let price = voucher.price();
+        self.env().transfer_tokens(&fee_collector, &price);
         self.env().emit_event(PaymentFulfilled {
-            payment_id: voucher.payment_id.clone(),
-            buyer: voucher.tokenization_voucher.buyer,
-            amount: voucher.price,
+            payment_id: voucher.payment_id(),
+            buyer: voucher.buyer(),
+            amount: price,
         });
     }
 
@@ -123,7 +132,8 @@ mod tests {
         // Prepare a payment voucher.
         let expiration = ctx.expiration_time();
         let amount = U512::from(2000);
-        let voucher = PaymentVoucher::new("label", expiration, alice, amount, "id_1");
+        let tokenization_voucher = TokenizationVoucher::new("label", expiration, alice, 0);
+        let voucher = PaymentVoucher::new(amount, "id_1", alice, vec![tokenization_voucher]);
         let signature = ctx.sign(&voucher);
 
         // CSPR balances before the purchase.

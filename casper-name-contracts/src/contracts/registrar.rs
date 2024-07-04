@@ -1,10 +1,11 @@
 use core::ops::DerefMut;
 
 use odra::module::Revertible;
+use odra::{args::Maybe, module::Module, Address, SubModule, UnwrapOrRevert, Var};
 use odra::{prelude::*, External};
-use odra::{args::Maybe, module::Module, Address, ContractRef, SubModule, UnwrapOrRevert, Var};
 use odra_modules::access::{AccessControl, Role, DEFAULT_ADMIN_ROLE};
 
+use crate::data_structures::{assert_not_expired, RenewalVoucher};
 use crate::{
     contracts::name_token::NameTokenContractRef,
     data_structures::{NameTokenMetadata, TokenizationVoucher},
@@ -52,7 +53,7 @@ impl Registrar {
     // Getter functions.
 
     pub fn grace_period(&self) -> u64 {
-        self.grace_period.get().unwrap_or_revert(&self.env())
+        self.grace_period.get().unwrap_or_revert(self)
     }
 
     // Admin functions.
@@ -69,39 +70,41 @@ impl Registrar {
 
     pub fn admin_burn(&mut self, token_hashes: Vec<String>) {
         self.assert_caller_is_admin();
-        let mut name_token = self.name_token.deref_mut();
+        let name_token = self.name_token.deref_mut();
         for token_hash in token_hashes {
-            name_token.burn(Maybe::None, Maybe::Some(token_hash));
+            burn(name_token, token_hash);
         }
     }
 
     // Controller functions.
 
-    pub fn register(&mut self, voucher: TokenizationVoucher) {
+    pub fn register(&mut self, vouchers: Vec<TokenizationVoucher>) {
         self.assert_caller_is_controller();
-        self.verify_voucher(&voucher);
+        for voucher in vouchers {
+            assert_not_expired(&voucher, &self.env());
 
-        // Compute token hash.
-        let token_hash = self.compute_namehash(&voucher.label);
+            // Compute token hash.
+            let token_hash = self.compute_namehash(&voucher.label);
 
-        // Check if token already exists.
-        let token_exists = name_token.token_exists(&token_hash);
+            // Check if token already exists.
+            let token_exists = self.name_token.token_exists(&token_hash);
 
-        // If token exists and is expired and grace period is over, burn it.
-        if token_exists {
-            let metadata = name_token.metadata_by_hash(&token_hash);
-            if metadata.expiration + self.grace_period() <= self.env().get_block_time() {
-                self.name_token.burn(Maybe::None, Maybe::Some(token_hash.clone()));
-            } else {
-                self.revert(RegistrarError::TokenNotExpired);
+            // If token exists and is expired and grace period is over, burn it.
+            if token_exists {
+                self.assert_token_not_expired(&token_hash);
+                burn(self.name_token.deref_mut(), token_hash.clone());
             }
-        }
 
-        // Mint token.
-        let metadata = NameTokenMetadata::from(&voucher);
-        let metadata = metadata.to_json().unwrap_or_revert(self);
-        self.name_token
-            .mint(voucher.buyer, metadata, Maybe::Some(token_hash));
+            // Mint token.
+            let metadata = NameTokenMetadata::from(&voucher);
+            let metadata = metadata.to_json().unwrap_or_revert(self);
+            mint(
+                self.name_token.deref_mut(),
+                voucher.owner,
+                metadata,
+                token_hash,
+            );
+        }
     }
 
     pub fn expire(&mut self, token_hashes: Vec<String>) {
@@ -112,13 +115,29 @@ impl Registrar {
         }
     }
 
-    pub fn renew(&mut self, token_hash: String, expiration: u64) {
+    pub fn renew(&mut self, vouchers: Vec<RenewalVoucher>) {
         self.assert_caller_is_controller();
-        let metadata = self.name_token.metadata_by_hash(&token_hash);
-        self.assert_in_grace_period(metadata.expiration);
-        let new_metadata = NameTokenMetadata::new(&metadata.label, expiration);
-        let new_metadata = new_metadata.to_json().unwrap_or_revert(self);
-        self.name_token.set_token_metadata(Maybe::None, Maybe::Some(token_hash), new_metadata);
+        for voucher in vouchers {
+            // verify the voucher is not expired
+            assert_not_expired(&voucher, &self.env());
+            // TODO: should we check if the token exists?
+            // get the metadata of the token
+            let metadata = self.name_token.metadata_by_hash(&voucher.token_hash);
+            // check if the token is expired
+            self.assert_token_not_expired(&voucher.token_hash);
+            // check if the token is in grace period
+            self.assert_in_grace_period(metadata.expiration, voucher.token_hash.clone());
+            // clear resolver
+            // MetadataUpdated event
+            // burn the token
+            let new_metadata = NameTokenMetadata::new(&metadata.label, voucher.token_expiration);
+            let new_metadata = new_metadata.to_json().unwrap_or_revert(self);
+            set_token_metadata(
+                self.name_token.deref_mut(),
+                voucher.token_hash,
+                new_metadata,
+            );
+        }
     }
 }
 
@@ -133,24 +152,21 @@ impl Registrar {
             .check_role(&DEFAULT_ADMIN_ROLE, &self.env().caller());
     }
 
-    pub fn assert_in_grace_period(&self, expiration: u64) {
+    pub fn assert_in_grace_period(&mut self, expiration: u64, token_hash: String) {
         let grace_period = self.grace_period();
         let block_time = self.env().get_block_time();
         if expiration + grace_period < block_time {
-            self.env().revert(RegistrarError::GracePeriodExpired);
-        }
-    }
-
-    pub fn verify_voucher(&self, voucher: &TokenizationVoucher) {
-        if voucher.token_expiration < self.env().get_block_time() {
-            self.env().revert(RegistrarError::ExpirationDateInThePast);
+            // TODO: Check if this is correct.
+            burn(self.name_token.deref_mut(), token_hash);
+            self.revert(RegistrarError::GracePeriodExpired);
         }
     }
 
     pub fn expire_single(&mut self, token_hash: String, block_time: u64, grace_period: u64) {
+        let name_token = self.name_token.deref_mut();
         let metadata = name_token.metadata_by_hash(&token_hash);
         if metadata.expiration + grace_period < block_time {
-            self.name_token.burn(Maybe::None, Maybe::Some(token_hash));
+            burn(name_token, token_hash);
         }
     }
 
@@ -158,6 +174,39 @@ impl Registrar {
         let hash = self.env().hash(label);
         hex::encode(hash)
     }
+
+    #[inline]
+    fn assert_token_not_expired(&self, token_hash: &String) {
+        let metadata = self.name_token.metadata_by_hash(token_hash);
+        let is_expired = metadata.expiration + self.grace_period() < self.env().get_block_time();
+        if !is_expired {
+            self.revert(RegistrarError::TokenNotExpired);
+        }
+    }
+}
+
+#[inline]
+fn burn(name_token: &mut NameTokenContractRef, token_hash: String) {
+    name_token.burn(Maybe::None, Maybe::Some(token_hash));
+}
+
+#[inline]
+fn mint(
+    name_token: &mut NameTokenContractRef,
+    buyer: Address,
+    metadata: String,
+    token_hash: String,
+) {
+    name_token.mint(buyer, metadata, Maybe::Some(token_hash));
+}
+
+#[inline]
+fn set_token_metadata(
+    name_token: &mut NameTokenContractRef,
+    token_hash: String,
+    token_meta_data: String,
+) {
+    name_token.set_token_metadata(Maybe::None, Maybe::Some(token_hash), token_meta_data);
 }
 
 #[odra::odra_error]
@@ -372,8 +421,11 @@ mod tests {
         // When Admin tries to renew the token.
         let test_token_hash = blake2b("test");
         ctx.env.set_caller(admin);
-        ctx.registrar
-            .renew(test_token_hash.clone(), INIT_TIME + 200);
+        let vouchers = vec![RenewalVoucher::new(
+            test_token_hash.clone(),
+            INIT_TIME + 200,
+        )];
+        ctx.registrar.renew(vouchers);
 
         // Then token expiration is updated.
         let metadata = ctx.token.metadata_by_hash(&test_token_hash);

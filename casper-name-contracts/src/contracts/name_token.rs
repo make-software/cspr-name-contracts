@@ -152,7 +152,10 @@ impl NameToken {
         if !self.token.is_whitelisted(&caller) {
             self.revert(NameTokenError::NotWhitelisted);
         }
-        let token_id = self.token.token_id(token_id, token_hash);
+        let token_id = self
+            .token
+            .token_identifier(token_id, token_hash)
+            .to_string();
         self.token
             .set_token_metadata_unchecked(&token_id, token_meta_data);
     }

@@ -65,9 +65,10 @@ pub fn registrar_register(name: &str, buyer: &str) {
     let mut contracts = DeployedContracts::load(&env);
 
     let owner = Address::from_str(buyer).unwrap();
-    let now = chrono::Utc::now().timestamp_millis() as u64;
-    let expiration = now + EXPIRATION;
-    let voucher = TokenizationVoucher::new(name, expiration, owner);
+    let now: u64 = chrono::Utc::now().timestamp_millis() as u64;
+    let token_expiration = now + EXPIRATION;
+    let voucher_expiration = now + ONE_DAY;
+    let voucher = TokenizationVoucher::new(name, owner, token_expiration, voucher_expiration);
 
     env.set_gas(10_000_000_000);
     contracts.registrar.register(vec![voucher]);

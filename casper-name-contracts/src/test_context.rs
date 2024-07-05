@@ -4,6 +4,7 @@ use blake2::digest::VariableOutput;
 use blake2::Blake2bVar;
 use odra::args::Maybe;
 use odra::casper_types::bytesrepr::{Bytes, ToBytes};
+use odra::casper_types::U512;
 use odra::host::{Deployer, HostEnv, HostRef};
 use odra::{prelude::*, Address};
 
@@ -20,7 +21,9 @@ pub const NAME_TOKEN_SYMBOL: &'static str = "NT";
 pub const INIT_TIME: u64 = 1704103200000; // 2024-01-01T10:00:00.000Z
 pub const ONE_DAY: u64 = 86400000;
 pub const GRACE_PERIOD: u64 = ONE_DAY * 2;
-pub const EXPIRATION: u64 = ONE_DAY * 365;
+pub const TOKEN_EXPIRATION: u64 = ONE_DAY * 365;
+pub const PAYMENT_VOUCHER_EXPIRATION: u64 = ONE_DAY * 2;
+pub const VOUCHER_EXPIRATION: u64 = ONE_DAY * 7;
 
 pub struct TestContext {
     pub env: HostEnv,
@@ -51,19 +54,22 @@ impl TestContext {
         let registrar = RegistrarHostRef::deploy(
             &env,
             RegistrarInitArgs {
-                name_token: name_token.address().clone(),
+                name_token: *name_token.address(),
             },
         );
         let controller = ControllerHostRef::deploy(
             &env,
             controller::ControllerInitArgs {
-                registrar: registrar.address().clone(),
+                registrar: *registrar.address(),
                 signer: env.public_key(&signer),
                 treasury,
             },
         );
 
-        let contracts = TestContext {
+        // Set start time.
+        env.advance_block_time(INIT_TIME);
+
+        TestContext {
             env: env.clone(),
             signer,
             token: name_token,
@@ -74,12 +80,7 @@ impl TestContext {
             bob: env.get_account(2),
             anyone: env.get_account(3),
             treasury,
-        };
-
-        // Set start time.
-        env.advance_block_time(INIT_TIME);
-
-        contracts
+        }
     }
 
     pub fn install_and_setup() -> TestContext {
@@ -98,7 +99,7 @@ impl TestContext {
     pub fn whitelist_registrar_in_name_token(&mut self) {
         self.token.set_variables(
             Maybe::Some(true),
-            Maybe::Some(vec![self.registrar.address().clone()]),
+            Maybe::Some(vec![*self.registrar.address()]),
             Maybe::None,
         );
     }
@@ -115,38 +116,48 @@ impl TestContext {
 
     pub fn try_name_register(
         &mut self,
-        caller: &Address,
-        recipient: &Address,
+        caller: Address,
+        recipient: Address,
         label: &str,
-        expiration: u64,
+        token_expiration: u64,
+        voucher_expiration: u64,
     ) -> odra::OdraResult<()> {
-        let voucher = TokenizationVoucher::new(label, expiration, *recipient, expiration);
-        self.env.set_caller(*caller);
+        let voucher =
+            TokenizationVoucher::new(label, recipient, token_expiration, voucher_expiration);
+        self.set_caller(caller);
         self.registrar.try_register(vec![voucher])
     }
 
-    pub fn with_name_registered(&mut self, caller: &Address, recipient: &Address, label: &str) {
-        self.try_name_register(caller, recipient, label, self.expiration_time())
-            .unwrap()
+    pub fn with_name_registered(&mut self, caller: Address, recipient: Address, label: &str) {
+        let token_expiration = self.token_expiration_time();
+        let voucher_expiration = self.voucher_expiration_time();
+        self.try_name_register(
+            caller,
+            recipient,
+            label,
+            token_expiration,
+            voucher_expiration,
+        )
+        .unwrap()
     }
 
     // TODO: Add more checks.
-    pub fn expect_name_is_registered(&self, owner: &Address, label: &str) {
+    pub fn expect_name_is_registered(&self, owner: Address, label: &str) {
         let token_id = blake2b(label);
         assert!(self.token.token_exists(&token_id), "Token does not exist");
         let addr = self
             .token
             .owner_of(Maybe::None, Maybe::Some(token_id.clone()));
-        assert_eq!(&addr, owner, "Owner is not correct");
+        assert_eq!(addr, owner, "Owner is not correct");
 
         let metadata = self.token.metadata_by_hash(&token_id);
-        let expected = NameTokenMetadata::new(label, self.expiration_time());
+        let expected = NameTokenMetadata::new(label, self.token_expiration_time());
         assert_eq!(metadata, expected);
     }
 
     pub fn try_name_expire(&mut self, label: &str) -> odra::OdraResult<()> {
         let token_id = blake2b(label);
-        self.env.set_caller(self.anyone);
+        self.set_caller(self.anyone);
         self.registrar.try_expire(vec![token_id])
     }
 
@@ -154,19 +165,35 @@ impl TestContext {
         self.try_name_expire(label).unwrap()
     }
 
-    pub fn expiration_time(&self) -> u64 {
-        self.env.block_time() + EXPIRATION
+    pub fn token_expiration_time(&self) -> u64 {
+        self.env.block_time() + TOKEN_EXPIRATION
     }
 
-    pub fn admin_transfer(&mut self, recipient: &Address, token_hashes: Vec<&str>) {
+    pub fn payment_voucher_expiration_time(&self) -> u64 {
+        self.env.block_time() + PAYMENT_VOUCHER_EXPIRATION
+    }
+
+    pub fn voucher_expiration_time(&self) -> u64 {
+        self.env.block_time() + VOUCHER_EXPIRATION
+    }
+
+    pub fn admin_transfer(&mut self, recipient: Address, token_hashes: Vec<&str>) {
         self.env.set_caller(self.admin);
         self.registrar
-            .admin_transfer(recipient.clone(), blake2b_vec(token_hashes))
+            .admin_transfer(recipient, blake2b_vec(token_hashes))
     }
 
     pub fn admin_burn(&mut self, token_hashes: Vec<&str>) {
         self.env.set_caller(self.admin);
         self.registrar.admin_burn(blake2b_vec(token_hashes));
+    }
+
+    pub fn set_caller(&mut self, caller: Address) {
+        self.env.set_caller(caller);
+    }
+
+    pub fn balance_of(&self, account: &Address) -> U512 {
+        self.env.balance_of(account)
     }
 }
 

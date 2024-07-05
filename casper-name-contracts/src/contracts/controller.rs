@@ -1,3 +1,5 @@
+use super::{registrar::RegistrarContractRef, utils::assert_voucher_not_expired};
+use crate::data_structures::{ExpirableVoucher, Payment, PaymentVoucher, RenewalPaymentVoucher};
 use odra::{
     casper_types::{
         bytesrepr::{Bytes, ToBytes},
@@ -8,8 +10,6 @@ use odra::{
     Address, External, SubModule, UnwrapOrRevert, Var,
 };
 use odra_modules::access::{AccessControl, Role, DEFAULT_ADMIN_ROLE};
-use crate::data_structures::{Payment, PaymentVoucher, RenewalPaymentVoucher};
-use super::{registrar::RegistrarContractRef, utils::assert_voucher_not_expired};
 
 #[odra::event]
 pub struct PaymentFulfilled {
@@ -53,19 +53,13 @@ impl Controller {
 
     #[odra(payable)]
     pub fn buy(&mut self, voucher: PaymentVoucher, signature: Bytes) {
-        assert_voucher_not_expired(&voucher, &self.env());
-        self.assert_caller_is_buyer(&voucher);
-        self.verify_signature(&voucher, &signature);
-        self.collect_cspr_payment(&voucher);
+        self.process_payment_voucher(&voucher, signature);
         self.registrar.register(voucher.tokenization_vouchers);
     }
 
     #[odra(payable)]
     pub fn renew(&mut self, voucher: RenewalPaymentVoucher, signature: Bytes) {
-        assert_voucher_not_expired(&voucher, &self.env());
-        self.assert_caller_is_buyer(&voucher);
-        self.verify_signature(&voucher, &signature);
-        self.collect_cspr_payment(&voucher);
+        self.process_payment_voucher(&voucher, signature);
         self.registrar.renew(voucher.renewal_vouchers);
     }
 }
@@ -80,6 +74,18 @@ impl Controller {
         if self.env().caller() != voucher.buyer() {
             self.revert(ControllerError::BuyerMustBeCaller);
         }
+    }
+
+    fn process_payment_voucher<P: Payment + ExpirableVoucher + ToBytes>(
+        &self,
+        voucher: &P,
+        signature: Bytes,
+    ) {
+        let block_time = self.env().get_block_time();
+        assert_voucher_not_expired(voucher, block_time, self);
+        self.assert_caller_is_buyer(voucher);
+        self.verify_signature(voucher, &signature);
+        self.collect_cspr_payment(voucher);
     }
 
     fn collect_cspr_payment<P: Payment>(&self, voucher: &P) {
@@ -128,18 +134,27 @@ mod tests {
         let (fee_collector, alice) = (ctx.treasury, ctx.alice);
 
         // Prepare a payment voucher.
-        let expiration = ctx.expiration_time();
+        let token_expiration = ctx.token_expiration_time();
+        let payment_expiration = ctx.payment_voucher_expiration_time();
+        let voucher_expiration = ctx.token_expiration_time();
         let amount = U512::from(2000);
-        let tokenization_voucher = TokenizationVoucher::new("label", expiration, alice, expiration);
-        let voucher = PaymentVoucher::new(amount, "id_1", alice, vec![tokenization_voucher], expiration);
+        let tokenization_voucher =
+            TokenizationVoucher::new("label", alice, token_expiration, payment_expiration);
+        let voucher = PaymentVoucher::new(
+            amount,
+            "id_1",
+            alice,
+            vec![tokenization_voucher],
+            voucher_expiration,
+        );
         let signature = ctx.sign(&voucher);
 
         // CSPR balances before the purchase.
-        let fee_collector_balance = ctx.env.balance_of(&fee_collector);
-        let alice_balance = ctx.env.balance_of(&alice);
+        let fee_collector_balance = ctx.balance_of(&fee_collector);
+        let alice_balance = ctx.balance_of(&alice);
 
         // But the voucher.
-        ctx.env.set_caller(alice);
+        ctx.set_caller(alice);
         ctx.controller
             .with_tokens(amount)
             .buy(voucher, signature.clone());
@@ -149,9 +164,9 @@ mod tests {
 
         // CSPR balances after the purchase.
         assert_eq!(
-            ctx.env.balance_of(&fee_collector),
+            ctx.balance_of(&fee_collector),
             fee_collector_balance + amount
         );
-        assert_eq!(ctx.env.balance_of(&alice), alice_balance - amount);
+        assert_eq!(ctx.balance_of(&alice), alice_balance - amount);
     }
 }

@@ -1,7 +1,5 @@
-use odra::{casper_types::U512, prelude::*, Address, ContractEnv};
+use odra::{casper_types::U512, prelude::*, Address};
 use serde::{Deserialize, Serialize};
-
-use crate::contracts::registrar::RegistrarError;
 
 #[odra::odra_error]
 #[derive(Debug)]
@@ -48,18 +46,23 @@ impl From<&TokenizationVoucher> for NameTokenMetadata {
 #[odra::odra_type]
 pub struct TokenizationVoucher {
     pub label: String,
-    pub token_expiration: u64,
     pub owner: Address,
+    pub token_expiration: u64,
     pub voucher_expiration: u64,
 }
 
 impl TokenizationVoucher {
-    pub fn new(label: &str, expiration: u64, owner: Address, voucher_expiration: u64) -> Self {
+    pub fn new(
+        label: &str,
+        owner: Address,
+        token_expiration: u64,
+        voucher_expiration: u64,
+    ) -> Self {
         Self {
             label: String::from(label),
-            token_expiration: expiration,
             owner,
-            voucher_expiration
+            token_expiration,
+            voucher_expiration,
         }
     }
 }
@@ -79,14 +82,14 @@ impl PaymentVoucher {
         payment_id: &str,
         buyer: Address,
         vouchers: Vec<TokenizationVoucher>,
-        voucher_expiration: u64
+        voucher_expiration: u64,
     ) -> Self {
         Self {
             tokenization_vouchers: vouchers,
             price,
             payment_id: String::from(payment_id),
             buyer,
-            voucher_expiration
+            voucher_expiration,
         }
     }
 }

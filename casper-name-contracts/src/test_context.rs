@@ -118,23 +118,23 @@ impl TestContext {
         &mut self,
         caller: Address,
         recipient: Address,
-        label: &str,
+        token_hash: &str,
         token_expiration: u64,
         voucher_expiration: u64,
     ) -> odra::OdraResult<()> {
         let voucher =
-            TokenizationVoucher::new(label, recipient, token_expiration, voucher_expiration);
+            TokenizationVoucher::new(token_hash, recipient, token_expiration, voucher_expiration);
         self.set_caller(caller);
         self.registrar.try_register(vec![voucher])
     }
 
-    pub fn with_name_registered(&mut self, caller: Address, recipient: Address, label: &str) {
+    pub fn with_name_registered(&mut self, caller: Address, recipient: Address, token_hash: &str) {
         let token_expiration = self.token_expiration_time();
         let voucher_expiration = self.voucher_expiration_time();
         self.try_name_register(
             caller,
             recipient,
-            label,
+            token_hash,
             token_expiration,
             voucher_expiration,
         )
@@ -142,8 +142,8 @@ impl TestContext {
     }
 
     // TODO: Add more checks.
-    pub fn expect_name_is_registered(&self, owner: Address, label: &str) {
-        let token_id = blake2b(label);
+    pub fn expect_name_is_registered(&self, owner: Address, token_hash: &str) {
+        let token_id = blake2b(token_hash);
         assert!(self.token.token_exists(&token_id), "Token does not exist");
         let addr = self
             .token
@@ -151,18 +151,18 @@ impl TestContext {
         assert_eq!(addr, owner, "Owner is not correct");
 
         let metadata = self.token.metadata_by_hash(&token_id);
-        let expected = NameTokenMetadata::new(label, self.token_expiration_time());
+        let expected = NameTokenMetadata::new(token_hash, self.token_expiration_time());
         assert_eq!(metadata, expected);
     }
 
-    pub fn try_name_expire(&mut self, label: &str) -> odra::OdraResult<()> {
-        let token_id = blake2b(label);
+    pub fn try_name_expire(&mut self, token_hash: &str) -> odra::OdraResult<()> {
+        let token_id = blake2b(token_hash);
         self.set_caller(self.anyone);
         self.registrar.try_expire(vec![token_id])
     }
 
-    pub fn with_name_expired(&mut self, label: &str) {
-        self.try_name_expire(label).unwrap()
+    pub fn with_name_expired(&mut self, token_hash: &str) {
+        self.try_name_expire(token_hash).unwrap()
     }
 
     pub fn token_expiration_time(&self) -> u64 {

@@ -16,14 +16,14 @@ pub enum NameTokenError {
 #[odra::odra_type]
 #[derive(Serialize, Deserialize)]
 pub struct NameTokenMetadata {
-    pub label: String,
+    pub token_hash: String,
     pub expiration: u64,
 }
 
 impl NameTokenMetadata {
-    pub fn new(label: &str, expiration: u64) -> Self {
+    pub fn new(token_hash: &str, expiration: u64) -> Self {
         Self {
-            label: String::from(label),
+            token_hash: String::from(token_hash),
             expiration,
         }
     }
@@ -39,13 +39,13 @@ impl NameTokenMetadata {
 
 impl From<&TokenizationVoucher> for NameTokenMetadata {
     fn from(voucher: &TokenizationVoucher) -> Self {
-        Self::new(&voucher.label, voucher.token_expiration)
+        Self::new(&voucher.token_hash, voucher.token_expiration)
     }
 }
 
 #[odra::odra_type]
 pub struct TokenizationVoucher {
-    pub label: String,
+    pub token_hash: String,
     pub owner: Address,
     pub token_expiration: u64,
     pub voucher_expiration: u64,
@@ -53,13 +53,13 @@ pub struct TokenizationVoucher {
 
 impl TokenizationVoucher {
     pub fn new(
-        label: &str,
+        token_hash: &str,
         owner: Address,
         token_expiration: u64,
         voucher_expiration: u64,
     ) -> Self {
         Self {
-            label: String::from(label),
+            token_hash: String::from(token_hash),
             owner,
             token_expiration,
             voucher_expiration,
@@ -179,7 +179,7 @@ mod tests {
     #[test]
     fn test_metadata_serialization() {
         let expected = r#"{
-            "label": "test-label",
+            "token_hash": "test-label",
             "expiration": 86400
         }"#
         .replace(" ", "")

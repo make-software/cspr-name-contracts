@@ -88,7 +88,7 @@ impl Registrar {
             self.assert_token_expires_in_future(voucher.token_expiration, block_time);
 
             // Compute token hash.
-            let token_hash = self.compute_namehash(&voucher.label);
+            let token_hash = self.compute_namehash(&voucher.token_hash);
 
             // Check if token already exists.
             let token_exists = self.name_token.token_exists(&token_hash);
@@ -134,7 +134,7 @@ impl Registrar {
             self.assert_in_grace_period(metadata.expiration);
             // clear resolver
             // MetadataUpdated event
-            let new_metadata = NameTokenMetadata::new(&metadata.label, voucher.token_expiration);
+            let new_metadata = NameTokenMetadata::new(&metadata.token_hash, voucher.token_expiration);
             let new_metadata = new_metadata.to_json().unwrap_or_revert(self);
             set_token_metadata(
                 self.name_token.deref_mut(),
@@ -397,7 +397,7 @@ mod tests {
 
     // TODO: Check expiring multiple tokens.
     #[test]
-    fn test_domain_expiration_after_grace_period() {
+    fn test_token_expiration_after_grace_period() {
         let mut ctx = TestContext::install_and_setup();
         let (admin, alice) = (ctx.admin, ctx.alice);
 

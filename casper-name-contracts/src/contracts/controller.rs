@@ -8,10 +8,8 @@ use odra::{
     Address, External, SubModule, UnwrapOrRevert, Var,
 };
 use odra_modules::access::{AccessControl, Role, DEFAULT_ADMIN_ROLE};
-
-use crate::data_structures::{assert_not_expired, Payment, PaymentVoucher, RenewalPaymentVoucher};
-
-use super::registrar::RegistrarContractRef;
+use crate::data_structures::{Payment, PaymentVoucher, RenewalPaymentVoucher};
+use super::{registrar::RegistrarContractRef, utils::assert_voucher_not_expired};
 
 #[odra::event]
 pub struct PaymentFulfilled {
@@ -55,7 +53,7 @@ impl Controller {
 
     #[odra(payable)]
     pub fn buy(&mut self, voucher: PaymentVoucher, signature: Bytes) {
-        assert_not_expired(&voucher, &self.env());
+        assert_voucher_not_expired(&voucher, &self.env());
         self.assert_caller_is_buyer(&voucher);
         self.verify_signature(&voucher, &signature);
         self.collect_cspr_payment(&voucher);
@@ -63,8 +61,8 @@ impl Controller {
     }
 
     #[odra(payable)]
-    pub fn renew(&self, voucher: RenewalPaymentVoucher, signature: Bytes) {
-        assert_not_expired(&voucher, &self.env());
+    pub fn renew(&mut self, voucher: RenewalPaymentVoucher, signature: Bytes) {
+        assert_voucher_not_expired(&voucher, &self.env());
         self.assert_caller_is_buyer(&voucher);
         self.verify_signature(&voucher, &signature);
         self.collect_cspr_payment(&voucher);
@@ -132,8 +130,8 @@ mod tests {
         // Prepare a payment voucher.
         let expiration = ctx.expiration_time();
         let amount = U512::from(2000);
-        let tokenization_voucher = TokenizationVoucher::new("label", expiration, alice, 0);
-        let voucher = PaymentVoucher::new(amount, "id_1", alice, vec![tokenization_voucher]);
+        let tokenization_voucher = TokenizationVoucher::new("label", expiration, alice, expiration);
+        let voucher = PaymentVoucher::new(amount, "id_1", alice, vec![tokenization_voucher], expiration);
         let signature = ctx.sign(&voucher);
 
         // CSPR balances before the purchase.

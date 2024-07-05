@@ -120,9 +120,9 @@ impl TestContext {
         label: &str,
         expiration: u64,
     ) -> odra::OdraResult<()> {
-        let voucher = TokenizationVoucher::new(label, expiration, *recipient);
+        let voucher = TokenizationVoucher::new(label, expiration, *recipient, expiration);
         self.env.set_caller(*caller);
-        self.registrar.try_register(voucher)
+        self.registrar.try_register(vec![voucher])
     }
 
     pub fn with_name_registered(&mut self, caller: &Address, recipient: &Address, label: &str) {

@@ -70,5 +70,5 @@ pub fn registrar_register(name: &str, buyer: &str) {
     let voucher = TokenizationVoucher::new(name, expiration, owner);
 
     env.set_gas(10_000_000_000);
-    contracts.registrar.register(voucher);
+    contracts.registrar.register(vec![voucher]);
 }

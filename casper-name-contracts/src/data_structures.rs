@@ -50,7 +50,7 @@ pub struct TokenizationVoucher {
     pub label: String,
     pub token_expiration: u64,
     pub owner: Address,
-    pub voucher_expiration: u64, // TODO: support this, test it.
+    pub voucher_expiration: u64,
 }
 
 impl TokenizationVoucher {
@@ -59,7 +59,7 @@ impl TokenizationVoucher {
             label: String::from(label),
             token_expiration: expiration,
             owner,
-            voucher_expiration,
+            voucher_expiration
         }
     }
 }
@@ -70,6 +70,7 @@ pub struct PaymentVoucher {
     pub price: U512,
     pub payment_id: String,
     pub buyer: Address,
+    pub voucher_expiration: u64, // TODO: support this, test it.
 }
 
 impl PaymentVoucher {
@@ -78,12 +79,14 @@ impl PaymentVoucher {
         payment_id: &str,
         buyer: Address,
         vouchers: Vec<TokenizationVoucher>,
+        voucher_expiration: u64
     ) -> Self {
         Self {
             tokenization_vouchers: vouchers,
             price,
             payment_id: String::from(payment_id),
             buyer,
+            voucher_expiration
         }
     }
 }
@@ -138,29 +141,29 @@ impl Payment for RenewalPaymentVoucher {
     }
 }
 
-pub trait Expireable {
+pub trait ExpirableVoucher {
     fn expiration_time(&self) -> u64;
 }
 
-pub fn assert_not_expired<T: Expireable>(e: &T, env: &ContractEnv) {
-    if e.expiration_time() < env.get_block_time() {
-        env.revert(RegistrarError::ExpirationDateInThePast);
-    }
-}
-
-impl Expireable for RenewalVoucher {
+impl ExpirableVoucher for RenewalPaymentVoucher {
     fn expiration_time(&self) -> u64 {
         self.voucher_expiration
     }
 }
 
-impl Expireable for RenewalPaymentVoucher {
+impl ExpirableVoucher for PaymentVoucher {
     fn expiration_time(&self) -> u64 {
         self.voucher_expiration
     }
 }
 
-impl Expireable for TokenizationVoucher {
+impl ExpirableVoucher for TokenizationVoucher {
+    fn expiration_time(&self) -> u64 {
+        self.voucher_expiration
+    }
+}
+
+impl ExpirableVoucher for RenewalVoucher {
     fn expiration_time(&self) -> u64 {
         self.voucher_expiration
     }

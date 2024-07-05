@@ -5,7 +5,7 @@ use odra::{args::Maybe, module::Module, Address, SubModule, UnwrapOrRevert, Var}
 use odra::{prelude::*, External};
 use odra_modules::access::{AccessControl, Role, DEFAULT_ADMIN_ROLE};
 
-use crate::data_structures::{assert_not_expired, RenewalVoucher};
+use crate::data_structures::RenewalVoucher;
 use crate::{
     contracts::name_token::NameTokenContractRef,
     data_structures::{NameTokenMetadata, TokenizationVoucher},
@@ -81,7 +81,7 @@ impl Registrar {
     pub fn register(&mut self, vouchers: Vec<TokenizationVoucher>) {
         self.assert_caller_is_controller();
         for voucher in vouchers {
-            assert_not_expired(&voucher, &self.env());
+            self.assert_token_expires_in_future(voucher.token_expiration);
 
             // Compute token hash.
             let token_hash = self.compute_namehash(&voucher.label);
@@ -119,8 +119,7 @@ impl Registrar {
         self.assert_caller_is_controller();
         for voucher in vouchers {
             // verify the voucher is not expired
-            assert_not_expired(&voucher, &self.env());
-            // TODO: should we check if the token exists?
+            self.assert_token_expires_in_future(voucher.token_expiration);
             // get the metadata of the token
             let metadata = self.name_token.metadata_by_hash(&voucher.token_hash);
             // check if the token is expired
@@ -129,7 +128,6 @@ impl Registrar {
             self.assert_in_grace_period(metadata.expiration, voucher.token_hash.clone());
             // clear resolver
             // MetadataUpdated event
-            // burn the token
             let new_metadata = NameTokenMetadata::new(&metadata.label, voucher.token_expiration);
             let new_metadata = new_metadata.to_json().unwrap_or_revert(self);
             set_token_metadata(
@@ -156,9 +154,14 @@ impl Registrar {
         let grace_period = self.grace_period();
         let block_time = self.env().get_block_time();
         if expiration + grace_period < block_time {
-            // TODO: Check if this is correct.
-            burn(self.name_token.deref_mut(), token_hash);
             self.revert(RegistrarError::GracePeriodExpired);
+        }
+    }
+
+    pub fn assert_token_expires_in_future(&self, token_expiration: u64) {
+        let block_time = self.env().get_block_time();
+        if token_expiration < block_time {
+            self.revert(RegistrarError::ExpirationDateInThePast);
         }
     }
 
@@ -214,12 +217,13 @@ pub enum RegistrarError {
     ExpirationDateInThePast = 1001,
     TokenNotExpired = 1002,
     GracePeriodExpired = 1003,
+    VoucherExpired = 1004,
 }
 
 #[cfg(test)]
 mod tests {
     use super::*;
-    use crate::test_context::{blake2b, TestContext, EXPIRATION, GRACE_PERIOD, INIT_TIME};
+    use crate::test_context::{blake2b, TestContext, EXPIRATION, GRACE_PERIOD, INIT_TIME, ONE_DAY};
     use odra_modules::access::errors::Error as AccessControlError;
 
     #[test]
@@ -313,7 +317,7 @@ mod tests {
         // And token not expired.
         ctx.env.advance_block_time(EXPIRATION / 2);
 
-        // When Admin trys to register the same token again.
+        // When Admin tries to register the same token again.
         let result = ctx.try_name_register(&admin, &alice, "test", ctx.expiration_time());
 
         // Then registration fails.
@@ -349,7 +353,7 @@ mod tests {
         // And token expired, and grace period is over.
         ctx.env.advance_block_time(EXPIRATION + GRACE_PERIOD + 1);
 
-        // When Admin trys to register the same token again.
+        // When Admin tries to register the same token again.
         ctx.with_name_registered(&admin, &bob, "test");
 
         // Then Alice's token is burned.
@@ -418,14 +422,19 @@ mod tests {
         // Given Alice has a token.
         ctx.with_name_registered(&admin, &alice, "test");
 
+        ctx.env.advance_block_time(EXPIRATION + GRACE_PERIOD - 1);
         // When Admin tries to renew the token.
         let test_token_hash = blake2b("test");
         ctx.env.set_caller(admin);
-        let vouchers = vec![RenewalVoucher::new(
-            test_token_hash.clone(),
-            INIT_TIME + 200,
-        )];
-        ctx.registrar.renew(vouchers);
+        dbg!(INIT_TIME + 2 * EXPIRATION);
+        dbg!(ctx.env.block_time());
+        let voucher = RenewalVoucher {
+            token_hash: test_token_hash.clone(),
+            token_expiration: INIT_TIME + 30 * EXPIRATION,
+            voucher_expiration: INIT_TIME + 2 * EXPIRATION,
+        };
+        dbg!(&voucher);
+        ctx.registrar.renew(vec![voucher]);
 
         // Then token expiration is updated.
         let metadata = ctx.token.metadata_by_hash(&test_token_hash);

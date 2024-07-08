@@ -128,13 +128,12 @@ impl Registrar {
             self.assert_token_expires_in_future(voucher.token_expiration, block_time);
             // get the metadata of the token
             let metadata = self.name_token.metadata_by_hash(&voucher.token_hash);
-            // check if the token is expired
-            self.assert_token_not_expired(&voucher.token_hash, block_time);
-            // check if the token is in grace period
+            // check if the token is expired and is in grace period
             self.assert_in_grace_period(metadata.expiration);
             // clear resolver
             // MetadataUpdated event
-            let new_metadata = NameTokenMetadata::new(&metadata.token_hash, voucher.token_expiration);
+            let new_metadata =
+                NameTokenMetadata::new(&metadata.token_hash, voucher.token_expiration);
             let new_metadata = new_metadata.to_json().unwrap_or_revert(self);
             set_token_metadata(
                 self.name_token.deref_mut(),
@@ -159,7 +158,7 @@ impl Registrar {
     pub fn assert_in_grace_period(&mut self, expiration: u64) {
         let grace_period = self.grace_period();
         let block_time = self.env().get_block_time();
-        if expiration + grace_period < block_time {
+        if block_time > expiration + grace_period {
             self.revert(RegistrarError::GracePeriodExpired);
         }
     }
@@ -181,15 +180,6 @@ impl Registrar {
     pub fn compute_namehash(&self, label: &String) -> String {
         let hash = self.env().hash(label);
         hex::encode(hash)
-    }
-
-    #[inline]
-    fn assert_token_not_expired(&self, token_hash: &String, block_time: u64) {
-        let metadata = self.name_token.metadata_by_hash(token_hash);
-        let renew_deadline = metadata.expiration + self.grace_period();
-        if block_time >= renew_deadline {
-            self.revert(RegistrarError::TokenNotExpired);
-        }
     }
 
     #[inline]
@@ -237,8 +227,11 @@ pub enum RegistrarError {
 #[cfg(test)]
 mod tests {
     use super::*;
-    use crate::test_context::{blake2b, TestContext, GRACE_PERIOD, INIT_TIME, TOKEN_EXPIRATION};
-    use odra_modules::access::errors::Error as AccessControlError;
+    use crate::test_context::{
+        blake2b, TestContext, GRACE_PERIOD, INIT_TIME, TOKEN_EXPIRATION, TOKEN_HASH,
+    };
+    use odra::host::HostRef;
+    use odra_modules::{access::errors::Error as AccessControlError, cep78::events::Burn};
 
     #[test]
     fn test_admin_can_manage_controller_role() {
@@ -303,11 +296,36 @@ mod tests {
         // When Admin try to register with expiration time in past.
         let token_expiration = INIT_TIME - 1;
         let voucher_expiration = ctx.voucher_expiration_time();
-        let result =
-            ctx.try_name_register(admin, alice, "test", token_expiration, voucher_expiration);
+        let result = ctx.try_name_register(
+            admin,
+            alice,
+            TOKEN_HASH,
+            token_expiration,
+            voucher_expiration,
+        );
 
         // Then registration fails.
         assert_eq!(result, Err(RegistrarError::ExpirationDateInThePast.into()));
+    }
+
+    #[test]
+    fn register_with_expired_voucher_fails() {
+        let mut ctx = TestContext::install_and_setup();
+        let (admin, alice) = (ctx.admin, ctx.alice);
+
+        // When Admin try to register with expiration time in past.
+        let token_expiration = ctx.token_expiration_time();
+        let voucher_expiration = INIT_TIME - 1;
+        let result = ctx.try_name_register(
+            admin,
+            alice,
+            TOKEN_HASH,
+            token_expiration,
+            voucher_expiration,
+        );
+
+        // Then registration fails.
+        assert_eq!(result, Err(RegistrarError::VoucherExpired.into()));
     }
 
     #[test]
@@ -316,10 +334,10 @@ mod tests {
         let (admin, alice) = (ctx.admin, ctx.alice);
 
         // When Admin try to register with expiration time in future.
-        ctx.with_name_registered(admin, alice, "test");
+        ctx.with_name_registered(admin, alice, TOKEN_HASH);
 
         // Then token is minted.
-        ctx.expect_name_is_registered(alice, "test");
+        ctx.expect_name_is_registered(alice, TOKEN_HASH);
     }
 
     #[test]
@@ -328,16 +346,16 @@ mod tests {
         let (admin, alice) = (ctx.admin, ctx.alice);
 
         // Given Alice has a token.
-        ctx.with_name_registered(admin, alice, "test");
+        ctx.with_name_registered(admin, alice, TOKEN_HASH);
 
         // And token not expired.
-        ctx.env.advance_block_time(TOKEN_EXPIRATION / 2);
+        ctx.advance_block_time(TOKEN_EXPIRATION / 2);
 
         // When Admin tries to register the same token again.
         let result = ctx.try_name_register(
             admin,
             alice,
-            "test",
+            TOKEN_HASH,
             ctx.token_expiration_time(),
             ctx.voucher_expiration_time(),
         );
@@ -352,17 +370,16 @@ mod tests {
         let (admin, alice) = (ctx.admin, ctx.alice);
 
         // Given Alice has a token.
-        ctx.with_name_registered(admin, alice, "test");
+        ctx.with_name_registered(admin, alice, TOKEN_HASH);
 
         // And token expired, but within grace period.
-        ctx.env
-            .advance_block_time(TOKEN_EXPIRATION + GRACE_PERIOD / 2);
+        ctx.advance_block_time(TOKEN_EXPIRATION + GRACE_PERIOD / 2);
 
         // When Admin tries to register the same token again.
         let result = ctx.try_name_register(
             admin,
             alice,
-            "test",
+            TOKEN_HASH,
             ctx.token_expiration_time(),
             ctx.voucher_expiration_time(),
         );
@@ -375,24 +392,23 @@ mod tests {
     fn register_the_same_name_after_grace_period() {
         let mut ctx = TestContext::install_and_setup();
         let (admin, alice, bob) = (ctx.admin, ctx.alice, ctx.bob);
-
+        let registrar_address = *ctx.registrar.address();
         // Given Alice has a token.
-        ctx.with_name_registered(admin, alice, "test");
+        ctx.with_name_registered(admin, alice, TOKEN_HASH);
 
         // And token expired, and grace period is over.
-        ctx.env
-            .advance_block_time(TOKEN_EXPIRATION + GRACE_PERIOD + 1);
+        ctx.advance_block_time(TOKEN_EXPIRATION + GRACE_PERIOD + 1);
 
         // When Admin tries to register the same token again.
-        ctx.with_name_registered(admin, bob, "test");
+        ctx.with_name_registered(admin, bob, TOKEN_HASH);
 
         // Then Alice's token is burned.
-        // TODO: Add more checks.
-        // let event: Burn = ctx.register.get_event(-1).unwrap();
-        // let expected = Burn::new(ctx.user, token_id, ctx.operator);
+        let event: Burn = ctx.token.get_event(-2).unwrap();
+        let expected = Burn::new(alice, blake2b(TOKEN_HASH), registrar_address);
+        assert_eq!(event, expected);
 
         // And Bob's token is minted.
-        ctx.expect_name_is_registered(bob, "test");
+        ctx.expect_name_is_registered(bob, TOKEN_HASH);
     }
 
     // TODO: Check expiring multiple tokens.
@@ -402,18 +418,16 @@ mod tests {
         let (admin, alice) = (ctx.admin, ctx.alice);
 
         // Given Alice has a token.
-        ctx.with_name_registered(admin, alice, "test");
+        ctx.with_name_registered(admin, alice, TOKEN_HASH);
 
         // And is after grace period.
-        ctx.env
-            .advance_block_time(TOKEN_EXPIRATION + GRACE_PERIOD + 1);
+        ctx.advance_block_time(TOKEN_EXPIRATION + GRACE_PERIOD + 1);
 
         // When anyone tries to expire the token.
-        ctx.with_name_expired("test");
+        ctx.with_name_expired(TOKEN_HASH);
 
         // Then token is burned.
-        // TODO: Check if token is burned.
-        // assert_eq!(ctx.name_token.balance_of(alice), 0);
+        assert_eq!(ctx.token.balance_of(alice), 0);
     }
 
     #[test]
@@ -422,9 +436,9 @@ mod tests {
         let (admin, alice, bob) = (ctx.admin, ctx.alice, ctx.bob);
 
         // Given Alice has a token.
-        ctx.with_name_registered(admin, alice, "test");
+        ctx.with_name_registered(admin, alice, TOKEN_HASH);
 
-        ctx.admin_transfer(bob, vec!["test"]);
+        ctx.admin_transfer(bob, vec![TOKEN_HASH]);
 
         // Then Alice's token is transferred to Bob.
         assert_eq!(ctx.token.balance_of(alice), 0);
@@ -437,12 +451,34 @@ mod tests {
         let (admin, alice) = (ctx.admin, ctx.alice);
 
         // Given Alice has a token.
-        ctx.with_name_registered(admin, alice, "test");
+        ctx.with_name_registered(admin, alice, TOKEN_HASH);
 
-        ctx.admin_burn(vec!["test"]);
+        ctx.admin_burn(vec![TOKEN_HASH]);
 
         // Then Alice's token is burned.
         assert_eq!(ctx.token.balance_of(alice), 0);
+    }
+
+    #[test]
+    fn renew_with_expired_voucher_fails() {
+        let mut ctx = TestContext::install_and_setup();
+        let (admin, alice) = (ctx.admin, ctx.alice);
+
+        // Given Alice has a token.
+        ctx.with_name_registered(admin, alice, TOKEN_HASH);
+
+        // When Admin tries to renew the token.
+        ctx.set_caller(admin);
+
+        let token_expiration = INIT_TIME + 2 * TOKEN_EXPIRATION;
+        let voucher_expiration = INIT_TIME + TOKEN_EXPIRATION;
+        let voucher =
+            RenewalVoucher::new(blake2b(TOKEN_HASH), token_expiration, voucher_expiration);
+        ctx.advance_block_time(TOKEN_EXPIRATION + GRACE_PERIOD - 1);
+        let result = ctx.registrar.try_renew(vec![voucher]);
+
+        // Then registration fails.
+        assert_eq!(result, Err(RegistrarError::VoucherExpired.into()));
     }
 
     #[test]
@@ -451,23 +487,49 @@ mod tests {
         let (admin, alice) = (ctx.admin, ctx.alice);
 
         // Given Alice has a token.
-        ctx.with_name_registered(admin, alice, "test");
+        ctx.with_name_registered(admin, alice, TOKEN_HASH);
 
-        ctx.env
-            .advance_block_time(TOKEN_EXPIRATION + GRACE_PERIOD - 1);
+        ctx.advance_block_time(TOKEN_EXPIRATION + GRACE_PERIOD - 1);
         // When Admin tries to renew the token.
-        let test_token_hash = blake2b("test");
+        let test_token_hash = blake2b(TOKEN_HASH);
+        let token_expiration = INIT_TIME + 2 * TOKEN_EXPIRATION;
+        let voucher_expiration = INIT_TIME + TOKEN_EXPIRATION + GRACE_PERIOD;
+        let voucher = RenewalVoucher::new(
+            test_token_hash.clone(),
+            token_expiration,
+            voucher_expiration,
+        );
         ctx.set_caller(admin);
-        let voucher = RenewalVoucher {
-            token_hash: test_token_hash.clone(),
-            token_expiration: INIT_TIME + 2 * TOKEN_EXPIRATION,
-            voucher_expiration: INIT_TIME + TOKEN_EXPIRATION + GRACE_PERIOD,
-        };
         ctx.registrar.renew(vec![voucher]);
 
         // Then token expiration is updated.
         let metadata = ctx.token.metadata_by_hash(&test_token_hash);
-        let expected = NameTokenMetadata::new("test", INIT_TIME + 2 * TOKEN_EXPIRATION);
+        let expected = NameTokenMetadata::new(TOKEN_HASH, INIT_TIME + 2 * TOKEN_EXPIRATION);
         assert_eq!(metadata, expected);
+    }
+
+    #[test]
+    fn test_renew_after_grace_period_fails() {
+        let mut ctx = TestContext::install_and_setup();
+        let (admin, alice) = (ctx.admin, ctx.alice);
+
+        // Given Alice has a token.
+        ctx.with_name_registered(admin, alice, TOKEN_HASH);
+
+        ctx.advance_block_time(TOKEN_EXPIRATION + GRACE_PERIOD + 1);
+        // When Admin tries to renew the token.
+        let test_token_hash = blake2b(TOKEN_HASH);
+        let token_expiration = INIT_TIME + 2 * TOKEN_EXPIRATION;
+        let voucher_expiration = INIT_TIME + TOKEN_EXPIRATION + GRACE_PERIOD + 1;
+        let voucher = RenewalVoucher::new(
+            test_token_hash.clone(),
+            token_expiration,
+            voucher_expiration,
+        );
+        ctx.set_caller(admin);
+        let result = ctx.registrar.try_renew(vec![voucher]);
+
+        // Then registration fails.
+        assert_eq!(result, Err(RegistrarError::GracePeriodExpired.into()));
     }
 }

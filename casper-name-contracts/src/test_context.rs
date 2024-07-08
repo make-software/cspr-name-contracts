@@ -7,6 +7,7 @@ use odra::casper_types::bytesrepr::{Bytes, ToBytes};
 use odra::casper_types::U512;
 use odra::host::{Deployer, HostEnv, HostRef};
 use odra::{prelude::*, Address};
+use odra_modules::cep78::events::Mint;
 
 use crate::contracts::controller::{self, ControllerHostRef};
 use crate::contracts::registrar::{RegistrarInitArgs, CONTROLLER_ROLE};
@@ -24,6 +25,7 @@ pub const GRACE_PERIOD: u64 = ONE_DAY * 2;
 pub const TOKEN_EXPIRATION: u64 = ONE_DAY * 365;
 pub const PAYMENT_VOUCHER_EXPIRATION: u64 = ONE_DAY * 2;
 pub const VOUCHER_EXPIRATION: u64 = ONE_DAY * 7;
+pub const TOKEN_HASH: &str = "label";
 
 pub struct TestContext {
     pub env: HostEnv,
@@ -141,18 +143,26 @@ impl TestContext {
         .unwrap()
     }
 
-    // TODO: Add more checks.
     pub fn expect_name_is_registered(&self, owner: Address, token_hash: &str) {
         let token_id = blake2b(token_hash);
         assert!(self.token.token_exists(&token_id), "Token does not exist");
-        let addr = self
+
+        let actual_owner = self
             .token
             .owner_of(Maybe::None, Maybe::Some(token_id.clone()));
-        assert_eq!(addr, owner, "Owner is not correct");
+        assert_eq!(actual_owner, owner, "Owner is not correct");
 
         let metadata = self.token.metadata_by_hash(&token_id);
-        let expected = NameTokenMetadata::new(token_hash, self.token_expiration_time());
-        assert_eq!(metadata, expected);
+        let expected_metadata = NameTokenMetadata::new(token_hash, self.token_expiration_time());
+        assert_eq!(metadata, expected_metadata);
+
+        assert!(
+            self.env.emitted_event(
+                &self.token,
+                &Mint::new(owner, token_id, expected_metadata.to_json().unwrap())
+            ),
+            "Mint event not emitted"
+        );
     }
 
     pub fn try_name_expire(&mut self, token_hash: &str) -> odra::OdraResult<()> {
@@ -190,6 +200,10 @@ impl TestContext {
 
     pub fn set_caller(&mut self, caller: Address) {
         self.env.set_caller(caller);
+    }
+
+    pub fn advance_block_time(&mut self, time: u64) {
+        self.env.advance_block_time(time);
     }
 
     pub fn balance_of(&self, account: &Address) -> U512 {

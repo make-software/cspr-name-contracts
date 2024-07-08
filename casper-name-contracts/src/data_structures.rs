@@ -110,6 +110,16 @@ pub struct RenewalVoucher {
     pub voucher_expiration: u64,
 }
 
+impl RenewalVoucher {
+    pub fn new(token_hash: String, token_expiration: u64, voucher_expiration: u64) -> Self {
+        Self {
+            token_hash,
+            token_expiration,
+            voucher_expiration,
+        }
+    }
+}
+
 pub trait Payment {
     fn price(&self) -> U512;
     fn payment_id(&self) -> String;

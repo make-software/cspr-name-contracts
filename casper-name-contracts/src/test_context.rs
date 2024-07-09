@@ -15,7 +15,7 @@ use crate::contracts::{
     name_token::{NameTokenHostRef, NameTokenInitArgs},
     registrar::RegistrarHostRef,
 };
-use crate::data_structures::{NameTokenMetadata, TokenizationVoucher};
+use crate::data_structures::{NameMintInfo, NameTokenMetadata, TokenizationVoucher};
 
 pub const NAME_TOKEN_NAME: &'static str = "NameToken";
 pub const NAME_TOKEN_SYMBOL: &'static str = "NT";
@@ -23,7 +23,6 @@ pub const INIT_TIME: u64 = 1704103200000; // 2024-01-01T10:00:00.000Z
 pub const ONE_DAY: u64 = 86400000;
 pub const GRACE_PERIOD: u64 = ONE_DAY * 2;
 pub const TOKEN_EXPIRATION: u64 = ONE_DAY * 365;
-pub const PAYMENT_VOUCHER_EXPIRATION: u64 = ONE_DAY * 2;
 pub const VOUCHER_EXPIRATION: u64 = ONE_DAY * 7;
 pub const TOKEN_HASH: &str = "label";
 
@@ -124,10 +123,10 @@ impl TestContext {
         token_expiration: u64,
         voucher_expiration: u64,
     ) -> odra::OdraResult<()> {
-        let voucher =
-            TokenizationVoucher::new(token_hash, recipient, token_expiration, voucher_expiration);
+        let names = vec![NameMintInfo::new(token_hash, recipient, token_expiration)];
+        let voucher = TokenizationVoucher::new(names, voucher_expiration);
         self.set_caller(caller);
-        self.registrar.try_register(vec![voucher])
+        self.registrar.try_register(voucher)
     }
 
     pub fn with_name_registered(&mut self, caller: Address, recipient: Address, token_hash: &str) {
@@ -177,10 +176,6 @@ impl TestContext {
 
     pub fn token_expiration_time(&self) -> u64 {
         self.env.block_time() + TOKEN_EXPIRATION
-    }
-
-    pub fn payment_voucher_expiration_time(&self) -> u64 {
-        self.env.block_time() + PAYMENT_VOUCHER_EXPIRATION
     }
 
     pub fn voucher_expiration_time(&self) -> u64 {

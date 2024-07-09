@@ -1,5 +1,5 @@
-use super::{registrar::RegistrarContractRef, utils::assert_voucher_not_expired};
-use crate::data_structures::{ExpirableVoucher, Payment, PaymentVoucher, RenewalPaymentVoucher};
+use super::registrar::RegistrarContractRef;
+use crate::data_structures::{Payment, PaymentVoucher, RenewalPaymentVoucher};
 use odra::{
     casper_types::{
         bytesrepr::{Bytes, ToBytes},
@@ -54,13 +54,13 @@ impl Controller {
     #[odra(payable)]
     pub fn buy(&mut self, voucher: PaymentVoucher, signature: Bytes) {
         self.process_payment_voucher(&voucher, signature);
-        self.registrar.register(voucher.tokenization_vouchers);
+        self.registrar.register(voucher.into());
     }
 
     #[odra(payable)]
     pub fn renew(&mut self, voucher: RenewalPaymentVoucher, signature: Bytes) {
         self.process_payment_voucher(&voucher, signature);
-        self.registrar.renew(voucher.renewal_vouchers);
+        self.registrar.prolong(voucher.into());
     }
 }
 
@@ -71,18 +71,12 @@ impl Controller {
     }
 
     fn assert_caller_is_buyer<P: Payment>(&self, voucher: &P) {
-        if self.env().caller() != voucher.buyer() {
+        if self.env().caller() != voucher.payment_info().buyer {
             self.revert(ControllerError::BuyerMustBeCaller);
         }
     }
 
-    fn process_payment_voucher<P: Payment + ExpirableVoucher + ToBytes>(
-        &self,
-        voucher: &P,
-        signature: Bytes,
-    ) {
-        let block_time = self.env().get_block_time();
-        assert_voucher_not_expired(voucher, block_time, self);
+    fn process_payment_voucher<P: Payment + ToBytes>(&self, voucher: &P, signature: Bytes) {
         self.assert_caller_is_buyer(voucher);
         self.verify_signature(voucher, &signature);
         self.collect_cspr_payment(voucher);
@@ -92,12 +86,13 @@ impl Controller {
         let fee_collector = self
             .treasury
             .get_or_revert_with(ControllerError::FeeCollectorNotSet);
-        let price = voucher.price();
-        self.env().transfer_tokens(&fee_collector, &price);
+        let payment_info = voucher.payment_info();
+        self.env()
+            .transfer_tokens(&fee_collector, &payment_info.amount);
         self.env().emit_event(PaymentFulfilled {
-            payment_id: voucher.payment_id(),
-            buyer: voucher.buyer(),
-            amount: price,
+            payment_id: payment_info.payment_id.clone(),
+            buyer: payment_info.buyer,
+            amount: payment_info.amount,
         });
     }
 
@@ -124,8 +119,8 @@ mod tests {
     use odra::{casper_types::U512, host::HostRef};
 
     use crate::{
-        data_structures::{PaymentVoucher, TokenizationVoucher},
-        test_context::TestContext,
+        data_structures::{NameMintInfo, PaymentVoucher},
+        test_context::{TestContext, TOKEN_HASH},
     };
 
     #[test]
@@ -135,18 +130,11 @@ mod tests {
 
         // Prepare a payment voucher.
         let token_expiration = ctx.token_expiration_time();
-        let payment_expiration = ctx.payment_voucher_expiration_time();
         let voucher_expiration = ctx.token_expiration_time();
         let amount = U512::from(2000);
-        let tokenization_voucher =
-            TokenizationVoucher::new("label", alice, token_expiration, payment_expiration);
-        let voucher = PaymentVoucher::new(
-            amount,
-            "id_1",
-            alice,
-            vec![tokenization_voucher],
-            voucher_expiration,
-        );
+
+        let names = vec![NameMintInfo::new(TOKEN_HASH, alice, token_expiration)];
+        let voucher = PaymentVoucher::new(amount, "id_1", alice, names, voucher_expiration);
         let signature = ctx.sign(&voucher);
 
         // CSPR balances before the purchase.

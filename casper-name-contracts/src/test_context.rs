@@ -6,7 +6,7 @@ use odra::args::Maybe;
 use odra::casper_types::bytesrepr::{Bytes, ToBytes};
 use odra::casper_types::U512;
 use odra::host::{Deployer, HostEnv, HostRef};
-use odra::{prelude::*, Address};
+use odra::{prelude::*, Address, OdraResult};
 use odra_modules::cep78::events::Mint;
 
 use crate::contracts::controller::{self, ControllerHostRef};
@@ -25,6 +25,8 @@ pub const GRACE_PERIOD: u64 = ONE_DAY * 2;
 pub const TOKEN_EXPIRATION: u64 = ONE_DAY * 365;
 pub const VOUCHER_EXPIRATION: u64 = ONE_DAY * 7;
 pub const TOKEN_HASH: &str = "label";
+pub const RESOLVER: OdraResult<Address> =
+    Address::new("hash-7ba9daac84bebee8111c186588f21ebca35550b6cf1244e71768bd871938be6a");
 
 pub struct TestContext {
     pub env: HostEnv,
@@ -56,6 +58,7 @@ impl TestContext {
             &env,
             RegistrarInitArgs {
                 name_token: *name_token.address(),
+                default_resolver: RESOLVER.unwrap(),
             },
         );
         let controller = ControllerHostRef::deploy(
@@ -152,7 +155,11 @@ impl TestContext {
         assert_eq!(actual_owner, owner, "Owner is not correct");
 
         let metadata = self.token.metadata_by_hash(&token_id);
-        let expected_metadata = NameTokenMetadata::new(token_hash, self.token_expiration_time());
+        let expected_metadata = NameTokenMetadata::with_resolver(
+            token_hash,
+            self.token_expiration_time(),
+            RESOLVER.unwrap(),
+        );
         assert_eq!(metadata, expected_metadata);
 
         assert!(

@@ -62,6 +62,13 @@ impl Controller {
         self.process_payment_voucher(&voucher, signature);
         self.registrar.prolong(voucher.into());
     }
+
+    pub fn resolve(&self, full_domain: String) -> Option<Address> {
+        // check validity of the token,
+        // loads the resolver address,
+        // resolve using the resolver.
+        None
+    }
 }
 
 impl Controller {

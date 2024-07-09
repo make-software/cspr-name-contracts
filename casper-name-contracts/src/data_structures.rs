@@ -18,13 +18,23 @@ pub enum NameTokenError {
 pub struct NameTokenMetadata {
     pub token_hash: String,
     pub expiration: u64,
+    pub resolver: Option<Address>,
 }
 
 impl NameTokenMetadata {
-    pub fn new(token_hash: &str, expiration: u64) -> Self {
+    pub fn with_resolver(token_hash: &str, expiration: u64, resolver: Address) -> Self {
         Self {
             token_hash: String::from(token_hash),
             expiration,
+            resolver: Some(resolver),
+        }
+    }
+
+    pub fn with_no_resolver(token_hash: &str, expiration: u64) -> Self {
+        Self {
+            token_hash: String::from(token_hash),
+            expiration,
+            resolver: None,
         }
     }
 
@@ -34,12 +44,6 @@ impl NameTokenMetadata {
 
     pub fn from_json(json: &str) -> Result<Self, NameTokenError> {
         serde_json_wasm::from_str(json).map_err(|_| NameTokenError::DeserializationError)
-    }
-}
-
-impl From<&NameMintInfo> for NameTokenMetadata {
-    fn from(voucher: &NameMintInfo) -> Self {
-        Self::new(&voucher.label, voucher.token_expiration)
     }
 }
 
@@ -224,13 +228,35 @@ mod tests {
     fn test_metadata_serialization() {
         let expected = r#"{
             "token_hash": "test-label",
-            "expiration": 86400
+            "expiration": 86400,
+            "resolver": null
         }"#
         .replace(" ", "")
         .replace("\n", "");
 
         // Test metadata to_json.
-        let metadata = NameTokenMetadata::new("test-label", 86400);
+        let metadata = NameTokenMetadata::with_no_resolver("test-label", 86400);
+        assert_eq!(expected, metadata.to_json().unwrap());
+
+        // Test metadata from_json.
+        let deserialized = NameTokenMetadata::from_json(&expected).unwrap();
+        assert_eq!(metadata, deserialized);
+
+        let expected = r#"{
+            "token_hash": "test-label",
+            "expiration": 86400,
+            "resolver": "hash-7ba9daac84bebee8111c186588f21ebca35550b6cf1244e71768bd871938be6a"
+        }"#
+        .replace(" ", "")
+        .replace("\n", "");
+
+        // Test metadata to_json.
+        let metadata = NameTokenMetadata::with_resolver(
+            "test-label",
+            86400,
+            Address::new("hash-7ba9daac84bebee8111c186588f21ebca35550b6cf1244e71768bd871938be6a")
+                .unwrap(),
+        );
         assert_eq!(expected, metadata.to_json().unwrap());
 
         // Test metadata from_json.

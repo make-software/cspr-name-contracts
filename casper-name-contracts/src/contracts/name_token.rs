@@ -1,3 +1,4 @@
+use crate::data_structures::NameTokenMetadata;
 use odra::args::Maybe;
 use odra::module::Revertible;
 use odra::{prelude::*, UnwrapOrRevert};
@@ -7,8 +8,6 @@ use odra_modules::cep78::modalities::{
     NFTKind, NFTMetadataKind, OwnershipMode, WhitelistMode,
 };
 use odra_modules::cep78::token::Cep78;
-
-use crate::data_structures::NameTokenMetadata;
 
 #[odra::module]
 pub struct NameToken {
@@ -161,7 +160,32 @@ impl NameToken {
     }
 
     pub fn metadata_by_hash(&self, token_hash: &String) -> NameTokenMetadata {
-        let metadata = self.metadata(Maybe::None, Maybe::Some(token_hash.clone()));
+        self._metadata_by_hash(token_hash.to_string())
+    }
+
+    pub fn resolver(&self, token_id: String) -> Option<Address> {
+        let metadata = self._metadata_by_hash(token_id);
+        metadata.resolver
+    }
+
+    pub fn set_resolver(&mut self, token_id: String, resolver: Address) {
+        let metadata = self._metadata_by_hash(token_id.clone());
+        let new_metadata = NameTokenMetadata {
+            resolver: Some(resolver),
+            ..metadata
+        };
+        self.set_token_metadata(
+            Maybe::None,
+            Maybe::Some(token_id),
+            new_metadata.to_json().unwrap_or_revert(self),
+        );
+    }
+}
+
+impl NameToken {
+    #[inline]
+    fn _metadata_by_hash(&self, token_hash: String) -> NameTokenMetadata {
+        let metadata = self.metadata(Maybe::None, Maybe::Some(token_hash));
         NameTokenMetadata::from_json(&metadata).unwrap_or_revert(self)
     }
 }

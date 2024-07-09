@@ -11,6 +11,8 @@ use crate::{
     data_structures::{NameTokenMetadata, TokenizationVoucher},
 };
 
+use super::resolver::ResolverContractRef;
+
 pub const CONTROLLER_ROLE: Role = [2u8; 32];
 
 #[odra::module]
@@ -18,6 +20,7 @@ pub struct Registrar {
     name_token: External<NameTokenContractRef>,
     access_control: SubModule<AccessControl>,
     grace_period: Var<u64>,
+    default_resolver: External<ResolverContractRef>,
 }
 
 #[odra::module]
@@ -30,11 +33,13 @@ impl Registrar {
         }
     }
 
-    pub fn init(&mut self, name_token: Address) {
+    pub fn init(&mut self, name_token: Address, default_resolver: Address) {
         let caller = self.env().caller();
 
         // Set NameToken address.
         self.name_token.set(name_token);
+        // Set default resolver address.
+        self.default_resolver.set(default_resolver);
 
         // Init grace period to 0.
         self.grace_period.set(0);
@@ -97,7 +102,11 @@ impl Registrar {
             }
 
             // Mint token.
-            let metadata = NameTokenMetadata::from(&info);
+            let metadata = NameTokenMetadata::with_resolver(
+                &info.label,
+                info.token_expiration,
+                *self.default_resolver.address(),
+            );
             let metadata = metadata.to_json().unwrap_or_revert(self);
             mint(
                 self.name_token.deref_mut(),
@@ -127,10 +136,26 @@ impl Registrar {
             let metadata = self.name_token.metadata_by_hash(&token.token_id);
             // check if the time for the renewal does not elapsed
             self.assert_in_renewal_period(metadata.expiration);
-            let new_metadata = NameTokenMetadata::new(&metadata.token_hash, token.token_expiration);
+            let new_metadata = NameTokenMetadata {
+                expiration: token.token_expiration,
+                ..metadata
+            };
             let new_metadata = new_metadata.to_json().unwrap_or_revert(self);
             set_token_metadata(self.name_token.deref_mut(), token.token_id, new_metadata);
         }
+    }
+
+    pub fn set_default_resolver(&mut self, resolver: Address) {
+        self.assert_caller_is_admin();
+        self.default_resolver.set(resolver);
+    }
+
+    pub fn resolve(&self, token_id: String, full_domain: String) -> Option<Address> {
+        if let Some(address) = self.name_token.resolver(token_id) {
+            let resolver = ResolverContractRef::new(self.env(), address);
+            return resolver.resolve(full_domain);
+        }
+        self.default_resolver.resolve(full_domain)
     }
 }
 
@@ -186,6 +211,12 @@ impl Registrar {
             self.revert(RegistrarError::VoucherExpired);
         }
     }
+
+    pub fn assert_token_exists(&self, token_hash: &String) {
+        if !self.name_token.token_exists(token_hash) {
+            self.revert(RegistrarError::TokenDoesNotExist);
+        }
+    }
 }
 
 #[inline]
@@ -218,6 +249,7 @@ pub enum RegistrarError {
     TokenNotExpired = 1002,
     GracePeriodExpired = 1003,
     VoucherExpired = 1004,
+    TokenDoesNotExist = 1005,
 }
 
 #[cfg(test)]
@@ -226,7 +258,7 @@ mod tests {
     use crate::{
         data_structures::TokenRenewalInfo,
         test_context::{
-            blake2b, TestContext, GRACE_PERIOD, INIT_TIME, TOKEN_EXPIRATION, TOKEN_HASH,
+            blake2b, TestContext, GRACE_PERIOD, INIT_TIME, RESOLVER, TOKEN_EXPIRATION, TOKEN_HASH,
         },
     };
     use odra::host::HostRef;
@@ -503,7 +535,11 @@ mod tests {
 
         // Then token expiration is updated.
         let metadata = ctx.token.metadata_by_hash(&test_token_hash);
-        let expected = NameTokenMetadata::new(TOKEN_HASH, INIT_TIME + 2 * TOKEN_EXPIRATION);
+        let expected = NameTokenMetadata::with_resolver(
+            TOKEN_HASH,
+            INIT_TIME + 2 * TOKEN_EXPIRATION,
+            RESOLVER.unwrap(),
+        );
         assert_eq!(metadata, expected);
     }
 

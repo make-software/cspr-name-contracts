@@ -169,7 +169,7 @@ impl NameToken {
     }
 
     pub fn set_resolver(&mut self, token_id: String, resolver: Address) {
-        if self.token.owner_of_by_id(&token_hash) != self.env().caller() {
+        if self.token.owner_of_by_id(&token_id) != self.env().caller() {
             self.revert(NameTokenError::InvalidTokenOwner);
         }
         let metadata = self._metadata_by_hash(token_id.clone());

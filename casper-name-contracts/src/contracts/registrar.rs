@@ -175,17 +175,17 @@ impl Registrar {
 }
 
 impl Registrar {
-    pub fn assert_caller_is_controller(&self) {
+    fn assert_caller_is_controller(&self) {
         self.access_control
             .check_role(&CONTROLLER_ROLE, &self.env().caller());
     }
 
-    pub fn assert_caller_is_admin(&self) {
+    fn assert_caller_is_admin(&self) {
         self.access_control
             .check_role(&DEFAULT_ADMIN_ROLE, &self.env().caller());
     }
 
-    pub fn assert_in_renewal_period(&mut self, expiration: u64) {
+    fn assert_in_renewal_period(&mut self, expiration: u64) {
         let grace_period = self.grace_period();
         let block_time = self.env().get_block_time();
         if block_time > expiration + grace_period {
@@ -199,14 +199,14 @@ impl Registrar {
         }
     }
 
-    pub fn expire_single(&mut self, token_hash: String, block_time: u64, grace_period: u64) {
+    fn expire_single(&mut self, token_hash: String, block_time: u64, grace_period: u64) {
         let metadata = self.name_token.metadata_by_hash(&token_hash);
         if metadata.expiration + grace_period < block_time {
             self.burn(&token_hash, &metadata);
         }
     }
 
-    pub fn compute_namehash(&self, label: &String) -> String {
+    fn compute_namehash(&self, label: &String) -> String {
         let hash = self.env().hash(label);
         hex::encode(hash)
     }
@@ -222,12 +222,6 @@ impl Registrar {
     fn assert_voucher_not_expired<T: ExpirableVoucher>(&self, voucher: &T, block_time: u64) {
         if voucher.expiration_time() < block_time {
             self.revert(RegistrarError::VoucherExpired);
-        }
-    }
-
-    pub fn assert_token_exists(&self, token_hash: &String) {
-        if !self.name_token.token_exists(token_hash) {
-            self.revert(RegistrarError::TokenDoesNotExist);
         }
     }
 
@@ -247,7 +241,7 @@ impl Registrar {
         let name_token = self.name_token.deref_mut();
         set_token_metadata(name_token, token_hash.to_owned(), token_meta_data);
         burn(name_token, token_hash.to_owned());
-    }
+    }    
 }
 
 #[inline]

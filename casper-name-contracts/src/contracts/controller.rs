@@ -64,10 +64,7 @@ impl Controller {
     }
 
     pub fn resolve(&self, full_domain: String) -> Option<Address> {
-        // check validity of the token,
-        // loads the resolver address,
-        // resolve using the resolver.
-        None
+        self.registrar.resolve(full_domain)
     }
 }
 

@@ -14,6 +14,7 @@ use crate::{
 use super::resolver::ResolverContractRef;
 
 pub const CONTROLLER_ROLE: Role = [2u8; 32];
+pub const CSPR_DOMAIN: &str = "cspr";
 
 #[odra::module]
 pub struct Registrar {
@@ -75,9 +76,9 @@ impl Registrar {
 
     pub fn admin_burn(&mut self, token_hashes: Vec<String>) {
         self.assert_caller_is_admin();
-        let name_token = self.name_token.deref_mut();
         for token_hash in token_hashes {
-            burn(name_token, token_hash);
+            let metadata = self.name_token.metadata_by_hash(&token_hash);
+            self.burn(&token_hash, &metadata);
         }
     }
 
@@ -97,8 +98,9 @@ impl Registrar {
 
             // If token exists and is expired and grace period is over, burn it.
             if token_exists {
-                self.assert_token_expired(&token_hash, block_time);
-                burn(self.name_token.deref_mut(), token_hash.clone());
+                let metadata = self.name_token.metadata_by_hash(&token_hash);
+                self.assert_token_expired(metadata.expiration, block_time);
+                self.burn(&token_hash, &metadata);
             }
 
             // Mint token.
@@ -150,10 +152,23 @@ impl Registrar {
         self.default_resolver.set(resolver);
     }
 
-    pub fn resolve(&self, token_id: String, full_domain: String) -> Option<Address> {
+    pub fn resolve(&self, full_domain: String) -> Option<Address> {
+        if !full_domain.ends_with(CSPR_DOMAIN) {
+            return None;
+        }
+        let token_id = full_domain.split('.').next_back()?.to_owned();
+
+        if !self.name_token.token_exists(&token_id) {
+            return None;
+        }
+
+        let metadata = self.name_token.metadata_by_hash(&token_id);
+        if metadata.expiration < self.env().get_block_time() {
+            return None;
+        }
+
         if let Some(address) = self.name_token.resolver(token_id) {
-            let resolver = ResolverContractRef::new(self.env(), address);
-            return resolver.resolve(full_domain);
+            return ResolverContractRef::new(self.env(), address).resolve(full_domain);
         }
         self.default_resolver.resolve(full_domain)
     }
@@ -185,10 +200,9 @@ impl Registrar {
     }
 
     pub fn expire_single(&mut self, token_hash: String, block_time: u64, grace_period: u64) {
-        let name_token = self.name_token.deref_mut();
-        let metadata = name_token.metadata_by_hash(&token_hash);
+        let metadata = self.name_token.metadata_by_hash(&token_hash);
         if metadata.expiration + grace_period < block_time {
-            burn(name_token, token_hash);
+            self.burn(&token_hash, &metadata);
         }
     }
 
@@ -198,9 +212,8 @@ impl Registrar {
     }
 
     #[inline]
-    fn assert_token_expired(&self, token_hash: &String, block_time: u64) {
-        let metadata = self.name_token.metadata_by_hash(token_hash);
-        let rebuy_time = metadata.expiration + self.grace_period();
+    fn assert_token_expired(&self, token_expiration: u64, block_time: u64) {
+        let rebuy_time = token_expiration + self.grace_period();
         if block_time < rebuy_time {
             self.revert(RegistrarError::TokenNotExpired);
         }
@@ -217,11 +230,24 @@ impl Registrar {
             self.revert(RegistrarError::TokenDoesNotExist);
         }
     }
-}
 
-#[inline]
-fn burn(name_token: &mut NameTokenContractRef, token_hash: String) {
-    name_token.burn(Maybe::None, Maybe::Some(token_hash));
+    #[inline]
+    fn burn(&mut self, token_hash: &str, metadata: &NameTokenMetadata) {
+        let env = self.env().clone();
+        let resolver = self.name_token.resolver(token_hash.to_owned());
+        if let Some(resolver) = resolver {
+            ResolverContractRef::new(env, resolver).cleanup(token_hash.to_owned());
+        }
+        let metadata = NameTokenMetadata {
+            resolver: None,
+            ..metadata.clone()
+        };
+        let token_meta_data = metadata.to_json().unwrap_or_revert(self);
+
+        let name_token = self.name_token.deref_mut();
+        set_token_metadata(name_token, token_hash.to_owned(), token_meta_data);
+        burn(name_token, token_hash.to_owned());
+    }
 }
 
 #[inline]
@@ -243,6 +269,11 @@ fn set_token_metadata(
     name_token.set_token_metadata(Maybe::None, Maybe::Some(token_hash), token_meta_data);
 }
 
+#[inline]
+fn burn(name_token: &mut NameTokenContractRef, token_hash: String) {
+    name_token.burn(Maybe::None, Maybe::Some(token_hash));
+}
+
 #[odra::odra_error]
 pub enum RegistrarError {
     ExpirationDateInThePast = 1001,
@@ -258,7 +289,7 @@ mod tests {
     use crate::{
         data_structures::TokenRenewalInfo,
         test_context::{
-            blake2b, TestContext, GRACE_PERIOD, INIT_TIME, RESOLVER, TOKEN_EXPIRATION, TOKEN_HASH,
+            blake2b, TestContext, GRACE_PERIOD, INIT_TIME, TOKEN_EXPIRATION, TOKEN_HASH,
         },
     };
     use odra::host::HostRef;
@@ -538,7 +569,7 @@ mod tests {
         let expected = NameTokenMetadata::with_resolver(
             TOKEN_HASH,
             INIT_TIME + 2 * TOKEN_EXPIRATION,
-            RESOLVER.unwrap(),
+            *ctx.default_resolver.address(),
         );
         assert_eq!(metadata, expected);
     }

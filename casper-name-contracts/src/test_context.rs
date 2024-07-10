@@ -6,11 +6,12 @@ use odra::args::Maybe;
 use odra::casper_types::bytesrepr::{Bytes, ToBytes};
 use odra::casper_types::U512;
 use odra::host::{Deployer, HostEnv, HostRef};
-use odra::{prelude::*, Address, OdraResult};
+use odra::{prelude::*, Address};
 use odra_modules::cep78::events::Mint;
 
 use crate::contracts::controller::{self, ControllerHostRef};
 use crate::contracts::registrar::{RegistrarInitArgs, CONTROLLER_ROLE};
+use crate::contracts::resolver::{MockResolverHostRef, MockResolverInitArgs};
 use crate::contracts::{
     name_token::{NameTokenHostRef, NameTokenInitArgs},
     registrar::RegistrarHostRef,
@@ -25,14 +26,13 @@ pub const GRACE_PERIOD: u64 = ONE_DAY * 2;
 pub const TOKEN_EXPIRATION: u64 = ONE_DAY * 365;
 pub const VOUCHER_EXPIRATION: u64 = ONE_DAY * 7;
 pub const TOKEN_HASH: &str = "label";
-pub const RESOLVER: OdraResult<Address> =
-    Address::new("hash-7ba9daac84bebee8111c186588f21ebca35550b6cf1244e71768bd871938be6a");
 
 pub struct TestContext {
     pub env: HostEnv,
     pub token: NameTokenHostRef,
     pub registrar: RegistrarHostRef,
     pub controller: ControllerHostRef,
+    pub default_resolver: MockResolverHostRef,
     pub admin: Address,
     pub alice: Address,
     pub bob: Address,
@@ -54,11 +54,17 @@ impl TestContext {
                 symbol: String::from(NAME_TOKEN_SYMBOL),
             },
         );
+        let resolver = MockResolverHostRef::deploy(
+            &env,
+            MockResolverInitArgs {
+                name_token: *name_token.address(),
+            },
+        );
         let registrar = RegistrarHostRef::deploy(
             &env,
             RegistrarInitArgs {
                 name_token: *name_token.address(),
-                default_resolver: RESOLVER.unwrap(),
+                default_resolver: *resolver.address(),
             },
         );
         let controller = ControllerHostRef::deploy(
@@ -79,6 +85,7 @@ impl TestContext {
             token: name_token,
             registrar,
             controller,
+            default_resolver: resolver,
             admin: env.get_account(0),
             alice: env.get_account(1),
             bob: env.get_account(2),
@@ -158,7 +165,7 @@ impl TestContext {
         let expected_metadata = NameTokenMetadata::with_resolver(
             token_hash,
             self.token_expiration_time(),
-            RESOLVER.unwrap(),
+            *self.default_resolver.address(),
         );
         assert_eq!(metadata, expected_metadata);
 

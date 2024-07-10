@@ -1,7 +1,7 @@
 use std::str::FromStr;
 
 use casper_name_contracts::contracts::registrar::{Registrar, RegistrarHostRef, RegistrarInitArgs};
-use casper_name_contracts::data_structures::TokenizationVoucher;
+use casper_name_contracts::data_structures::{NameMintInfo, TokenizationVoucher};
 use odra::args::Maybe;
 use odra::contract_def::HasIdent;
 use odra::host::Deployer;
@@ -37,7 +37,9 @@ pub fn deploy_all() {
     let registrar = RegistrarHostRef::deploy(
         &env,
         RegistrarInitArgs {
-            name_token: token.address().clone(),
+            name_token: *token.address(),
+            // TODO: replace with a resolver address
+            default_resolver: *token.address(),
         },
     );
     contracts.add_contract(&Registrar::ident(), registrar.address());
@@ -68,8 +70,9 @@ pub fn registrar_register(name: &str, buyer: &str) {
     let now: u64 = chrono::Utc::now().timestamp_millis() as u64;
     let token_expiration = now + EXPIRATION;
     let voucher_expiration = now + ONE_DAY;
-    let voucher = TokenizationVoucher::new(name, owner, token_expiration, voucher_expiration);
+    let names = vec![NameMintInfo::new(name, owner, token_expiration)];
+    let voucher = TokenizationVoucher::new(names, voucher_expiration);
 
     env.set_gas(10_000_000_000);
-    contracts.registrar.register(vec![voucher]);
+    contracts.registrar.register(voucher);
 }

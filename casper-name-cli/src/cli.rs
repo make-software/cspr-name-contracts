@@ -18,6 +18,9 @@ enum Commands {
 
     #[clap(name = "registrar", about = "Administer the registrar contract.")]
     Registrar(Registrar),
+
+    #[clap(name = "controller", about = "Use the controller contract.")]
+    Controller(Controller),
 }
 
 #[derive(Debug, Parser)]
@@ -31,6 +34,18 @@ pub enum RegistrarCommands {
     Register { name: String, buyer: String },
 }
 
+#[derive(Debug, Parser)]
+pub struct Controller {
+    #[structopt(subcommand)]
+    pub controller_commands: ControllerCommands,
+}
+
+#[derive(Debug, Subcommand)]
+pub enum ControllerCommands {
+    Buy { name: String },
+}
+
+
 pub fn parse() {
     match Cli::parse().command {
         Commands::DeployContracts => actions::deploy_all(),
@@ -39,6 +54,9 @@ pub fn parse() {
             RegistrarCommands::Register { name, buyer } => {
                 actions::registrar_register(&name, &buyer)
             }
+        },
+        Commands::Controller(controller) => match controller.controller_commands {
+            ControllerCommands::Buy { name } => actions::controller_buy(&name),
         },
     }
 }

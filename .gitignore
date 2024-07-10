@@ -8,3 +8,4 @@ Cargo.lock
 .env
 .DS_Store
 /.idea
+casper-name-contracts/wasm

@@ -1,8 +1,7 @@
 use std::{fs::File, io::Write, str::FromStr};
 
 use casper_name_contracts::contracts::{
-    name_token::{NameToken, NameTokenHostRef},
-    registrar::{Registrar, RegistrarHostRef},
+    controller::ControllerHostRef, name_token::{NameToken, NameTokenHostRef}, registrar::{Registrar, RegistrarHostRef}, resolver::DefaultResolverHostRef
 };
 use chrono::{DateTime, SecondsFormat, Utc};
 use odra::{
@@ -98,6 +97,8 @@ pub struct Contract {
 pub struct DeployedContracts {
     pub token: NameTokenHostRef,
     pub registrar: RegistrarHostRef,
+    pub controller: ControllerHostRef,
+    pub resolver: DefaultResolverHostRef,
 }
 
 impl DeployedContracts {
@@ -106,6 +107,8 @@ impl DeployedContracts {
         Self {
             token: NameTokenHostRef::load(env, contracts.address(&NameToken::ident()).unwrap()),
             registrar: RegistrarHostRef::load(env, contracts.address(&Registrar::ident()).unwrap()),
+            controller: ControllerHostRef::load(env, contracts.address(&ControllerHostRef::ident()).unwrap()),
+            resolver: DefaultResolverHostRef::load(env, contracts.address(&DefaultResolverHostRef::ident()).unwrap()),
         }
     }
 }

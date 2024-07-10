@@ -36,6 +36,7 @@
 ## Resolver
 - [ ] - Set account address record [Maciek]
 
+
 ## Repo
 - [ ] - Enable CI tests
 - [ ] - Lints

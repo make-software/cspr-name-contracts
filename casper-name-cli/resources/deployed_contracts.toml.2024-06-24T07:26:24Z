@@ -1,5 +1,0 @@
-time = "2024-06-24T07:26:24Z"
-
-[[contracts]]
-name = "NameToken"
-package_hash = "hash-5838514b00ec313f089d1b3d85fcbecbcaabac9e67d74d2a2048419cd1e9cdad"

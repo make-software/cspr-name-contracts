@@ -170,7 +170,7 @@ impl Registrar {
         if let Some(address) = self.name_token.resolver(token_id) {
             return ResolverContractRef::new(self.env(), address).resolve(full_domain);
         }
-        self.default_resolver.resolve(full_domain)
+        None
     }
 }
 
@@ -230,7 +230,10 @@ impl Registrar {
         let env = self.env().clone();
         let resolver = self.name_token.resolver(token_hash.to_owned());
         if let Some(resolver) = resolver {
-            ResolverContractRef::new(env, resolver).cleanup(token_hash.to_owned());
+            // Cleanup only default resolver.
+            if &resolver == self.default_resolver.address() {
+                ResolverContractRef::new(env, resolver).cleanup(token_hash.to_owned());
+            }
         }
         let metadata = NameTokenMetadata {
             resolver: None,
@@ -241,7 +244,7 @@ impl Registrar {
         let name_token = self.name_token.deref_mut();
         set_token_metadata(name_token, token_hash.to_owned(), token_meta_data);
         burn(name_token, token_hash.to_owned());
-    }    
+    }
 }
 
 #[inline]

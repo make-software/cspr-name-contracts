@@ -169,6 +169,9 @@ impl NameToken {
     }
 
     pub fn set_resolver(&mut self, token_id: String, resolver: Address) {
+        if self.token.owner_of_by_id(&token_hash) != self.env().caller() {
+            self.revert(NameTokenError::InvalidTokenOwner);
+        }
         let metadata = self._metadata_by_hash(token_id.clone());
         let new_metadata = NameTokenMetadata {
             resolver: Some(resolver),
@@ -193,4 +196,5 @@ impl NameToken {
 #[odra::odra_error]
 pub enum NameTokenError {
     NotWhitelisted = 3001,
+    InvalidTokenOwner = 3002,
 }

@@ -214,6 +214,6 @@ impl NameToken {
 
 #[odra::odra_error]
 pub enum NameTokenError {
-    NotWhitelisted = 3001,
-    InvalidTokenOwner = 3002,
+    NotWhitelisted = 1301,
+    InvalidTokenOwner = 1302,
 }

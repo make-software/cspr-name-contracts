@@ -93,8 +93,8 @@ impl DefaultResolver {
 
 #[odra::odra_error]
 pub enum ResolverError {
-    ResolutionSetWithInvalidToken = 1500,
-    ResolutionSetByInvalidOwner = 1501,
+    ResolutionSetWithInvalidToken = 1401,
+    ResolutionSetByInvalidOwner = 1402,
 }
 
 #[cfg(test)]

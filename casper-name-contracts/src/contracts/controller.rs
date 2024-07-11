@@ -112,10 +112,10 @@ impl Controller {
 
 #[odra::odra_error]
 pub enum ControllerError {
-    InvalidSignature = 2001,
-    FeeCollectorNotSet = 2002,
-    RegistrarNotSet = 2003,
-    BuyerMustBeCaller = 2004,
+    InvalidSignature = 1101,
+    FeeCollectorNotSet = 1102,
+    RegistrarNotSet = 1103,
+    BuyerMustBeCaller = 1104,
 }
 
 #[cfg(test)]

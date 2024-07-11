@@ -269,11 +269,11 @@ fn burn(name_token: &mut NameTokenContractRef, token_hash: String) {
 
 #[odra::odra_error]
 pub enum RegistrarError {
-    ExpirationDateInThePast = 1001,
-    TokenNotExpired = 1002,
-    GracePeriodExpired = 1003,
-    VoucherExpired = 1004,
-    TokenDoesNotExist = 1005,
+    ExpirationDateInThePast = 1201,
+    TokenNotExpired = 1202,
+    GracePeriodExpired = 1203,
+    VoucherExpired = 1204,
+    TokenDoesNotExist = 1205,
 }
 
 #[cfg(test)]

@@ -7,6 +7,7 @@ use odra::casper_types::bytesrepr::{Bytes, ToBytes};
 use odra::casper_types::U512;
 use odra::host::{Deployer, HostEnv, HostRef};
 use odra::{prelude::*, Address};
+use odra_modules::access::DEFAULT_ADMIN_ROLE;
 use odra_modules::cep78::events::Mint;
 
 use crate::contracts::controller::{self, ControllerHostRef};
@@ -100,6 +101,7 @@ impl TestContext {
         // Setup access.
         contracts.whitelist_registrar_in_name_token();
         contracts.set_controller_in_registrar();
+        contracts.set_registrar_in_resolver();
 
         // Setup grace period.
         contracts.registrar.set_grace_period(GRACE_PERIOD);
@@ -118,6 +120,11 @@ impl TestContext {
     pub fn set_controller_in_registrar(&mut self) {
         self.registrar
             .grant_role(&CONTROLLER_ROLE, self.controller.address());
+    }
+
+    pub fn set_registrar_in_resolver(&mut self) {
+        self.default_resolver
+            .grant_role(&DEFAULT_ADMIN_ROLE, self.registrar.address());
     }
 
     pub fn sign<T: ToBytes>(&self, data: &T) -> Bytes {

@@ -35,7 +35,7 @@ impl DefaultResolver {
     }
 
     pub fn init(&mut self, name_token: Address) {
-        self.set_name_token(name_token);
+        self.name_token.set(name_token);
 
         let admin = self.env().caller();
         self.access_control
@@ -43,19 +43,27 @@ impl DefaultResolver {
     }
 
     pub fn set_name_token(&mut self, name_token: Address) {
+        if !self.has_role(&DEFAULT_ADMIN_ROLE, &self.env().caller()) {
+            self.env()
+                .revert(ResolverError::UnauthorizedTokenAddressUpdate);
+        }
         self.name_token.set(name_token);
     }
 
     pub fn set_resolution(&mut self, full_domain: String, address: Option<Address>) {
-        let token_hash = self.calculate_token_hash(&full_domain).unwrap_or_revert(self);
+        let token_hash = self
+            .calculate_token_hash(&full_domain)
+            .unwrap_or_revert_with(self, ResolverError::InvalidDomain);
         let caller = self.env().caller();
- 
+
         if !self.name_token.is_token_valid(&token_hash) {
-            self.env().revert(ResolverError::ResolutionSetWithInvalidToken);
+            self.env()
+                .revert(ResolverError::ResolutionSetWithInvalidToken);
         }
 
-        if self.name_token.owner_of(Maybe::None, Maybe::Some(token_hash.clone())) != caller {
-            self.env().revert(ResolverError::ResolutionSetByInvalidOwner);
+        if self.owner_of(&token_hash) != caller {
+            self.env()
+                .revert(ResolverError::ResolutionSetByInvalidOwner);
         }
 
         let nonce = self.nonce(&token_hash);
@@ -73,8 +81,13 @@ impl DefaultResolver {
     }
 
     pub fn cleanup(&mut self, token_name: String) {
+        let caller = self.env().caller();
         let hash = self.env().hash(token_name);
         let token_hash = utils::to_utf8_string(&hash).unwrap_or_revert(self);
+
+        if !self.has_role(&DEFAULT_ADMIN_ROLE, &caller) && self.owner_of(&token_hash) != caller {
+            self.env().revert(ResolverError::UnauthorizedCleanup);
+        }
         self.nonces.add(&token_hash, 1);
     }
 
@@ -85,9 +98,15 @@ impl DefaultResolver {
 
     #[inline]
     fn calculate_token_hash(&self, full_domain: &str) -> Option<TokenHash> {
-        let token_name = utils::extract_token_name(&full_domain).unwrap_or_revert(self);
+        let token_name = utils::extract_token_name(&full_domain)?;
         let hash = self.env().hash(token_name);
         Some(utils::to_utf8_string(&hash).unwrap_or_revert(self))
+    }
+
+    #[inline]
+    fn owner_of(&self, token_hash: &TokenHash) -> Address {
+        self.name_token
+            .owner_of(Maybe::None, Maybe::Some(token_hash.clone()))
     }
 }
 
@@ -95,34 +114,259 @@ impl DefaultResolver {
 pub enum ResolverError {
     ResolutionSetWithInvalidToken = 1401,
     ResolutionSetByInvalidOwner = 1402,
+    UnauthorizedCleanup = 1403,
+    UnauthorizedTokenAddressUpdate = 1404,
+    InvalidDomain = 1405,
 }
 
 #[cfg(test)]
 mod tests {
+    use odra::OdraResult;
+
     use super::*;
-    use crate::test_context::TestContext;
+    use crate::test_context::{blake2b, TestContext, TOKEN_EXPIRATION};
+
+    const TOKEN_NAME: &str = "odra";
+    const NON_EXISTENT_TOKEN_DOMAIN: &str = "odra2.cspr";
+    const NON_CSPR_DOMAIN: &str = "odra.com";
+    const MAIN_DOMAIN: &str = "odra.cspr";
+    const SUBDOMAIN: &str = "docs.odra.cspr";
 
     #[test]
-    fn test_default_resolver() {
+    fn deployer_is_admin() {
+        // Given the contract is deployed
+        let (ctx, admin, _, _) = setup();
+        // Then the deployer is the admin
+        assert!(ctx.default_resolver.has_role(&DEFAULT_ADMIN_ROLE, &admin));
+    }
+
+    #[test]
+    fn only_admin_can_set_name_token() {
+        let (mut ctx, admin, alice, _) = setup();
+
+        // When alice tries to set the name token
+        ctx.set_caller(alice);
+        // Then the operation fails
+        assert!(ctx.default_resolver.try_set_name_token(alice).is_err());
+
+        // When the admin sets the name token
+        ctx.set_caller(admin);
+        // Then the operation succeeds
+        assert!(ctx.default_resolver.try_set_name_token(alice).is_ok());
+    }
+
+    #[test]
+    fn anyone_can_resolve() {
+        let (mut ctx, _, alice, bob) = setup();
+
+        // When alice sets the resolution for the main domain
+        set_resolution_with_caller(&mut ctx, MAIN_DOMAIN, alice, alice);
+        // Then alice can resolve the main domain
+        assert_eq!(
+            resolve_with_caller(&mut ctx, MAIN_DOMAIN, alice),
+            Some(alice)
+        );
+        // And bob can also resolve the main domain
+        assert_eq!(resolve_with_caller(&mut ctx, MAIN_DOMAIN, bob), Some(alice));
+    }
+
+    #[test]
+    fn only_owner_can_set_resolution() {
+        let (mut ctx, admin, alice, bob) = setup();
+
+        // When alice sets the resolution for the main domain
+        ctx.set_caller(alice);
+        // Then the operation succeeds
+        assert!(try_set_resolution(&mut ctx, MAIN_DOMAIN, alice).is_ok());
+
+        // When admin sets the resolution for the main domain
+        ctx.set_caller(admin);
+        // Then the operation fails
+        assert_eq!(
+            try_set_resolution(&mut ctx, MAIN_DOMAIN, admin).err(),
+            Some(ResolverError::ResolutionSetByInvalidOwner.into())
+        );
+        // When bob sets the resolution for the main domain
+        ctx.set_caller(bob);
+        // Then the operation fails
+        assert_eq!(
+            try_set_resolution(&mut ctx, MAIN_DOMAIN, bob).err(),
+            Some(ResolverError::ResolutionSetByInvalidOwner.into())
+        );
+    }
+
+    #[test]
+    fn cannot_set_resolution_with_non_existent_token() {
+        let (mut ctx, _, alice, _) = setup();
+
+        // When alice tries to set the resolution for a non-existent token
+        ctx.set_caller(alice);
+        let result = try_set_resolution(&mut ctx, NON_EXISTENT_TOKEN_DOMAIN, alice);
+        // Then the operation fails
+        assert_eq!(
+            result,
+            Err(ResolverError::ResolutionSetWithInvalidToken.into())
+        );
+    }
+
+    #[test]
+    fn cannot_set_resolution_with_expired_token() {
+        // Given the token has expired
+        let (mut ctx, _, alice, _) = setup();
+        ctx.advance_block_time(TOKEN_EXPIRATION + 1);
+
+        // When alice tries to set the resolution
+        ctx.set_caller(alice);
+        let result = try_set_resolution(&mut ctx, SUBDOMAIN, alice);
+        // Then the operation fails
+        assert_eq!(
+            result,
+            Err(ResolverError::ResolutionSetWithInvalidToken.into())
+        );
+    }
+
+    #[test]
+    fn cannot_set_resolution_with_non_cspr_domain() {
+        let (mut ctx, _, alice, _) = setup();
+        // When alice tries to set the resolution for a non-cspr domain
+        ctx.set_caller(alice);
+        let result = try_set_resolution(&mut ctx, NON_CSPR_DOMAIN, alice);
+        // Then the operation fails
+        assert_eq!(result, Err(ResolverError::InvalidDomain.into()));
+    }
+
+    #[test]
+    fn cannot_set_resolution_with_burned_token() {
+        // Given the token has been burned
+        let (mut ctx, admin, alice, _) = setup();
+        ctx.set_caller(admin);
+        ctx.token
+            .set_variables(Maybe::Some(true), Maybe::Some(vec![admin]), Maybe::None);
+        ctx.token
+            .burn(Maybe::None, Maybe::Some(blake2b(TOKEN_NAME)));
+        // When alice tries to set the resolution
+        ctx.set_caller(alice);
+        let result = try_set_resolution(&mut ctx, SUBDOMAIN, alice);
+        // Then the operation fails
+        assert_eq!(
+            result,
+            Err(ResolverError::ResolutionSetWithInvalidToken.into())
+        );
+    }
+
+    #[test]
+    fn cleanup_erases_subdomains() {
+        let (mut ctx, _, alice, bob) = setup();
+
+        // When alice sets the resolution for the main domain and a subdomain
+        ctx.set_caller(alice);
+        set_resolution(&mut ctx, MAIN_DOMAIN, alice);
+        set_resolution(&mut ctx, SUBDOMAIN, bob);
+
+        // Then both resolutions are set
+        assert_eq!(resolve(&ctx, MAIN_DOMAIN), Some(alice));
+        assert_eq!(resolve(&ctx, SUBDOMAIN), Some(bob));
+
+        // When alice cleans up the token's resolutions
+        cleanup(&mut ctx, TOKEN_NAME);
+
+        // Then both resolutions are erased
+        assert_eq!(resolve(&ctx, MAIN_DOMAIN), None);
+        assert_eq!(resolve(&ctx, SUBDOMAIN), None);
+    }
+
+    #[test]
+    fn admin_can_cleanup_any_token() {
+        let (mut ctx, admin, alice, bob) = setup();
+
+        // When alice sets the resolution for the main domain and a subdomain
+        ctx.set_caller(alice);
+        set_resolution(&mut ctx, MAIN_DOMAIN, alice);
+        set_resolution(&mut ctx, SUBDOMAIN, bob);
+
+        // Then both resolutions are set
+        assert_eq!(resolve(&ctx, MAIN_DOMAIN), Some(alice));
+        assert_eq!(resolve(&ctx, SUBDOMAIN), Some(bob));
+
+        // When the admin cleans up alice's token's resolutions
+        cleanup_with_caller(&mut ctx, TOKEN_NAME, admin);
+
+        // Then both resolutions are erased
+        assert_eq!(resolve(&ctx, MAIN_DOMAIN), None);
+        assert_eq!(resolve(&ctx, SUBDOMAIN), None);
+    }
+
+    #[test]
+    fn only_owner_or_admin_can_cleanup() {
+        let (mut ctx, _, alice, bob) = setup();
+
+        // When alice sets the resolution for the main domain and a subdomain
+        ctx.set_caller(alice);
+        set_resolution(&mut ctx, MAIN_DOMAIN, alice);
+        set_resolution(&mut ctx, SUBDOMAIN, bob);
+
+        // Then both resolutions are set
+        assert_eq!(resolve(&ctx, MAIN_DOMAIN), Some(alice));
+        assert_eq!(resolve(&ctx, SUBDOMAIN), Some(bob));
+
+        // When bob tries to clean up alice's token's resolutions
+        ctx.set_caller(bob);
+        let result = try_cleanup(&mut ctx, TOKEN_NAME);
+        // Then the operation fails
+        assert_eq!(result, Err(ResolverError::UnauthorizedCleanup.into()));
+    }
+
+    fn setup() -> (TestContext, Address, Address, Address) {
         let mut ctx = TestContext::install_and_setup();
         let (admin, alice, bob) = (ctx.admin, ctx.alice, ctx.bob);
-        let token_name = "odra";
 
-        ctx.with_name_registered(admin, alice, token_name);
+        ctx.with_name_registered(admin, alice, TOKEN_NAME);
+        (ctx, admin, alice, bob)
+    }
 
-        let main_domain = "odra.cspr".to_string();
-        let subdomain = "docs.odra.cspr".to_string();
+    fn set_resolution(ctx: &mut TestContext, domain: &str, address: Address) {
+        ctx.default_resolver
+            .set_resolution(domain.to_string(), Some(address));
+    }
 
-        ctx.set_caller(alice);
-        ctx.default_resolver.set_resolution(main_domain.clone(), Some(alice));
-        ctx.default_resolver.set_resolution(subdomain.clone(), Some(bob));
+    fn try_set_resolution(ctx: &mut TestContext, domain: &str, address: Address) -> OdraResult<()> {
+        ctx.default_resolver
+            .try_set_resolution(domain.to_string(), Some(address))
+    }
 
-        assert_eq!(ctx.default_resolver.resolve(main_domain.clone()), Some(alice));
-        assert_eq!(ctx.default_resolver.resolve(subdomain.clone()), Some(bob));
+    fn set_resolution_with_caller(
+        ctx: &mut TestContext,
+        domain: &str,
+        address: Address,
+        caller: Address,
+    ) {
+        ctx.set_caller(caller);
+        set_resolution(ctx, domain, address);
+    }
 
-        ctx.default_resolver.cleanup(token_name.to_string());
+    fn resolve(ctx: &TestContext, domain: &str) -> Option<Address> {
+        ctx.default_resolver.resolve(domain.to_string())
+    }
 
-        assert_eq!(ctx.default_resolver.resolve(main_domain), None);
-        assert_eq!(ctx.default_resolver.resolve(subdomain), None);
+    fn resolve_with_caller(
+        ctx: &mut TestContext,
+        domain: &str,
+        caller: Address,
+    ) -> Option<Address> {
+        ctx.set_caller(caller);
+        resolve(ctx, domain)
+    }
+
+    fn cleanup(ctx: &mut TestContext, token_name: &str) {
+        try_cleanup(ctx, token_name).unwrap();
+    }
+
+    fn cleanup_with_caller(ctx: &mut TestContext, token_name: &str, caller: Address) {
+        ctx.set_caller(caller);
+        cleanup(ctx, token_name);
+    }
+
+    fn try_cleanup(ctx: &mut TestContext, token_name: &str) -> OdraResult<()> {
+        ctx.default_resolver.try_cleanup(token_name.to_string())
     }
 }

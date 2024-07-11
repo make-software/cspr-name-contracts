@@ -1,6 +1,7 @@
-use odra::{prelude::*, Address, External, Mapping, Var};
+use odra::{args::Maybe, prelude::*, Address, External, Mapping, SubModule, UnwrapOrRevert};
+use odra_modules::access::{AccessControl, Role, DEFAULT_ADMIN_ROLE};
 
-use super::name_token::NameTokenContractRef;
+use super::{name_token::NameTokenContractRef, utils};
 
 #[odra::external_contract]
 pub trait Resolver {
@@ -8,76 +9,37 @@ pub trait Resolver {
     fn set_name_token(&mut self, name_token: Address);
     fn set_resolution(&mut self, full_domain: String, address: Option<Address>);
     fn resolve(&self, full_domain: String) -> Option<Address>;
-    fn cleanup(&mut self, token_id: String);
+    fn cleanup(&mut self, token_name: String);
 }
 
-pub type TokenHash = String;
-pub type Subdomain = String;
-pub type Nonce = u32;
+type TokenHash = String;
+type Domain = String;
+type Nonce = u32;
 
 #[odra::module]
 pub struct DefaultResolver {
+    access_control: SubModule<AccessControl>,
+    name_token: External<NameTokenContractRef>,
     nonces: Mapping<TokenHash, Nonce>,
-    resolutions: Mapping<(TokenHash,Subdomain, Nonce), Address>
+    resolutions: Mapping<(TokenHash, Domain, Nonce), Option<Address>>,
 }
 
 #[odra::module]
 impl DefaultResolver {
-    pub fn init(&mut self) {}
-
-    pub fn set_resolution(&mut self, token_hash: TokenHash, subdomain: Subdomain, address: Address) {
-        let nonce = self.nonce(&token_hash);
-        self.resolutions.set(&(token_hash, subdomain, nonce), address);
+    delegate! {
+        to self.access_control {
+            fn has_role(&self, role: &Role, address: &Address) -> bool;
+            fn grant_role(&mut self, role: &Role, address: &Address);
+            fn revoke_role(&mut self, role: &Role, address: &Address);
+        }
     }
 
-    pub fn resolve(&self, token_hash: TokenHash, subdomain: Subdomain) -> Option<Address> {
-        let nonce = self.nonce(&token_hash);
-        self.resolutions.get(&(token_hash, subdomain, nonce))
-    }
-
-    fn nonce(&self, token_hash: &TokenHash) -> Nonce {
-        self.nonces.get_or_default(token_hash)
-    }
-
-    pub fn cleanup(&mut self, token_hash: TokenHash) {
-        self.nonces.add(&token_hash, 1);
-    }
-}
-
-#[cfg(test)]
-mod tests {
-    use odra::host::{Deployer, NoArgs};
-
-    use super::*;
-    
-    #[test]
-    fn test_default_resolver() {
-        let env = odra_test::env();
-        let mut resolver = DefaultResolverHostRef::deploy(&env, NoArgs);
-
-        let token_hash = "token_hash".to_string();
-        let subdomain = "subdomain".to_string();
-        let address = env.get_account(4);
-
-        resolver.set_resolution(token_hash.clone(), subdomain.clone(), address);
-        assert_eq!(resolver.resolve(token_hash.clone(), subdomain.clone()), Some(address));
-
-        resolver.cleanup(token_hash.clone());
-
-        assert_eq!(resolver.resolve(token_hash.clone(), subdomain.clone()), None);
-    }        
-}
-
-#[odra::module]
-pub struct MockResolver {
-    name_token: External<NameTokenContractRef>,
-    resolutions: Var<BTreeMap<String, Option<Address>>>,
-}
-
-#[odra::module]
-impl MockResolver {
     pub fn init(&mut self, name_token: Address) {
-        self.name_token.set(name_token);
+        self.set_name_token(name_token);
+
+        let admin = self.env().caller();
+        self.access_control
+            .unchecked_grant_role(&DEFAULT_ADMIN_ROLE, &admin);
     }
 
     pub fn set_name_token(&mut self, name_token: Address) {
@@ -85,17 +47,82 @@ impl MockResolver {
     }
 
     pub fn set_resolution(&mut self, full_domain: String, address: Option<Address>) {
-        let mut resolutions = self.resolutions.get_or_default();
-        resolutions.insert(full_domain, address);
-        self.resolutions.set(resolutions);
+        let token_hash = self.calculate_token_hash(&full_domain).unwrap_or_revert(self);
+        let caller = self.env().caller();
+ 
+        if !self.name_token.is_token_valid(&token_hash) {
+            self.env().revert(ResolverError::ResolutionSetWithInvalidToken);
+        }
+
+        if self.name_token.owner_of(Maybe::None, Maybe::Some(token_hash.clone())) != caller {
+            self.env().revert(ResolverError::ResolutionSetByInvalidOwner);
+        }
+
+        let nonce = self.nonce(&token_hash);
+        self.resolutions
+            .set(&(token_hash, full_domain, nonce), address);
     }
 
     pub fn resolve(&self, full_domain: String) -> Option<Address> {
-        let resolutions = self.resolutions.get()?;
-        resolutions.get(&full_domain).copied().flatten()
+        let token_hash = self.calculate_token_hash(&full_domain)?;
+        let nonce = self.nonce(&token_hash);
+
+        self.resolutions
+            .get(&(token_hash, full_domain, nonce))
+            .flatten()
     }
 
-    pub fn cleanup(&mut self, #[allow(unused_variables)] token_id: String) {
-        self.resolutions.set(BTreeMap::new());
+    pub fn cleanup(&mut self, token_name: String) {
+        let hash = self.env().hash(token_name);
+        let token_hash = utils::to_utf8_string(&hash).unwrap_or_revert(self);
+        self.nonces.add(&token_hash, 1);
+    }
+
+    #[inline]
+    fn nonce(&self, token_hash: &TokenHash) -> Nonce {
+        self.nonces.get_or_default(token_hash)
+    }
+
+    #[inline]
+    fn calculate_token_hash(&self, full_domain: &str) -> Option<TokenHash> {
+        let token_name = utils::extract_token_name(&full_domain).unwrap_or_revert(self);
+        let hash = self.env().hash(token_name);
+        Some(utils::to_utf8_string(&hash).unwrap_or_revert(self))
+    }
+}
+
+#[odra::odra_error]
+pub enum ResolverError {
+    ResolutionSetWithInvalidToken = 1500,
+    ResolutionSetByInvalidOwner = 1501,
+}
+
+#[cfg(test)]
+mod tests {
+    use super::*;
+    use crate::test_context::TestContext;
+
+    #[test]
+    fn test_default_resolver() {
+        let mut ctx = TestContext::install_and_setup();
+        let (admin, alice, bob) = (ctx.admin, ctx.alice, ctx.bob);
+        let token_name = "odra";
+
+        ctx.with_name_registered(admin, alice, token_name);
+
+        let main_domain = "odra.cspr".to_string();
+        let subdomain = "docs.odra.cspr".to_string();
+
+        ctx.set_caller(alice);
+        ctx.default_resolver.set_resolution(main_domain.clone(), Some(alice));
+        ctx.default_resolver.set_resolution(subdomain.clone(), Some(bob));
+
+        assert_eq!(ctx.default_resolver.resolve(main_domain.clone()), Some(alice));
+        assert_eq!(ctx.default_resolver.resolve(subdomain.clone()), Some(bob));
+
+        ctx.default_resolver.cleanup(token_name.to_string());
+
+        assert_eq!(ctx.default_resolver.resolve(main_domain), None);
+        assert_eq!(ctx.default_resolver.resolve(subdomain), None);
     }
 }

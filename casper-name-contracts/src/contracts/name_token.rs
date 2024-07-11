@@ -183,6 +183,25 @@ impl NameToken {
             new_metadata.to_json().unwrap_or_revert(self),
         );
     }
+
+    pub fn assert_is_owner(&self, token_id: &String, address: Address) {
+        let owner = self.token.owner_of_by_id(token_id);
+        if owner != address {
+            self.revert(NameTokenError::InvalidTokenOwner);
+        }
+    }
+
+    pub fn is_token_valid(&self, token_hash: &String) -> bool {
+        if !self.token.token_exists_by_hash(token_hash) {
+            return false;
+        }
+
+        let metadata = self._metadata_by_hash(token_hash.to_owned());
+        if metadata.expiration < self.env().get_block_time() {
+            return false;
+        }
+        true
+    }
 }
 
 impl NameToken {

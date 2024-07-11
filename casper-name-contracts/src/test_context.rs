@@ -11,7 +11,7 @@ use odra_modules::cep78::events::Mint;
 
 use crate::contracts::controller::{self, ControllerHostRef};
 use crate::contracts::registrar::{RegistrarInitArgs, CONTROLLER_ROLE};
-use crate::contracts::resolver::{MockResolverHostRef, MockResolverInitArgs};
+use crate::contracts::resolver::{DefaultResolverHostRef, DefaultResolverInitArgs};
 use crate::contracts::{
     name_token::{NameTokenHostRef, NameTokenInitArgs},
     registrar::RegistrarHostRef,
@@ -32,7 +32,7 @@ pub struct TestContext {
     pub token: NameTokenHostRef,
     pub registrar: RegistrarHostRef,
     pub controller: ControllerHostRef,
-    pub default_resolver: MockResolverHostRef,
+    pub default_resolver: DefaultResolverHostRef,
     pub admin: Address,
     pub alice: Address,
     pub bob: Address,
@@ -54,9 +54,9 @@ impl TestContext {
                 symbol: String::from(NAME_TOKEN_SYMBOL),
             },
         );
-        let resolver = MockResolverHostRef::deploy(
+        let resolver = DefaultResolverHostRef::deploy(
             &env,
-            MockResolverInitArgs {
+            DefaultResolverInitArgs {
                 name_token: *name_token.address(),
             },
         );

@@ -12,9 +12,9 @@ use crate::{
 };
 
 use super::resolver::ResolverContractRef;
+use super::utils;
 
 pub const CONTROLLER_ROLE: Role = [2u8; 32];
-pub const CSPR_DOMAIN: &str = "cspr";
 
 #[odra::module]
 pub struct Registrar {
@@ -153,24 +153,15 @@ impl Registrar {
     }
 
     pub fn resolve(&self, full_domain: String) -> Option<Address> {
-        if !full_domain.ends_with(CSPR_DOMAIN) {
-            return None;
-        }
-        let token_id = full_domain.split('.').next_back()?.to_owned();
-
-        if !self.name_token.token_exists(&token_id) {
+        let token_name = utils::extract_token_name(&full_domain)?;
+        if !self.name_token.is_token_valid(&token_name) {
             return None;
         }
 
-        let metadata = self.name_token.metadata_by_hash(&token_id);
-        if metadata.expiration < self.env().get_block_time() {
-            return None;
+        match self.name_token.resolver(token_name) {
+            Some(address) => self.resolver(address).resolve(full_domain),
+            None => None,
         }
-
-        if let Some(address) = self.name_token.resolver(token_id) {
-            return ResolverContractRef::new(self.env(), address).resolve(full_domain);
-        }
-        None
     }
 }
 
@@ -208,7 +199,7 @@ impl Registrar {
 
     fn compute_namehash(&self, label: &String) -> String {
         let hash = self.env().hash(label);
-        hex::encode(hash)
+        utils::to_utf8_string(&hash).unwrap_or_revert(self)
     }
 
     #[inline]
@@ -219,6 +210,7 @@ impl Registrar {
         }
     }
 
+    #[inline]
     fn assert_voucher_not_expired<T: ExpirableVoucher>(&self, voucher: &T, block_time: u64) {
         if voucher.expiration_time() < block_time {
             self.revert(RegistrarError::VoucherExpired);
@@ -227,12 +219,11 @@ impl Registrar {
 
     #[inline]
     fn burn(&mut self, token_hash: &str, metadata: &NameTokenMetadata) {
-        let env = self.env().clone();
         let resolver = self.name_token.resolver(token_hash.to_owned());
         if let Some(resolver) = resolver {
             // Cleanup only default resolver.
-            if &resolver == self.default_resolver.address() {
-                ResolverContractRef::new(env, resolver).cleanup(token_hash.to_owned());
+            if resolver == *self.default_resolver.address() {
+                self.resolver(resolver).cleanup(token_hash.to_owned());
             }
         }
         let metadata = NameTokenMetadata {
@@ -244,6 +235,11 @@ impl Registrar {
         let name_token = self.name_token.deref_mut();
         set_token_metadata(name_token, token_hash.to_owned(), token_meta_data);
         burn(name_token, token_hash.to_owned());
+    }
+
+    #[inline]
+    fn resolver(&self, address: Address) -> ResolverContractRef {
+        ResolverContractRef::new(self.env(), address)
     }
 }
 

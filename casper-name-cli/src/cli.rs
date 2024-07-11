@@ -45,7 +45,6 @@ pub enum ControllerCommands {
     Buy { name: String },
 }
 
-
 pub fn parse() {
     match Cli::parse().command {
         Commands::DeployContracts => actions::deploy_all(),

@@ -9,6 +9,3 @@ fqn = "casper_name_contracts::contracts::controller::Controller"
 
 [[contracts]]
 fqn = "casper_name_contracts::contracts::resolver::DefaultResolver"
-
-[[contracts]]
-fqn = "casper_name_contracts::contracts::resolver::MockResolver"

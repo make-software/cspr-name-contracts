@@ -123,8 +123,8 @@ mod tests {
     use odra::{casper_types::U512, host::HostRef};
 
     use crate::{
-        data_structures::{NameMintInfo, PaymentVoucher},
-        test_context::{TestContext, TOKEN_HASH},
+        data_structures::{NameMintInfo, PaymentVoucher, RenewalPaymentVoucher, TokenRenewalInfo},
+        test_context::{TestContext, INIT_TIME, TOKEN_EXPIRATION, TOKEN_HASH},
     };
 
     #[test]
@@ -150,6 +150,46 @@ mod tests {
         ctx.controller
             .with_tokens(amount)
             .buy(voucher, signature.clone());
+
+        // Token was minted.
+        assert_eq!(ctx.token.balance_of(alice), 1);
+
+        // CSPR balances after the purchase.
+        assert_eq!(
+            ctx.balance_of(&fee_collector),
+            fee_collector_balance + amount
+        );
+        assert_eq!(ctx.balance_of(&alice), alice_balance - amount);
+    }
+
+    #[test]
+    fn test_renew() {
+        let mut ctx = TestContext::install_and_setup();
+        let (admin, fee_collector, alice) = (ctx.admin, ctx.treasury, ctx.alice);
+        ctx.with_name_registered(admin, alice, TOKEN_HASH);
+
+        // Prepare a payment voucher.
+        let token_expiration = INIT_TIME + 2 * TOKEN_EXPIRATION;
+        let voucher_expiration = INIT_TIME + TOKEN_EXPIRATION + 100;
+        let amount = U512::from(2000);
+
+        let names = vec![TokenRenewalInfo::new(
+            TOKEN_HASH.to_string(),
+            token_expiration,
+        )];
+        let voucher = RenewalPaymentVoucher::new(amount, "id_1", alice, names, voucher_expiration);
+        let signature = ctx.sign(&voucher);
+
+        // CSPR balances before the purchase.
+        let fee_collector_balance = ctx.balance_of(&fee_collector);
+        let alice_balance = ctx.balance_of(&alice);
+
+        ctx.advance_block_time(TOKEN_EXPIRATION + 1);
+        // But the voucher.
+        ctx.set_caller(alice);
+        ctx.controller
+            .with_tokens(amount)
+            .renew(voucher, signature.clone());
 
         // Token was minted.
         assert_eq!(ctx.token.balance_of(alice), 1);

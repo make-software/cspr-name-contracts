@@ -159,6 +159,23 @@ impl TestContext {
         .unwrap()
     }
 
+    pub fn with_multi_names_registered(
+        &mut self,
+        caller: Address,
+        recipient: Address,
+        token_hashes: Vec<&str>,
+    ) {
+        let token_expiration = self.token_expiration_time();
+        let voucher_expiration = self.voucher_expiration_time();
+        let names = token_hashes
+            .iter()
+            .map(|hash| NameMintInfo::new(*hash, recipient, token_expiration))
+            .collect();
+        let voucher = TokenizationVoucher::new(names, voucher_expiration);
+        self.set_caller(caller);
+        self.registrar.try_register(voucher).unwrap()
+    }
+
     pub fn expect_name_is_registered(&self, owner: Address, token_hash: &str) {
         let token_id = blake2b(token_hash);
         assert!(self.token.token_exists(&token_id), "Token does not exist");
@@ -193,6 +210,12 @@ impl TestContext {
 
     pub fn with_name_expired(&mut self, token_hash: &str) {
         self.try_name_expire(token_hash).unwrap()
+    }
+
+    pub fn with_names_expired(&mut self, token_hashes: Vec<&str>) {
+        let tokens_ids = token_hashes.iter().map(|hash| blake2b(hash)).collect();
+        self.set_caller(self.anyone);
+        self.registrar.try_expire(tokens_ids).unwrap();
     }
 
     pub fn token_expiration_time(&self) -> u64 {

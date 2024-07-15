@@ -134,8 +134,10 @@ impl Registrar {
         for token in voucher.tokens {
             // verify the new expiration date is in the future
             self.assert_token_expires_in_future(token.token_expiration, block_time);
+            // Compute token hash.
+            let token_hash = self.compute_namehash(&token.token_id);
             // get the token metadata
-            let metadata = self.name_token.metadata_by_hash(&token.token_id);
+            let metadata = self.name_token.metadata_by_hash(&token_hash);
             // check if the time for the renewal does not elapsed
             self.assert_in_renewal_period(metadata.expiration);
             let new_metadata = NameTokenMetadata {
@@ -154,11 +156,12 @@ impl Registrar {
 
     pub fn resolve(&self, full_domain: String) -> Option<Address> {
         let token_name = utils::extract_token_name(&full_domain)?;
-        if !self.name_token.is_token_valid(&token_name) {
+        let token_hash = self.compute_namehash(&token_name);
+        if !self.name_token.is_token_valid(&token_hash) {
             return None;
         }
 
-        match self.name_token.resolver(token_name) {
+        match self.name_token.resolver(token_hash) {
             Some(address) => self.resolver(address).resolve(full_domain),
             None => None,
         }
@@ -466,7 +469,6 @@ mod tests {
         ctx.expect_name_is_registered(bob, TOKEN_HASH);
     }
 
-    // TODO: Check expiring multiple tokens.
     #[test]
     fn test_token_expiration_after_grace_period() {
         let mut ctx = TestContext::install_and_setup();
@@ -482,6 +484,25 @@ mod tests {
         ctx.with_name_expired(TOKEN_HASH);
 
         // Then token is burned.
+        assert_eq!(ctx.token.balance_of(alice), 0);
+    }
+
+    #[test]
+    fn test_multi_tokens_expiration_after_grace_period() {
+        let mut ctx = TestContext::install_and_setup();
+        let (admin, alice) = (ctx.admin, ctx.alice);
+        let tokens = vec!["t1", "t2", "t3", "t4", "t5"];
+
+        // Given Alice has 5 tokens.
+        ctx.with_multi_names_registered(admin, alice, tokens.clone());
+        assert_eq!(ctx.token.balance_of(alice), 5);
+        // And is after grace period.
+        ctx.advance_block_time(TOKEN_EXPIRATION + GRACE_PERIOD + 1);
+
+        // When anyone tries to expire the tokens.
+        ctx.with_names_expired(tokens);
+
+        // Then all the tokens are burned.
         assert_eq!(ctx.token.balance_of(alice), 0);
     }
 
@@ -590,5 +611,71 @@ mod tests {
 
         // Then registration fails.
         assert_eq!(result, Err(RegistrarError::GracePeriodExpired.into()));
+    }
+
+    #[test]
+    fn test_set_default_resolver() {
+        let mut ctx = TestContext::install_and_setup();
+        let (admin, alice, resolver) = (ctx.admin, ctx.alice, *ctx.default_resolver.address());
+
+        // When Admin sets default resolver.
+        ctx.set_caller(admin);
+        let result = ctx.registrar.try_set_default_resolver(resolver);
+        // Then the operation succeeds.
+        assert_eq!(result, Ok(()));
+
+        // When Admin sets default resolver.
+        ctx.set_caller(alice);
+        let result = ctx.registrar.try_set_default_resolver(resolver);
+        // Then the operation fails.
+        assert!(result.is_err());
+    }
+
+    #[test]
+    fn resolve_with_invalid_domain() {
+        let mut ctx = TestContext::install_and_setup();
+        let (admin, alice) = (ctx.admin, ctx.alice);
+        let full_domain = "invalid".to_string();
+
+        // Given Alice has a token.
+        ctx.with_name_registered(admin, alice, TOKEN_HASH);
+
+        // When anyone tries to resolve an invalid domain.
+        let result = ctx.registrar.resolve(full_domain);
+
+        // Then the result is None.
+        assert_eq!(result, None);
+    }
+
+    #[test]
+    fn resolve_with_invalid_token() {
+        let ctx = TestContext::install_and_setup();
+        let full_domain = "odra.cspr".to_string();
+
+        // When anyone tries to resolve an invalid domain.
+        let result = ctx.registrar.resolve(full_domain);
+
+        // Then the result is None.
+        assert_eq!(result, None);
+    }
+
+    #[test]
+    fn resolve_with_valid_domain() {
+        let mut ctx = TestContext::install_and_setup();
+        let (admin, alice) = (ctx.admin, ctx.alice);
+        let full_domain = "odra.cspr".to_string();
+
+        // Given Alice has a token.
+        ctx.with_name_registered(admin, alice, "odra");
+
+        ctx.set_caller(alice);
+        ctx.default_resolver
+            .set_resolution(full_domain.clone(), Some(alice));
+
+        // When anyone tries to resolve a valid domain.
+        let result = ctx.registrar.resolve(full_domain);
+
+        // Then the result is the token owner.
+        assert_eq!(result, Some(alice));
     }
 }

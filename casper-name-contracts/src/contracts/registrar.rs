@@ -145,7 +145,7 @@ impl Registrar {
                 ..metadata
             };
             let new_metadata = new_metadata.to_json().unwrap_or_revert(self);
-            set_token_metadata(self.name_token.deref_mut(), token.token_id, new_metadata);
+            set_token_metadata(self.name_token.deref_mut(), token_hash, new_metadata);
         }
     }
 
@@ -567,11 +567,11 @@ mod tests {
 
         ctx.advance_block_time(TOKEN_EXPIRATION + GRACE_PERIOD - 1);
         // When Admin tries to renew the token.
-        let test_token_hash = blake2b(TOKEN_HASH);
+        let test_token_hash = TOKEN_HASH;
         let token_expiration = INIT_TIME + 2 * TOKEN_EXPIRATION;
         let voucher_expiration = INIT_TIME + TOKEN_EXPIRATION + GRACE_PERIOD;
         let tokens = vec![TokenRenewalInfo::new(
-            test_token_hash.clone(),
+            test_token_hash.to_owned(),
             token_expiration,
         )];
         let voucher = RenewalVoucher::new(tokens, voucher_expiration);
@@ -579,7 +579,7 @@ mod tests {
         ctx.registrar.prolong(voucher);
 
         // Then token expiration is updated.
-        let metadata = ctx.token.metadata_by_hash(&test_token_hash);
+        let metadata = ctx.token.metadata_by_hash(&blake2b(test_token_hash));
         let expected = NameTokenMetadata::with_resolver(
             TOKEN_HASH,
             INIT_TIME + 2 * TOKEN_EXPIRATION,
@@ -598,11 +598,11 @@ mod tests {
 
         ctx.advance_block_time(TOKEN_EXPIRATION + GRACE_PERIOD + 1);
         // When Admin tries to renew the token.
-        let test_token_hash = blake2b(TOKEN_HASH);
+        let test_token_hash = TOKEN_HASH;
         let token_expiration = INIT_TIME + 2 * TOKEN_EXPIRATION;
         let voucher_expiration = INIT_TIME + TOKEN_EXPIRATION + GRACE_PERIOD + 1;
         let tokens = vec![TokenRenewalInfo::new(
-            test_token_hash.clone(),
+            test_token_hash.to_string(),
             token_expiration,
         )];
         let voucher = RenewalVoucher::new(tokens, voucher_expiration);

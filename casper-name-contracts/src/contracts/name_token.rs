@@ -173,11 +173,8 @@ impl NameToken {
             resolver: Some(resolver),
             ..metadata
         };
-        self.set_token_metadata(
-            Maybe::None,
-            Maybe::Some(token_id),
-            new_metadata.to_json().unwrap_or_revert(self),
-        );
+        let json = new_metadata.to_json().unwrap_or_revert(self);
+        self.token.set_token_metadata_unchecked(&token_id, json);
     }
 
     pub fn assert_is_owner(&self, token_id: &String, address: Address) {

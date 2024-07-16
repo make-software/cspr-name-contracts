@@ -6,13 +6,13 @@ use casper_name_contracts::contracts::controller::{
 use casper_name_contracts::contracts::registrar::{
     Registrar, RegistrarHostRef, RegistrarInitArgs, CONTROLLER_ROLE,
 };
-use casper_name_contracts::contracts::resolver::DefaultResolverHostRef;
+use casper_name_contracts::contracts::resolver::{DefaultResolverHostRef, DefaultResolverInitArgs};
 use casper_name_contracts::data_structures::{NameMintInfo, PaymentVoucher, TokenizationVoucher};
 use odra::args::Maybe;
 use odra::casper_types::bytesrepr::{Bytes, ToBytes};
 use odra::contract_def::HasIdent;
 use odra::host::HostRef;
-use odra::host::{Deployer, NoArgs};
+use odra::host::Deployer;
 
 use casper_name_contracts::contracts::name_token::{
     NameToken, NameTokenHostRef, NameTokenInitArgs,
@@ -35,8 +35,8 @@ pub fn deploy_all() {
     let token = NameTokenHostRef::deploy(
         &env,
         NameTokenInitArgs {
-            name: "005_CN".to_string(),
-            symbol: "005_CN".to_string(),
+            name: "006_CN".to_string(),
+            symbol: "006_CN".to_string(),
         },
     );
     contracts.add_contract(&NameToken::ident(), token.address());
@@ -64,7 +64,9 @@ pub fn deploy_all() {
     contracts.add_contract(&Controller::ident(), controller.address());
 
     env.set_gas(200_000_000_000);
-    let resolver = DefaultResolverHostRef::deploy(&env, NoArgs);
+    let resolver = DefaultResolverHostRef::deploy(&env, DefaultResolverInitArgs {
+        name_token: *token.address(),
+    });
     contracts.add_contract(&DefaultResolverHostRef::ident(), resolver.address());
 }
 

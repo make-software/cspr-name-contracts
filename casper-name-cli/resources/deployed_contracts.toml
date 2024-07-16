@@ -1,17 +1,17 @@
-time = "2024-07-10T10:50:57Z"
+time = "2024-07-16T11:43:57Z"
 
 [[contracts]]
 name = "NameToken"
-package_hash = "hash-4bde5d71c07fc15e1c8949a13aa01f4ca6c90f2a3f8a315bb93ae172a7004471"
+package_hash = "hash-fc8ab6d9eb505dfbbafa206b8c0e1315f24f2e57679d3360845aa6a40c3b5616"
 
 [[contracts]]
 name = "Registrar"
-package_hash = "hash-fc1bf2a9ffbb459d4a4176a024acfb3cbd9879ac9b438c642c1cd7dd0d2aea3b"
+package_hash = "hash-7ea164bc01a4ccd5570828b01513d3e7c4af5eaa0b0553d62246b4bae667d536"
 
 [[contracts]]
 name = "Controller"
-package_hash = "hash-e6e783a9ae53d220e33a23ccb6f3717a0045efbd274f3c32507e4277ec5da62d"
+package_hash = "hash-89657c76ff061dfff952ffbf02c1ce7d0fd8920d8c0726f069b05286c5c8a7a6"
 
 [[contracts]]
 name = "DefaultResolver"
-package_hash = "hash-f22f80c8ebd4fa85e7137bbfa5a0f733659d6237a99e37c16a39bc4ada352087"
+package_hash = "hash-b6ac9c03faf55d53b3fa01d61b8ff176621bda8db5b8a4d209ebba56a2db1555"

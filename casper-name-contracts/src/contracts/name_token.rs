@@ -216,7 +216,7 @@ mod tests {
     use odra::OdraResult;
 
     use super::*;
-    use crate::test_context::{TestContext, INIT_TIME};
+    use crate::test_context::{blake2b, TestContext, INIT_TIME};
 
     #[test]
     fn test_token_exists() {
@@ -427,21 +427,21 @@ mod tests {
         let alice = ctx.alice;
 
         // Given a token with expiration time in furure
-        let token_hash = "token hash";
+        let name = "token hash";
         let expiration = INIT_TIME + 100;
         ctx.set_caller(ctx.admin);
-        let token_meta_data = NameTokenMetadata::with_no_resolver(token_hash, expiration);
+        let token_meta_data = NameTokenMetadata::with_no_resolver(name, expiration);
         ctx.token.mint(
             alice,
             token_meta_data.to_json().unwrap(),
-            Maybe::Some(token_hash.to_owned()),
+            Maybe::Some(name.to_owned()),
         );
         // Then the token should be valid
-        assert!(ctx.token.is_token_valid(&token_hash.to_string()));
+        assert!(ctx.token.is_token_valid(&name.to_string()));
         // When the expiration time is passed
         ctx.advance_block_time(expiration + 1);
         // Then the token should not be valid
-        assert!(!ctx.token.is_token_valid(&token_hash.to_string()));
+        assert!(!ctx.token.is_token_valid(&name.to_string()));
     }
 
     #[test]
@@ -450,33 +450,33 @@ mod tests {
         let alice = ctx.alice;
 
         // Given a token with expiration time in furure
-        let token_hash = "token hash";
+        let name = "token hash";
         let expiration = INIT_TIME + 100;
         ctx.set_caller(ctx.admin);
-        let token_meta_data = NameTokenMetadata::with_no_resolver(token_hash, expiration);
+        let token_meta_data = NameTokenMetadata::with_no_resolver(name, expiration);
         ctx.token.mint(
             alice,
             token_meta_data.to_json().unwrap(),
-            Maybe::Some(token_hash.to_owned()),
+            Maybe::Some(name.to_owned()),
         );
         // Then the token should be valid
-        assert!(ctx.token.is_token_valid(&token_hash.to_string()));
+        assert!(ctx.token.is_token_valid(&name.to_string()));
 
         // When the token is burnt
         whitelist_accounts(&mut ctx, vec![alice]);
         ctx.set_caller(alice);
-        assert!(try_burn(&mut ctx, token_hash).is_ok());
+        assert!(try_burn(&mut ctx, name).is_ok());
         // Then the token should not be valid
-        assert!(!ctx.token.is_token_valid(&token_hash.to_string()));
+        assert!(!ctx.token.is_token_valid(&name.to_string()));
     }
 
-    fn mint_for(ctx: &mut TestContext, owner: Address, token_hash: &str) {
+    fn mint_for(ctx: &mut TestContext, owner: Address, name: &str) {
         ctx.set_caller(ctx.admin);
-        let token_meta_data = NameTokenMetadata::with_no_resolver(token_hash, 0);
+        let token_meta_data = NameTokenMetadata::with_no_resolver(name, 0);
         ctx.token.mint(
             owner,
             token_meta_data.to_json().unwrap(),
-            Maybe::Some(token_hash.to_owned()),
+            Maybe::Some(name.to_owned()),
         );
     }
 

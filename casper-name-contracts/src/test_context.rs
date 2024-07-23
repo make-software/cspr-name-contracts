@@ -117,6 +117,14 @@ impl TestContext {
         );
     }
 
+    pub fn whitelist_admin_in_name_token(&mut self) {
+        self.token.set_variables(
+            Maybe::Some(true),
+            Maybe::Some(vec![self.admin]),
+            Maybe::None,
+        );
+    }
+
     pub fn set_controller_in_registrar(&mut self) {
         self.registrar
             .grant_role(&CONTROLLER_ROLE, self.controller.address());

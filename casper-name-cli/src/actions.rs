@@ -11,8 +11,8 @@ use casper_name_contracts::data_structures::{NameMintInfo, PaymentVoucher, Token
 use odra::args::Maybe;
 use odra::casper_types::bytesrepr::{Bytes, ToBytes};
 use odra::contract_def::HasIdent;
-use odra::host::HostRef;
 use odra::host::Deployer;
+use odra::host::HostRef;
 
 use casper_name_contracts::contracts::name_token::{
     NameToken, NameTokenHostRef, NameTokenInitArgs,
@@ -64,9 +64,12 @@ pub fn deploy_all() {
     contracts.add_contract(&Controller::ident(), controller.address());
 
     env.set_gas(200_000_000_000);
-    let resolver = DefaultResolverHostRef::deploy(&env, DefaultResolverInitArgs {
-        name_token: *token.address(),
-    });
+    let resolver = DefaultResolverHostRef::deploy(
+        &env,
+        DefaultResolverInitArgs {
+            name_token: *token.address(),
+        },
+    );
     contracts.add_contract(&DefaultResolverHostRef::ident(), resolver.address());
 }
 

@@ -72,7 +72,7 @@ impl NameToken {
         let metadata_mutability = MetadataMutability::Mutable;
         let receipt_name = String::new();
         let allow_minting = Maybe::Some(true);
-        let minting_mode = Maybe::Some(MintingMode::Public);
+        let minting_mode = Maybe::Some(MintingMode::Acl);
         let holder_mode = Maybe::Some(NFTHolderMode::Mixed);
         let whitelist_mode = Maybe::Some(WhitelistMode::Unlocked);
         let acl_white_list = Maybe::None;
@@ -221,6 +221,7 @@ mod tests {
     #[test]
     fn test_token_exists() {
         let mut ctx = TestContext::install_raw();
+        ctx.whitelist_admin_in_name_token();
         let token_hash = "token_hash";
         // Token should not exist
         assert_eq!(ctx.token.token_exists(&token_hash.to_string()), false);
@@ -242,6 +243,7 @@ mod tests {
     #[test]
     fn owner_cannot_burn_until_whitelisted() {
         let mut ctx = TestContext::install_raw();
+        ctx.whitelist_admin_in_name_token();
         // Given a token owned by alice
         let token_hash = "token_hash";
         let token_owner = ctx.alice;
@@ -263,6 +265,7 @@ mod tests {
     #[test]
     fn anyone_whitelisted_can_burn() {
         let mut ctx = TestContext::install_raw();
+        ctx.whitelist_admin_in_name_token();
         let (token_owner, anyone) = (ctx.alice, ctx.anyone);
         // Given a token owned by the token owner
         let token_hash = "token_hash";
@@ -284,6 +287,7 @@ mod tests {
     #[test]
     fn burning_burnt_token_should_fail() {
         let mut ctx = TestContext::install_raw();
+        ctx.whitelist_admin_in_name_token();
         // Given a token owned by alice
         let alice = ctx.alice;
         let token_hash = "token hash";
@@ -315,6 +319,7 @@ mod tests {
     #[test]
     fn admin_transfer_of_multiple_tokens_should_work() {
         let mut ctx = TestContext::install_raw();
+        ctx.whitelist_admin_in_name_token();
         let (alice, bob) = (ctx.alice, ctx.bob);
         // Given two tokens owned by alice
         let token_hashes = vec!["token_hash1".to_string(), "token_hash2".to_string()];
@@ -333,21 +338,15 @@ mod tests {
     #[test]
     fn admin_transfer_of_multiple_tokens_should_not_work_for_non_whitelisted_account() {
         let mut ctx = TestContext::install_raw();
-        let (installer, alice, bob) = (ctx.admin, ctx.alice, ctx.bob);
+        ctx.whitelist_admin_in_name_token();
+        let (alice, bob) = (ctx.alice, ctx.bob);
         // Given two tokens owned by alice
         let token_hashes = vec!["token_hash1".to_string(), "token_hash2".to_string()];
         mint_for(&mut ctx, alice, &token_hashes[0]);
         mint_for(&mut ctx, alice, &token_hashes[1]);
 
         // When non whitelisted account tries to transfer the tokens
-        // (Neither the installer nor the alice account is whitelisted)
         ctx.set_caller(alice);
-        assert_eq!(
-            ctx.token.try_admin_transfer(bob, token_hashes.clone()),
-            Err(NameTokenError::NotWhitelisted.into())
-        );
-
-        ctx.set_caller(installer);
         assert_eq!(
             ctx.token.try_admin_transfer(bob, token_hashes.clone()),
             Err(NameTokenError::NotWhitelisted.into())
@@ -367,6 +366,7 @@ mod tests {
     #[test]
     fn admin_transfer_of_non_existent_token_should_fail() {
         let mut ctx = TestContext::install_raw();
+        ctx.whitelist_admin_in_name_token();
         let (alice, bob) = (ctx.alice, ctx.bob);
         // Given two tokens owned by alice
         let token_hashes = vec![
@@ -399,6 +399,7 @@ mod tests {
     #[test]
     fn only_owner_can_set_resolver() {
         let mut ctx = TestContext::install_raw();
+        ctx.whitelist_admin_in_name_token();
         let (alice, bob) = (ctx.alice, ctx.bob);
         // Given a token owned by alice
         let token_hash = "token_hash";
@@ -424,6 +425,7 @@ mod tests {
     #[test]
     fn test_is_token_valid() {
         let mut ctx = TestContext::install_raw();
+        ctx.whitelist_admin_in_name_token();
         let alice = ctx.alice;
 
         // Given a token with expiration time in furure
@@ -447,6 +449,7 @@ mod tests {
     #[test]
     fn burnt_token_is_invalid() {
         let mut ctx = TestContext::install_raw();
+        ctx.whitelist_admin_in_name_token();
         let alice = ctx.alice;
 
         // Given a token with expiration time in furure

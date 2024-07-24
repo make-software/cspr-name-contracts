@@ -28,7 +28,7 @@ path = "bin/build_contract.rs"
 test = false
 
 [[bin]]
-name = "casper_name_contracts_build_schema"
+name = "casper-name-contracts_build_schema"
 path = "bin/build_schema.rs"
 test = false
 

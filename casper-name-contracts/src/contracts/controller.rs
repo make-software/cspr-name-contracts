@@ -18,7 +18,7 @@ pub struct PaymentFulfilled {
     amount: U512,
 }
 
-#[odra::module]
+#[odra::module(events = [PaymentFulfilled])]
 pub struct Controller {
     signer_public_key: Var<PublicKey>,
     registrar: External<RegistrarContractRef>,

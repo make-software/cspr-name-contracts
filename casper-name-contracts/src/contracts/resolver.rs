@@ -16,7 +16,18 @@ type TokenHash = String;
 type Domain = String;
 type Nonce = u32;
 
-#[odra::module]
+#[odra::event]
+pub struct ResolutionChanged {
+    full_domain: String,
+    address: Option<Address>,
+}
+
+#[odra::event]
+pub struct ResolutionCleared {
+    token_name: String,
+}
+
+#[odra::module(events = [ResolutionChanged, ResolutionCleared])]
 pub struct DefaultResolver {
     access_control: SubModule<AccessControl>,
     name_token: External<NameTokenContractRef>,
@@ -68,7 +79,12 @@ impl DefaultResolver {
 
         let nonce = self.nonce(&token_hash);
         self.resolutions
-            .set(&(token_hash, full_domain, nonce), address);
+            .set(&(token_hash, full_domain.clone(), nonce), address);
+
+        self.env().emit_event(ResolutionChanged {
+            full_domain,
+            address,
+        });
     }
 
     pub fn resolve(&self, full_domain: String) -> Option<Address> {
@@ -80,15 +96,18 @@ impl DefaultResolver {
             .flatten()
     }
 
+    // TODO: Why this is not a token_hash?
     pub fn cleanup(&mut self, token_name: String) {
         let caller = self.env().caller();
-        let hash = self.env().hash(token_name);
+        let hash = self.env().hash(token_name.clone());
         let token_hash = utils::to_utf8_string(&hash).unwrap_or_revert(self);
 
         if !self.has_role(&DEFAULT_ADMIN_ROLE, &caller) && self.owner_of(&token_hash) != caller {
             self.env().revert(ResolverError::UnauthorizedCleanup);
         }
         self.nonces.add(&token_hash, 1);
+
+        self.env().emit_event(ResolutionCleared { token_name });
     }
 
     #[inline]

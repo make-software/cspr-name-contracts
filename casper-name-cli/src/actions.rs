@@ -35,8 +35,8 @@ pub fn deploy_all() {
     let token = NameTokenHostRef::deploy(
         &env,
         NameTokenInitArgs {
-            name: "006_CN".to_string(),
-            symbol: "006_CN".to_string(),
+            name: "007_CN".to_string(),
+            symbol: "007_CN".to_string(),
         },
     );
     contracts.add_contract(&NameToken::ident(), token.address());

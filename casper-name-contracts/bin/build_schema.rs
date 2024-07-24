@@ -2,6 +2,9 @@
 #[allow(unused_imports, clippy::single_component_path_imports)]
 use odra_modules;
 
+#[allow(unused_imports, clippy::single_component_path_imports)]
+use casper_name_contracts;
+
 #[cfg(not(target_arch = "wasm32"))]
 extern "Rust" {
     fn module_schema() -> odra::contract_def::ContractBlueprint;

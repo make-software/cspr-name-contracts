@@ -82,6 +82,14 @@ impl Registrar {
         }
     }
 
+    pub fn expire(&mut self, token_hashes: Vec<String>) {
+        let block_time = self.env().get_block_time();
+        let grace_period = self.grace_period();
+        for token_hash in token_hashes {
+            self.expire_single(token_hash, block_time, grace_period);
+        }
+    }
+
     // Controller functions.
     pub fn register(&mut self, voucher: TokenizationVoucher) {
         let block_time = self.env().get_block_time();
@@ -116,14 +124,6 @@ impl Registrar {
                 metadata,
                 token_hash,
             );
-        }
-    }
-
-    pub fn expire(&mut self, token_hashes: Vec<String>) {
-        let block_time = self.env().get_block_time();
-        let grace_period = self.grace_period();
-        for token_hash in token_hashes {
-            self.expire_single(token_hash, block_time, grace_period);
         }
     }
 

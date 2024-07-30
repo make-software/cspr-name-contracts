@@ -91,6 +91,9 @@ impl Controller {
             .treasury
             .get_or_revert_with(ControllerError::FeeCollectorNotSet);
         let payment_info = voucher.payment_info();
+        if self.env().attached_value() < payment_info.amount {
+            self.revert(ControllerError::InsufficientPayment);
+        }
         self.env()
             .transfer_tokens(&fee_collector, &payment_info.amount);
         self.env().emit_event(PaymentFulfilled {
@@ -116,6 +119,7 @@ pub enum ControllerError {
     FeeCollectorNotSet = 1102,
     RegistrarNotSet = 1103,
     BuyerMustBeCaller = 1104,
+    InsufficientPayment = 1105,
 }
 
 #[cfg(test)]

@@ -7,8 +7,8 @@ edition = "2021"
 casper-name-contracts = { path = "../casper-name-contracts" }
 clap = { version = "4.5.4", features = ["derive"] }
 prettycli = "0.1.1"
-odra = { git = "https://github.com/odradev/odra", branch = "fix/cep78-more-fns", features = [], default-features = false }
-odra-casper-livenet-env = { git = "https://github.com/odradev/odra", branch = "fix/cep78-more-fns" }
+odra = { git = "https://github.com/odradev/odra", branch = "release/1.2.0", features = [], default-features = false }
+odra-casper-livenet-env = { git = "https://github.com/odradev/odra", branch = "release/1.2.0" }
 chrono = { version = "0.4", features = ["serde"] }
 serde = { version = "1.0", features = ["derive"] }
 serde_derive = { version = "1.0", features = ["default"] }

@@ -7,3 +7,6 @@ deploy-example:
 
 lint:
     cargo fmt
+
+show-structs-as-bytes:
+    cargo run --bin structs-as-bytes

@@ -71,9 +71,9 @@ impl TokenizationVoucher {
 
 #[odra::odra_type]
 pub struct PaymentVoucher {
-    payment: PaymentInfo,
-    names: Vec<NameMintInfo>,
-    voucher_expiration: u64,
+    pub payment: PaymentInfo,
+    pub names: Vec<NameMintInfo>,
+    pub voucher_expiration: u64,
 }
 
 impl PaymentVoucher {
@@ -139,9 +139,9 @@ impl TokenRenewalInfo {
 
 #[odra::odra_type]
 pub struct RenewalPaymentVoucher {
-    payment: PaymentInfo,
-    tokens: Vec<TokenRenewalInfo>,
-    voucher_expiration: u64,
+    pub payment: PaymentInfo,
+    pub tokens: Vec<TokenRenewalInfo>,
+    pub voucher_expiration: u64,
 }
 
 impl RenewalPaymentVoucher {

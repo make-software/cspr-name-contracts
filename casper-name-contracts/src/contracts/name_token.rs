@@ -216,7 +216,7 @@ mod tests {
     use odra::OdraResult;
 
     use super::*;
-    use crate::test_context::{blake2b, TestContext, INIT_TIME};
+    use crate::test_context::{TestContext, INIT_TIME};
 
     #[test]
     fn test_token_exists() {

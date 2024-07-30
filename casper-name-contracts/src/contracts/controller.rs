@@ -47,6 +47,16 @@ impl Controller {
             .unchecked_grant_role(&DEFAULT_ADMIN_ROLE, &admin);
     }
 
+    pub fn set_signer_public_key(&mut self, signer: PublicKey) {
+        self._assert_caller_is_admin();
+        self.signer_public_key.set(signer);
+    }
+
+    pub fn set_treasury(&mut self, treasury: Address) {
+        self._assert_caller_is_admin();
+        self.treasury.set(treasury);
+    }
+
     pub fn signer_public_key(&self) -> PublicKey {
         self.signer_public_key.get().unwrap_or_revert(self)
     }
@@ -69,6 +79,7 @@ impl Controller {
 }
 
 impl Controller {
+    #[inline]
     fn _assert_caller_is_admin(&self) {
         self.access_control
             .check_role(&DEFAULT_ADMIN_ROLE, &self.env().caller());

@@ -1,5 +1,5 @@
-use odra::{casper_types::U512, prelude::*, Address};
-use serde::{Deserialize, Serialize};
+use odra::{casper_types::U512, prelude::*, Address, OdraResult};
+use serde_json::{json, Value};
 
 #[odra::odra_error]
 #[derive(Debug)]
@@ -13,37 +13,72 @@ pub enum NameTokenError {
     DeserializationError = 1007,
 }
 
-#[odra::odra_type]
-#[derive(Serialize, Deserialize)]
+#[derive(PartialEq, Debug, Clone)]
 pub struct NameTokenMetadata {
-    pub name: String,
-    pub expiration: u64,
-    pub resolver: Option<Address>,
+    value: Value,
 }
 
 impl NameTokenMetadata {
     pub fn with_resolver(name: &str, expiration: u64, resolver: Address) -> Self {
         Self {
-            name: String::from(name),
-            expiration,
-            resolver: Some(resolver),
+            value: json!({
+                "name": name,
+                "expiration": expiration,
+                "resolver": resolver
+            }),
         }
     }
 
     pub fn with_no_resolver(name: &str, expiration: u64) -> Self {
         Self {
-            name: String::from(name),
-            expiration,
-            resolver: None,
+            value: json!({
+                "name": name,
+                "expiration": expiration,
+                "resolver": null
+            }),
         }
     }
 
-    pub fn to_json(&self) -> Result<String, NameTokenError> {
-        serde_json_wasm::to_string(self).map_err(|_| NameTokenError::SerializationError)
+    pub fn set_resolver(&mut self, resolver: Address) {
+        self.value["resolver"] = json!(resolver);
     }
 
-    pub fn from_json(json: &str) -> Result<Self, NameTokenError> {
-        serde_json_wasm::from_str(json).map_err(|_| NameTokenError::DeserializationError)
+    pub fn resolver(&self) -> OdraResult<Option<Address>> {
+        let resolver = self.value["resolver"].as_str();
+        if let Some(resolver) = resolver {
+            return Address::from_str(resolver)
+                .map_err(|_| NameTokenError::DeserializationError.into())
+                .map(Some);
+        }
+        Ok(None)
+    }
+
+    pub fn clear_resolver(&mut self) {
+        self.value["resolver"] = json!(null);
+    }
+
+    pub fn json(&self) -> String {
+        self.value.to_string()
+    }
+
+    pub fn expiration(&self) -> OdraResult<u64> {
+        self.value["expiration"]
+            .as_u64()
+            .ok_or(NameTokenError::DeserializationError.into())
+    }
+
+    pub fn set_expiration(&mut self, expiration: u64) {
+        self.value["expiration"] = json!(expiration);
+    }
+}
+
+impl TryFrom<String> for NameTokenMetadata {
+    type Error = NameTokenError;
+
+    fn try_from(value: String) -> Result<Self, Self::Error> {
+        Value::from_str(&value)
+            .map(|value| Self { value })
+            .map_err(|_| NameTokenError::DeserializationError)
     }
 }
 
@@ -236,10 +271,10 @@ mod tests {
 
         // Test metadata to_json.
         let metadata = NameTokenMetadata::with_no_resolver("test-label", 86400);
-        assert_eq!(expected, metadata.to_json().unwrap());
+        assert_eq!(expected, metadata.json());
 
         // Test metadata from_json.
-        let deserialized = NameTokenMetadata::from_json(&expected).unwrap();
+        let deserialized: NameTokenMetadata = expected.try_into().unwrap();
         assert_eq!(metadata, deserialized);
 
         let expected = r#"{
@@ -257,10 +292,10 @@ mod tests {
             Address::new("hash-7ba9daac84bebee8111c186588f21ebca35550b6cf1244e71768bd871938be6a")
                 .unwrap(),
         );
-        assert_eq!(expected, metadata.to_json().unwrap());
+        assert_eq!(expected, metadata.json());
 
         // Test metadata from_json.
-        let deserialized = NameTokenMetadata::from_json(&expected).unwrap();
+        let deserialized: NameTokenMetadata = expected.try_into().unwrap();
         assert_eq!(metadata, deserialized);
     }
 }

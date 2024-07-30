@@ -155,26 +155,23 @@ impl NameToken {
             .set_token_metadata_unchecked(&token_id, token_meta_data);
     }
 
-    pub fn metadata_by_hash(&self, token_hash: &String) -> NameTokenMetadata {
-        self._metadata_by_hash(token_hash.to_string())
+    pub fn metadata_by_hash(&self, token_hash: &String) -> String {
+        self.metadata(Maybe::None, Maybe::Some(token_hash.clone()))
     }
 
     pub fn resolver(&self, token_id: String) -> Option<Address> {
-        let metadata = self._metadata_by_hash(token_id);
-        metadata.resolver
+        let metadata: NameTokenMetadata = self.wrapped_metadata(&token_id);
+        metadata.resolver().unwrap_or_revert(self)
     }
 
     pub fn set_resolver(&mut self, token_id: String, resolver: Address) {
         if self.token.owner_of_by_id(&token_id) != self.env().caller() {
             self.revert(NameTokenError::InvalidTokenOwner);
         }
-        let metadata = self._metadata_by_hash(token_id.clone());
-        let new_metadata = NameTokenMetadata {
-            resolver: Some(resolver),
-            ..metadata
-        };
-        let json = new_metadata.to_json().unwrap_or_revert(self);
-        self.token.set_token_metadata_unchecked(&token_id, json);
+        let mut metadata: NameTokenMetadata = self.wrapped_metadata(&token_id);
+        metadata.set_resolver(resolver);
+        self.token
+            .set_token_metadata_unchecked(&token_id, metadata.json());
     }
 
     pub fn assert_is_owner(&self, token_id: &String, address: Address) {
@@ -189,8 +186,8 @@ impl NameToken {
             return false;
         }
 
-        let metadata = self._metadata_by_hash(token_hash.to_owned());
-        if metadata.expiration < self.env().get_block_time() {
+        let metadata: NameTokenMetadata = self.wrapped_metadata(token_hash);
+        if metadata.expiration().unwrap_or_revert(self) < self.env().get_block_time() {
             return false;
         }
         true
@@ -199,9 +196,10 @@ impl NameToken {
 
 impl NameToken {
     #[inline]
-    fn _metadata_by_hash(&self, token_hash: String) -> NameTokenMetadata {
-        let metadata = self.metadata(Maybe::None, Maybe::Some(token_hash));
-        NameTokenMetadata::from_json(&metadata).unwrap_or_revert(self)
+    pub fn wrapped_metadata(&self, token_hash: &String) -> NameTokenMetadata {
+        self.metadata_by_hash(token_hash)
+            .try_into()
+            .unwrap_or_revert(self)
     }
 }
 
@@ -433,11 +431,8 @@ mod tests {
         let expiration = INIT_TIME + 100;
         ctx.set_caller(ctx.admin);
         let token_meta_data = NameTokenMetadata::with_no_resolver(name, expiration);
-        ctx.token.mint(
-            alice,
-            token_meta_data.to_json().unwrap(),
-            Maybe::Some(name.to_owned()),
-        );
+        ctx.token
+            .mint(alice, token_meta_data.json(), Maybe::Some(name.to_owned()));
         // Then the token should be valid
         assert!(ctx.token.is_token_valid(&name.to_string()));
         // When the expiration time is passed
@@ -457,11 +452,8 @@ mod tests {
         let expiration = INIT_TIME + 100;
         ctx.set_caller(ctx.admin);
         let token_meta_data = NameTokenMetadata::with_no_resolver(name, expiration);
-        ctx.token.mint(
-            alice,
-            token_meta_data.to_json().unwrap(),
-            Maybe::Some(name.to_owned()),
-        );
+        ctx.token
+            .mint(alice, token_meta_data.json(), Maybe::Some(name.to_owned()));
         // Then the token should be valid
         assert!(ctx.token.is_token_valid(&name.to_string()));
 
@@ -476,11 +468,8 @@ mod tests {
     fn mint_for(ctx: &mut TestContext, owner: Address, name: &str) {
         ctx.set_caller(ctx.admin);
         let token_meta_data = NameTokenMetadata::with_no_resolver(name, 0);
-        ctx.token.mint(
-            owner,
-            token_meta_data.to_json().unwrap(),
-            Maybe::Some(name.to_owned()),
-        );
+        ctx.token
+            .mint(owner, token_meta_data.json(), Maybe::Some(name.to_owned()));
     }
 
     fn whitelist_accounts(ctx: &mut TestContext, accounts: Vec<Address>) {

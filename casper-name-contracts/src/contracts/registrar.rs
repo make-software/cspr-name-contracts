@@ -79,7 +79,7 @@ impl Registrar {
     pub fn admin_burn(&mut self, token_hashes: Vec<String>) {
         self.assert_caller_is_admin();
         for token_hash in token_hashes {
-            let metadata = self.name_token.metadata_by_hash(&token_hash);
+            let metadata = self.wrapped_metadata(&token_hash);
             self.burn(&token_hash, &metadata);
         }
     }
@@ -108,8 +108,8 @@ impl Registrar {
 
             // If token exists and is expired and grace period is over, burn it.
             if token_exists {
-                let metadata = self.name_token.metadata_by_hash(&token_hash);
-                self.assert_token_expired(metadata.expiration, block_time);
+                let metadata = self.wrapped_metadata(&token_hash);
+                self.assert_token_expired(metadata.expiration().unwrap_or_revert(self), block_time);
                 self.burn(&token_hash, &metadata);
             }
 
@@ -119,7 +119,7 @@ impl Registrar {
                 info.token_expiration,
                 *self.default_resolver.address(),
             );
-            let metadata = metadata.to_json().unwrap_or_revert(self);
+            let metadata = metadata.json();
             mint(
                 self.name_token.deref_mut(),
                 info.owner,
@@ -139,15 +139,17 @@ impl Registrar {
             // Compute token hash.
             let token_hash = self.compute_namehash(&token.token_id);
             // get the token metadata
-            let metadata = self.name_token.metadata_by_hash(&token_hash);
+            let mut metadata = self.wrapped_metadata(&token_hash);
             // check if the time for the renewal does not elapsed
-            self.assert_in_renewal_period(metadata.expiration);
-            let new_metadata = NameTokenMetadata {
-                expiration: token.token_expiration,
-                ..metadata
-            };
-            let new_metadata = new_metadata.to_json().unwrap_or_revert(self);
-            set_token_metadata(self.name_token.deref_mut(), token_hash, new_metadata);
+            let expiration = metadata.expiration().unwrap_or_revert(self);
+            self.assert_in_renewal_period(expiration);
+            metadata.set_expiration(token.token_expiration);
+
+            set_token_metadata(
+                self.name_token.deref_mut(),
+                token_hash,
+                metadata.json().to_string(),
+            );
         }
     }
 
@@ -196,8 +198,8 @@ impl Registrar {
     }
 
     fn expire_single(&mut self, token_hash: String, block_time: u64, grace_period: u64) {
-        let metadata = self.name_token.metadata_by_hash(&token_hash);
-        if metadata.expiration + grace_period < block_time {
+        let metadata = self.wrapped_metadata(&token_hash);
+        if metadata.expiration().unwrap_or_revert(self) + grace_period < block_time {
             self.burn(&token_hash, &metadata);
         }
     }
@@ -231,11 +233,10 @@ impl Registrar {
                 self.resolver(resolver).cleanup(token_hash.to_owned());
             }
         }
-        let metadata = NameTokenMetadata {
-            resolver: None,
-            ..metadata.clone()
-        };
-        let token_meta_data = metadata.to_json().unwrap_or_revert(self);
+        let mut metadata = metadata.clone();
+        metadata.clear_resolver();
+
+        let token_meta_data = metadata.json();
 
         let name_token = self.name_token.deref_mut();
         set_token_metadata(name_token, token_hash.to_owned(), token_meta_data);
@@ -245,6 +246,14 @@ impl Registrar {
     #[inline]
     fn resolver(&self, address: Address) -> ResolverContractRef {
         ResolverContractRef::new(self.env(), address)
+    }
+
+    #[inline]
+    fn wrapped_metadata(&self, token_hash: &String) -> NameTokenMetadata {
+        self.name_token
+            .metadata_by_hash(token_hash)
+            .try_into()
+            .unwrap_or_revert(self)
     }
 }
 
@@ -587,7 +596,7 @@ mod tests {
             INIT_TIME + 2 * TOKEN_EXPIRATION,
             *ctx.default_resolver.address(),
         );
-        assert_eq!(metadata, expected);
+        assert_eq!(metadata, expected.json());
     }
 
     #[test]

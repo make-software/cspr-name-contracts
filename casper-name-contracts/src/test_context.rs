@@ -199,12 +199,12 @@ impl TestContext {
             self.token_expiration_time(),
             *self.default_resolver.address(),
         );
-        assert_eq!(metadata, expected_metadata);
+        assert_eq!(metadata, expected_metadata.json());
 
         assert!(
             self.env.emitted_event(
                 &self.token,
-                &Mint::new(owner, token_id, expected_metadata.to_json().unwrap())
+                &Mint::new(owner, token_id, expected_metadata.json().to_string())
             ),
             "Mint event not emitted"
         );

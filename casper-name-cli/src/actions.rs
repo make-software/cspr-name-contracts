@@ -6,7 +6,9 @@ use casper_name_contracts::contracts::controller::{
 use casper_name_contracts::contracts::registrar::{
     Registrar, RegistrarHostRef, RegistrarInitArgs, CONTROLLER_ROLE,
 };
-use casper_name_contracts::contracts::resolver::{DefaultResolver, DefaultResolverHostRef, DefaultResolverInitArgs};
+use casper_name_contracts::contracts::resolver::{
+    DefaultResolver, DefaultResolverHostRef, DefaultResolverInitArgs,
+};
 use casper_name_contracts::data_structures::{NameMintInfo, PaymentVoucher, TokenizationVoucher};
 use odra::args::Maybe;
 use odra::casper_types::bytesrepr::{Bytes, ToBytes};

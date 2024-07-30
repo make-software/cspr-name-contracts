@@ -15,6 +15,8 @@ use super::resolver::ResolverContractRef;
 use super::utils;
 
 pub const CONTROLLER_ROLE: Role = [2u8; 32];
+// Reminting should be possible after 5 days.
+const PENDING_DELETE_PERIOD: u64 = 5 * 24 * 60 * 60 * 1000;
 
 #[odra::module]
 pub struct Registrar {
@@ -207,7 +209,7 @@ impl Registrar {
 
     #[inline]
     fn assert_token_expired(&self, token_expiration: u64, block_time: u64) {
-        let rebuy_time = token_expiration + self.grace_period();
+        let rebuy_time = token_expiration + self.grace_period() + PENDING_DELETE_PERIOD;
         if block_time < rebuy_time {
             self.revert(RegistrarError::TokenNotExpired);
         }
@@ -431,7 +433,7 @@ mod tests {
         ctx.with_name_registered(admin, alice, TOKEN_HASH);
 
         // And token expired, but within grace period.
-        ctx.advance_block_time(TOKEN_EXPIRATION + GRACE_PERIOD / 2);
+        ctx.advance_block_time(TOKEN_EXPIRATION + GRACE_PERIOD + PENDING_DELETE_PERIOD - 1);
 
         // When Admin tries to register the same token again.
         let result = ctx.try_name_register(
@@ -455,7 +457,7 @@ mod tests {
         ctx.with_name_registered(admin, alice, TOKEN_HASH);
 
         // And token expired, and grace period is over.
-        ctx.advance_block_time(TOKEN_EXPIRATION + GRACE_PERIOD + 1);
+        ctx.advance_block_time(TOKEN_EXPIRATION + GRACE_PERIOD + PENDING_DELETE_PERIOD);
 
         // When Admin tries to register the same token again.
         ctx.with_name_registered(admin, bob, TOKEN_HASH);

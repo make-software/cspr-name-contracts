@@ -5,6 +5,7 @@
 actor "D3 admin"
 participant "Registrar"
 participant "NameToken"
+participant "Resolver"
 boundary "Events"
 
 == [Admin] Burn a domain ==
@@ -12,10 +13,21 @@ boundary "Events"
 "D3 admin" -> "Registrar": admin_burn(name_hashes[])
 activate Registrar
 loop N times
+    Registrar -> NameToken: metadata(name_hash)
+    NameToken -> Registrar
+    group Resolver is default resolver
+        Registrar -> Resolver: cleanup(name_hash)
+        Resolver -> Registrar:
+    end
+    Registrar -> Registrar: clear resolver address
+    Registrar -> NameToken: set_token_metadata(name_hash, new_metadata)
+    activate NameToken
+    NameToken -> NameToken: update metadata
+    NameToken -> "Events": MetadataUpdated event
+    NameToken -> Registrar
+    deactivate NameToken
     Registrar -> NameToken: burn(name_hash)
     activate NameToken
-    NameToken -> NameToken: clear resolver
-    NameToken -> "Events": MetadataUpdated event
     NameToken -> NameToken: burn token
     NameToken -> "Events": Burn event
     NameToken -> Registrar

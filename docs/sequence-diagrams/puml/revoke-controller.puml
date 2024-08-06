@@ -5,9 +5,9 @@
 actor "Registrar admin"
 participant "Registrar"
 
-== Whitelist controller contract / admin address ==
+== Revoke controller contract / admin address permissions==
 
-"Registrar admin" -> "Registrar": grant_role(CONTROLLER_ROLE, package_key)
+"Registrar admin" -> "Registrar": revoke_role(CONTROLLER_ROLE, package_key)
 activate "Registrar"
 "Registrar" -> "Registrar": Update ACL
 "Registrar" -> "Registrar admin"

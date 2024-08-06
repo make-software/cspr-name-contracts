@@ -33,13 +33,13 @@ impl NameToken {
                 token_hash: Maybe<String>
             );
             // fn burn(&mut self, token_id: Maybe<u64>, token_hash: Maybe<String>);
-            fn transfer(
-                &mut self,
-                token_id: Maybe<u64>,
-                token_hash: Maybe<String>,
-                source_key: Address,
-                target_key: Address
-            );
+            // fn transfer(
+            //     &mut self,
+            //     token_id: Maybe<u64>,
+            //     token_hash: Maybe<String>,
+            //     source_key: Address,
+            //     target_key: Address
+            // );
             fn approve(&mut self, spender: Address, token_id: Maybe<u64>, token_hash: Maybe<String>);
             fn revoke(&mut self, token_id: Maybe<u64>, token_hash: Maybe<String>);
             fn set_approval_for_all(&mut self, approve_all: bool, operator: Address);
@@ -192,6 +192,34 @@ impl NameToken {
         }
         true
     }
+
+    pub fn transfer(
+        &mut self,
+        token_id: Maybe<u64>,
+        token_hash: Maybe<String>,
+        source_key: Address,
+        target_key: Address,
+    ) {
+        match token_hash {
+            Maybe::Some(token_hash) => {
+                if !self.is_token_valid(&token_hash) {
+                    self.revert(NameTokenError::ExpiredTokenTransfer);
+                }
+                self.token
+                    .transfer(token_id, Maybe::Some(token_hash), source_key, target_key);
+            }
+            Maybe::None => self.revert(NameTokenError::InvalidTokenIdentifier),
+        }
+    }
+
+    pub fn transfer_by_hash(
+        &mut self,
+        token_hash: String,
+        source_key: Address,
+        target_key: Address,
+    ) {
+        self.transfer(Maybe::None, Maybe::Some(token_hash), source_key, target_key);
+    }
 }
 
 impl NameToken {
@@ -207,6 +235,8 @@ impl NameToken {
 pub enum NameTokenError {
     NotWhitelisted = 1301,
     InvalidTokenOwner = 1302,
+    ExpiredTokenTransfer = 1303,
+    InvalidTokenIdentifier = 1304,
 }
 
 #[cfg(test)]

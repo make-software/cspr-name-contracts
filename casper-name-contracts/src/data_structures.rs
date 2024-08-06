@@ -141,6 +141,19 @@ impl From<PaymentVoucher> for TokenizationVoucher {
 }
 
 #[odra::odra_type]
+pub struct SecondarySaleVoucher {
+    pub payment: PaymentInfo,
+    pub names: Vec<NameTransferInfo>,
+    pub voucher_expiration: u64,
+}
+
+#[odra::odra_type]
+pub struct NameTransferInfo {
+    pub label: String,
+    pub owner: Address,
+}
+
+#[odra::odra_type]
 pub struct NameMintInfo {
     pub label: String,
     pub owner: Address,
@@ -234,6 +247,12 @@ impl Payment for PaymentVoucher {
 }
 
 impl Payment for RenewalPaymentVoucher {
+    fn payment_info(&self) -> &PaymentInfo {
+        &self.payment
+    }
+}
+
+impl Payment for SecondarySaleVoucher {
     fn payment_info(&self) -> &PaymentInfo {
         &self.payment
     }

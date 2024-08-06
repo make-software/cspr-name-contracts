@@ -18,18 +18,16 @@ pub struct PaymentFulfilled {
     amount: U512,
 }
 
-#[odra::module(events = [PaymentFulfilled])]
+#[odra::module]
 pub struct Controller {
-    signer_public_key: Var<PublicKey>,
+    controller: SubModule<BaseController>,
     registrar: External<RegistrarContractRef>,
-    treasury: Var<Address>,
-    access_control: SubModule<AccessControl>,
 }
 
 #[odra::module]
 impl Controller {
     delegate! {
-        to self.access_control {
+        to self.controller {
             fn has_role(&self, role: &Role, address: &Address) -> bool;
             fn grant_role(&mut self, role: &Role, address: &Address);
             fn revoke_role(&mut self, role: &Role, address: &Address);
@@ -38,6 +36,63 @@ impl Controller {
 
     pub fn init(&mut self, registrar: Address, signer: PublicKey, treasury: Address) {
         self.registrar.set(registrar);
+        self.controller.init(signer, treasury);
+    }
+
+    pub fn set_signer_public_key(&mut self, signer: PublicKey) {
+        self.controller.assert_caller_is_admin();
+        self.controller.signer_public_key.set(signer);
+    }
+
+    pub fn set_treasury(&mut self, treasury: Address) {
+        self.controller.assert_caller_is_admin();
+        self.controller.treasury.set(treasury);
+    }
+
+    pub fn signer_public_key(&self) -> PublicKey {
+        self.controller
+            .signer_public_key
+            .get()
+            .unwrap_or_revert(self)
+    }
+
+    #[odra(payable)]
+    pub fn buy(&mut self, voucher: PaymentVoucher, signature: Bytes) {
+        self.controller.process_payment_voucher(&voucher, signature);
+        self.registrar.register(voucher.into());
+    }
+
+    #[odra(payable)]
+    pub fn renew(&mut self, voucher: RenewalPaymentVoucher, signature: Bytes) {
+        self.controller.process_payment_voucher(&voucher, signature);
+        self.registrar.prolong(voucher.into());
+    }
+
+    pub fn resolve(&self, full_domain: String) -> Option<Address> {
+        self.registrar.resolve(full_domain)
+    }
+}
+
+#[odra::module(events = [PaymentFulfilled])]
+pub struct BaseController {
+    signer_public_key: Var<PublicKey>,
+    treasury: Var<Address>,
+    access_control: SubModule<AccessControl>,
+}
+
+#[odra::module]
+impl BaseController {
+    delegate! {
+        to self.access_control {
+            fn has_role(&self, role: &Role, address: &Address) -> bool;
+            fn grant_role(&mut self, role: &Role, address: &Address);
+            fn revoke_role(&mut self, role: &Role, address: &Address);
+        }
+    }
+}
+
+impl BaseController {
+    pub fn init(&mut self, signer: PublicKey, treasury: Address) {
         self.signer_public_key.set(signer);
         self.treasury.set(treasury);
 
@@ -47,40 +102,12 @@ impl Controller {
             .unchecked_grant_role(&DEFAULT_ADMIN_ROLE, &admin);
     }
 
-    pub fn set_signer_public_key(&mut self, signer: PublicKey) {
-        self._assert_caller_is_admin();
-        self.signer_public_key.set(signer);
-    }
-
-    pub fn set_treasury(&mut self, treasury: Address) {
-        self._assert_caller_is_admin();
-        self.treasury.set(treasury);
-    }
-
     pub fn signer_public_key(&self) -> PublicKey {
         self.signer_public_key.get().unwrap_or_revert(self)
     }
 
-    #[odra(payable)]
-    pub fn buy(&mut self, voucher: PaymentVoucher, signature: Bytes) {
-        self.process_payment_voucher(&voucher, signature);
-        self.registrar.register(voucher.into());
-    }
-
-    #[odra(payable)]
-    pub fn renew(&mut self, voucher: RenewalPaymentVoucher, signature: Bytes) {
-        self.process_payment_voucher(&voucher, signature);
-        self.registrar.prolong(voucher.into());
-    }
-
-    pub fn resolve(&self, full_domain: String) -> Option<Address> {
-        self.registrar.resolve(full_domain)
-    }
-}
-
-impl Controller {
     #[inline]
-    fn _assert_caller_is_admin(&self) {
+    fn assert_caller_is_admin(&self) {
         self.access_control
             .check_role(&DEFAULT_ADMIN_ROLE, &self.env().caller());
     }
@@ -91,7 +118,7 @@ impl Controller {
         }
     }
 
-    fn process_payment_voucher<P: Payment + ToBytes>(&self, voucher: &P, signature: Bytes) {
+    pub fn process_payment_voucher<P: Payment + ToBytes>(&self, voucher: &P, signature: Bytes) {
         self.assert_caller_is_buyer(voucher);
         self.verify_signature(voucher, &signature);
         self.collect_cspr_payment(voucher);

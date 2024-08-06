@@ -9,7 +9,7 @@ participant "Registrar"
 participant "NameToken"
 boundary "Events"
 
-== Renew a *cspr name with CSPR token payment ==
+== Prolong multiple *cspr name tokens with CSPR token payment ==
 
 Owner -> d3: Buy *cspr name with CSPR
 activate d3
@@ -22,26 +22,23 @@ Controller -> Controller: verify voucher\nexpiration
 Controller -> Controller: verify voucher\nsignature
 Controller -> Controller: process CSPR payment
 Controller -> "Events": Payment event
-Controller -> Registrar: renew(RenewalVoucher, sig)
+Controller -> Registrar: prolong(RenewalVoucher, sig)
 activate Registrar
 Registrar -> Registrar: verify voucher\nexpiration
-Registrar -> NameToken: metadata(name_hash)
-NameToken -> Registrar
-Registrar -> Registrar: check expiration date
-alt expiration+grace_period < blocktime
-    Registrar -> NameToken: burn(name_hash)
-    NameToken -> NameToken: clear resolver
+    loop N times
+    Registrar -> NameToken: metadata(name_hash)
+    NameToken -> Registrar
+    Registrar -> Registrar: check expiration date
+    alt expiration+grace_period < blocktime
+        Registrar ->x d3: Revert with\ngrace_period_expired\nerror
+    end
+    Registrar -> NameToken: set_token_metadata(name_hash, new_metadata)
+    activate NameToken
+    NameToken -> NameToken: update metadata
     NameToken -> "Events": MetadataUpdated event
-    NameToken -> NameToken: burn token
-    NameToken -> "Events": Burn event
-    Registrar ->x d3: Revert with\ngrace_period_expired\nerror
-end
-Registrar -> NameToken: set_token_metadata(name_hash, new_metadata)
-activate NameToken
-NameToken -> NameToken: update metadata
-NameToken -> "Events": MetadataUpdated event
-NameToken -> Registrar
-deactivate NameToken
+    NameToken -> Registrar
+    deactivate NameToken
+    end loop
 Registrar -> Controller
 deactivate Registrar
 Controller -> Owner

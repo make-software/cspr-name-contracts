@@ -13,15 +13,15 @@ boundary "Events"
 
 Owner -> d3: Buy *cspr name with CSPR
 activate d3
-d3 -> Owner: signed RenewalVoucher
+d3 -> Owner: signed RenewalPaymentVoucher
 deactivate d3
 
-Owner -> Controller: renew(RenewalVoucher, sig)
+Owner -> Controller: renew(RenewalPaymentVoucher, sig)
 activate Controller
 Controller -> Controller: verify voucher\nexpiration
 Controller -> Controller: verify voucher\nsignature
 Controller -> Controller: process CSPR payment
-Controller -> "Events": Payment event
+Controller -> "Events": PaymentFulfilled event
 Controller -> Registrar: prolong(RenewalVoucher, sig)
 activate Registrar
 Registrar -> Registrar: verify voucher\nexpiration

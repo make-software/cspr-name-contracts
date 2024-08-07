@@ -7,3 +7,4 @@
 * [Resolution](./Resolution.md)
 * [Secondary sale market](./Secondary-sale%20market.md)
 * [Admin functions](./Admin%20functions.md)
+

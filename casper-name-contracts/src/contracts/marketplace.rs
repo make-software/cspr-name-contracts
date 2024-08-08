@@ -6,11 +6,7 @@ use odra::{
 
 use crate::data_structures::SecondarySaleVoucher;
 
-use super::{
-    controller::BaseController,
-    name_token::NameTokenContractRef,
-    utils,
-};
+use super::{controller::BaseController, name_token::NameTokenContractRef, utils};
 
 #[odra::module]
 struct SecondaryMarket {

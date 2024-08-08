@@ -26,7 +26,7 @@ pub const ONE_DAY: u64 = 86400000;
 pub const GRACE_PERIOD: u64 = ONE_DAY * 2;
 pub const TOKEN_EXPIRATION: u64 = ONE_DAY * 365;
 pub const VOUCHER_EXPIRATION: u64 = ONE_DAY * 7;
-pub const TOKEN_HASH: &str = "label";
+pub const TOKEN_NAME: &str = "label";
 
 pub struct TestContext {
     pub env: HostEnv,
@@ -144,23 +144,23 @@ impl TestContext {
         &mut self,
         caller: Address,
         recipient: Address,
-        token_hash: &str,
+        token_name: &str,
         token_expiration: u64,
         voucher_expiration: u64,
     ) -> odra::OdraResult<()> {
-        let names = vec![NameMintInfo::new(token_hash, recipient, token_expiration)];
+        let names = vec![NameMintInfo::new(token_name, recipient, token_expiration)];
         let voucher = TokenizationVoucher::new(names, voucher_expiration);
         self.set_caller(caller);
         self.registrar.try_register(voucher)
     }
 
-    pub fn with_name_registered(&mut self, caller: Address, recipient: Address, token_hash: &str) {
+    pub fn with_name_registered(&mut self, caller: Address, recipient: Address, token_name: &str) {
         let token_expiration = self.token_expiration_time();
         let voucher_expiration = self.voucher_expiration_time();
         self.try_name_register(
             caller,
             recipient,
-            token_hash,
+            token_name,
             token_expiration,
             voucher_expiration,
         )
@@ -171,31 +171,31 @@ impl TestContext {
         &mut self,
         caller: Address,
         recipient: Address,
-        token_hashes: Vec<&str>,
+        token_names: Vec<&str>,
     ) {
         let token_expiration = self.token_expiration_time();
         let voucher_expiration = self.voucher_expiration_time();
-        let names = token_hashes
+        let names = token_names
             .iter()
-            .map(|hash| NameMintInfo::new(*hash, recipient, token_expiration))
+            .map(|label| NameMintInfo::new(*label, recipient, token_expiration))
             .collect();
         let voucher = TokenizationVoucher::new(names, voucher_expiration);
         self.set_caller(caller);
         self.registrar.try_register(voucher).unwrap()
     }
 
-    pub fn expect_name_is_registered(&self, owner: Address, token_hash: &str) {
-        let token_id = blake2b(token_hash);
-        assert!(self.token.token_exists(&token_id), "Token does not exist");
+    pub fn expect_name_is_registered(&self, owner: Address, token_name: &str) {
+        let token_hash = blake2b(token_name);
+        assert!(self.token.token_exists(&token_hash), "Token does not exist");
 
         let actual_owner = self
             .token
-            .owner_of(Maybe::None, Maybe::Some(token_id.clone()));
+            .owner_of(Maybe::None, Maybe::Some(token_hash.clone()));
         assert_eq!(actual_owner, owner, "Owner is not correct");
 
-        let metadata = self.token.metadata_by_hash(&token_id);
+        let metadata = self.token.metadata_by_hash(token_hash.clone());
         let expected_metadata = NameTokenMetadata::with_resolver(
-            token_hash,
+            token_name,
             self.token_expiration_time(),
             *self.default_resolver.address(),
         );
@@ -204,24 +204,24 @@ impl TestContext {
         assert!(
             self.env.emitted_event(
                 &self.token,
-                &Mint::new(owner, token_id, expected_metadata.json().to_string())
+                &Mint::new(owner, token_hash, expected_metadata.json().to_string())
             ),
             "Mint event not emitted"
         );
     }
 
-    pub fn try_name_expire(&mut self, token_hash: &str) -> odra::OdraResult<()> {
-        let token_id = blake2b(token_hash);
+    pub fn try_name_expire(&mut self, token_name: &str) -> odra::OdraResult<()> {
+        let token_id = blake2b(token_name);
         self.set_caller(self.anyone);
         self.registrar.try_expire(vec![token_id])
     }
 
-    pub fn with_name_expired(&mut self, token_hash: &str) {
-        self.try_name_expire(token_hash).unwrap()
+    pub fn with_name_expired(&mut self, token_name: &str) {
+        self.try_name_expire(token_name).unwrap()
     }
 
-    pub fn with_names_expired(&mut self, token_hashes: Vec<&str>) {
-        let tokens_ids = token_hashes.iter().map(|hash| blake2b(hash)).collect();
+    pub fn with_names_expired(&mut self, token_names: Vec<&str>) {
+        let tokens_ids = token_names.iter().map(blake2b).collect();
         self.set_caller(self.anyone);
         self.registrar.try_expire(tokens_ids).unwrap();
     }
@@ -234,15 +234,15 @@ impl TestContext {
         self.env.block_time() + VOUCHER_EXPIRATION
     }
 
-    pub fn admin_transfer(&mut self, recipient: Address, token_hashes: Vec<&str>) {
+    pub fn admin_transfer(&mut self, recipient: Address, token_names: Vec<&str>) {
         self.env.set_caller(self.admin);
         self.registrar
-            .admin_transfer(recipient, blake2b_vec(token_hashes))
+            .admin_transfer(recipient, blake2b_vec(token_names))
     }
 
-    pub fn admin_burn(&mut self, token_hashes: Vec<&str>) {
+    pub fn admin_burn(&mut self, token_names: Vec<&str>) {
         self.env.set_caller(self.admin);
-        self.registrar.admin_burn(blake2b_vec(token_hashes));
+        self.registrar.admin_burn(blake2b_vec(token_names));
     }
 
     pub fn set_caller(&mut self, caller: Address) {

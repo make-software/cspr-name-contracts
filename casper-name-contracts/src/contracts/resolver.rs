@@ -1,3 +1,5 @@
+use core::ops::Deref;
+
 use odra::{args::Maybe, prelude::*, Address, External, Mapping, SubModule, UnwrapOrRevert};
 use odra_modules::access::{AccessControl, Role, DEFAULT_ADMIN_ROLE};
 
@@ -7,14 +9,14 @@ use super::{name_token::NameTokenContractRef, utils};
 pub trait Resolver {
     fn init(&mut self, name_token: Address);
     fn set_name_token(&mut self, name_token: Address);
-    fn set_resolution(&mut self, full_domain: String, address: Option<Address>);
-    fn resolve(&self, full_domain: String) -> Option<Address>;
-    fn cleanup(&mut self, token_name: String);
+    fn set_resolution(&mut self, full_domain: Domain, address: Option<Address>);
+    fn resolve(&self, full_domain: Domain) -> Option<Address>;
+    fn cleanup(&mut self, token_hash: TokenHash);
 }
 
-type TokenHash = String;
-type Domain = String;
 type Nonce = u32;
+type Domain = String;
+type TokenHash = String;
 
 #[odra::event]
 pub struct ResolutionChanged {
@@ -24,15 +26,15 @@ pub struct ResolutionChanged {
 
 #[odra::event]
 pub struct ResolutionCleared {
-    token_name: String,
+    token_hash: String,
 }
 
 #[odra::module(events = [ResolutionChanged, ResolutionCleared])]
 pub struct DefaultResolver {
     access_control: SubModule<AccessControl>,
     name_token: External<NameTokenContractRef>,
-    nonces: Mapping<TokenHash, Nonce>,
-    resolutions: Mapping<(TokenHash, Domain, Nonce), Option<Address>>,
+    nonces: Mapping<String, Nonce>,
+    resolutions: Mapping<(String, String, Nonce), Option<Address>>,
 }
 
 #[odra::module]
@@ -61,33 +63,32 @@ impl DefaultResolver {
         self.name_token.set(name_token);
     }
 
-    pub fn set_resolution(&mut self, full_domain: String, address: Option<Address>) {
+    pub fn set_resolution(&mut self, full_domain: Domain, address: Option<Address>) {
+        let env = self.env();
         let token_hash = self
             .calculate_token_hash(&full_domain)
             .unwrap_or_revert_with(self, ResolverError::InvalidDomain);
-        let caller = self.env().caller();
+        let caller = env.caller();
 
         if !self.name_token.is_token_valid(&token_hash) {
-            self.env()
-                .revert(ResolverError::ResolutionSetWithInvalidToken);
+            env.revert(ResolverError::ResolutionSetWithInvalidToken);
         }
 
         if self.owner_of(&token_hash) != caller {
-            self.env()
-                .revert(ResolverError::ResolutionSetByInvalidOwner);
+            env.revert(ResolverError::ResolutionSetByInvalidOwner);
         }
 
         let nonce = self.nonce(&token_hash);
         self.resolutions
             .set(&(token_hash, full_domain.clone(), nonce), address);
 
-        self.env().emit_event(ResolutionChanged {
+        env.emit_event(ResolutionChanged {
             full_domain,
             address,
         });
     }
 
-    pub fn resolve(&self, full_domain: String) -> Option<Address> {
+    pub fn resolve(&self, full_domain: Domain) -> Option<Address> {
         let token_hash = self.calculate_token_hash(&full_domain)?;
         let nonce = self.nonce(&token_hash);
 
@@ -96,23 +97,18 @@ impl DefaultResolver {
             .flatten()
     }
 
-    // TODO: Why this is not a token_hash?
-    pub fn cleanup(&mut self, token_name: String) {
-        let caller = self.env().caller();
-        let hash = self.env().hash(token_name.clone());
-        let token_hash = utils::to_utf8_string(&hash).unwrap_or_revert(self);
+    pub fn cleanup(&mut self, token_hash: TokenHash) {
+        let env = self.env();
+        let caller = env.caller();
 
         if !self.has_role(&DEFAULT_ADMIN_ROLE, &caller) && self.owner_of(&token_hash) != caller {
             self.env().revert(ResolverError::UnauthorizedCleanup);
         }
         self.nonces.add(&token_hash, 1);
 
-        self.env().emit_event(ResolutionCleared { token_name });
-    }
-
-    #[inline]
-    fn nonce(&self, token_hash: &TokenHash) -> Nonce {
-        self.nonces.get_or_default(token_hash)
+        env.emit_event(ResolutionCleared {
+            token_hash: token_hash.deref().to_owned(),
+        });
     }
 
     #[inline]
@@ -123,9 +119,14 @@ impl DefaultResolver {
     }
 
     #[inline]
+    fn nonce(&self, token_hash: &TokenHash) -> Nonce {
+        self.nonces.get_or_default(token_hash)
+    }
+
+    #[inline]
     fn owner_of(&self, token_hash: &TokenHash) -> Address {
         self.name_token
-            .owner_of(Maybe::None, Maybe::Some(token_hash.clone()))
+            .owner_of(Maybe::None, Maybe::Some(token_hash.to_owned()))
     }
 }
 
@@ -380,12 +381,12 @@ mod tests {
         try_cleanup(ctx, token_name).unwrap();
     }
 
-    fn cleanup_with_caller(ctx: &mut TestContext, token_name: &str, caller: Address) {
+    fn cleanup_with_caller(ctx: &mut TestContext, token_hash: &str, caller: Address) {
         ctx.set_caller(caller);
-        cleanup(ctx, token_name);
+        cleanup(ctx, token_hash);
     }
 
     fn try_cleanup(ctx: &mut TestContext, token_name: &str) -> OdraResult<()> {
-        ctx.default_resolver.try_cleanup(token_name.to_string())
+        ctx.default_resolver.try_cleanup(blake2b(token_name))
     }
 }

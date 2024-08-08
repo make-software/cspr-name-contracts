@@ -166,7 +166,7 @@ mod tests {
 
     use crate::{
         data_structures::{NameMintInfo, PaymentVoucher, RenewalPaymentVoucher, TokenRenewalInfo},
-        test_context::{TestContext, INIT_TIME, TOKEN_EXPIRATION, TOKEN_HASH},
+        test_context::{TestContext, INIT_TIME, TOKEN_EXPIRATION, TOKEN_NAME},
     };
 
     #[test]
@@ -179,7 +179,7 @@ mod tests {
         let voucher_expiration = ctx.token_expiration_time();
         let amount = U512::from(2000);
 
-        let names = vec![NameMintInfo::new(TOKEN_HASH, alice, token_expiration)];
+        let names = vec![NameMintInfo::new(TOKEN_NAME, alice, token_expiration)];
         let voucher = PaymentVoucher::new(amount, "id_1", alice, names, voucher_expiration);
         let signature = ctx.sign(&voucher);
 
@@ -208,7 +208,7 @@ mod tests {
     fn test_renew() {
         let mut ctx = TestContext::install_and_setup();
         let (admin, fee_collector, alice) = (ctx.admin, ctx.treasury, ctx.alice);
-        ctx.with_name_registered(admin, alice, TOKEN_HASH);
+        ctx.with_name_registered(admin, alice, TOKEN_NAME);
 
         // Prepare a payment voucher.
         let token_expiration = INIT_TIME + 2 * TOKEN_EXPIRATION;
@@ -216,7 +216,7 @@ mod tests {
         let amount = U512::from(2000);
 
         let names = vec![TokenRenewalInfo::new(
-            TOKEN_HASH.to_string(),
+            TOKEN_NAME.to_string(),
             token_expiration,
         )];
         let voucher = RenewalPaymentVoucher::new(amount, "id_1", alice, names, voucher_expiration);

@@ -218,14 +218,14 @@ pub mod token {
         let resolver = parse_address(&address);
         assert!(resolver.is_contract());
 
-        let token_id = blake2b(&token_name);
+        let token_hash = blake2b(token_name);
         env.set_gas(3_000_000_000);
-        contract(env).set_resolver(token_id, resolver);
+        contract(env).set_resolver(token_hash, resolver);
     }
 
     pub fn resolver(env: &HostEnv, token_name: String) {
-        let token_id = blake2b(&token_name);
-        let result = contract(env).resolver(token_id);
+        let token_hash = blake2b(&token_name);
+        let result = contract(env).resolver(token_hash);
 
         let result = result
             .map(|addr| addr.to_string())
@@ -236,8 +236,8 @@ pub mod token {
     }
 
     pub fn metadata(env: &HostEnv, token_name: String) {
-        let token_id = blake2b(&token_name);
-        let result = contract(env).try_metadata_by_hash(&token_id);
+        let token_hash = blake2b(&token_name);
+        let result = contract(env).try_metadata_by_hash(token_hash);
 
         let result = result
             .map(|metadata| serde_json::to_string_pretty(&metadata).ok())

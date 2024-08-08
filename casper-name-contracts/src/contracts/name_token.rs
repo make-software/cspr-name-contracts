@@ -125,72 +125,19 @@ impl NameToken {
         self.token.burn_token_unchecked(token_id, caller);
     }
 
-    pub fn admin_transfer(&mut self, reciepient: Address, token_hashes: Vec<String>) {
+    pub fn admin_transfer(&mut self, recipient: Address, token_hashes: Vec<String>) {
         let spender = self.env().caller();
         if !self.token.is_whitelisted(&spender) {
             self.revert(NameTokenError::NotWhitelisted);
         }
         for token_hash in token_hashes {
             let owner = self.token.owner_of_by_id(&token_hash);
+            if !self.is_token_valid(&token_hash) {
+                self.revert(NameTokenError::ExpiredTokenTransfer);
+            }
             self.token
-                .transfer_unchecked(token_hash, owner, Some(spender), reciepient);
+                .transfer_unchecked(token_hash, owner, Some(spender), recipient);
         }
-    }
-
-    pub fn set_token_metadata(
-        &mut self,
-        token_id: Maybe<u64>,
-        token_hash: Maybe<String>,
-        token_meta_data: String,
-    ) {
-        let caller = self.env().caller();
-        if !self.token.is_whitelisted(&caller) {
-            self.revert(NameTokenError::NotWhitelisted);
-        }
-        let token_id = self
-            .token
-            .token_identifier(token_id, token_hash)
-            .to_string();
-        self.token
-            .set_token_metadata_unchecked(&token_id, token_meta_data);
-    }
-
-    pub fn metadata_by_hash(&self, token_hash: &String) -> String {
-        self.metadata(Maybe::None, Maybe::Some(token_hash.clone()))
-    }
-
-    pub fn resolver(&self, token_id: String) -> Option<Address> {
-        let metadata: NameTokenMetadata = self.wrapped_metadata(&token_id);
-        metadata.resolver().unwrap_or_revert(self)
-    }
-
-    pub fn set_resolver(&mut self, token_id: String, resolver: Address) {
-        if self.token.owner_of_by_id(&token_id) != self.env().caller() {
-            self.revert(NameTokenError::InvalidTokenOwner);
-        }
-        let mut metadata: NameTokenMetadata = self.wrapped_metadata(&token_id);
-        metadata.set_resolver(resolver);
-        self.token
-            .set_token_metadata_unchecked(&token_id, metadata.json());
-    }
-
-    pub fn assert_is_owner(&self, token_id: &String, address: Address) {
-        let owner = self.token.owner_of_by_id(token_id);
-        if owner != address {
-            self.revert(NameTokenError::InvalidTokenOwner);
-        }
-    }
-
-    pub fn is_token_valid(&self, token_hash: &String) -> bool {
-        if !self.token.token_exists_by_hash(token_hash) {
-            return false;
-        }
-
-        let metadata: NameTokenMetadata = self.wrapped_metadata(token_hash);
-        if metadata.expiration().unwrap_or_revert(self) < self.env().get_block_time() {
-            return false;
-        }
-        true
     }
 
     pub fn transfer(
@@ -212,6 +159,62 @@ impl NameToken {
         }
     }
 
+    pub fn set_token_metadata(
+        &mut self,
+        token_id: Maybe<u64>,
+        token_hash: Maybe<String>,
+        token_meta_data: String,
+    ) {
+        let caller = self.env().caller();
+        if !self.token.is_whitelisted(&caller) {
+            self.revert(NameTokenError::NotWhitelisted);
+        }
+        let token_id = self
+            .token
+            .token_identifier(token_id, token_hash)
+            .to_string();
+        self.token
+            .set_token_metadata_unchecked(&token_id, token_meta_data);
+    }
+
+    pub fn metadata_by_hash(&self, token_hash: String) -> String {
+        self.metadata(Maybe::None, Maybe::Some(token_hash))
+    }
+
+    pub fn resolver(&self, token_hash: String) -> Option<Address> {
+        let metadata: NameTokenMetadata = self.wrapped_metadata(&token_hash);
+        metadata.resolver().unwrap_or_revert(self)
+    }
+
+    pub fn set_resolver(&mut self, token_hash: String, resolver: Address) {
+        if self.token.owner_of_by_id(&token_hash) != self.env().caller() {
+            self.revert(NameTokenError::InvalidTokenOwner);
+        }
+        let mut metadata: NameTokenMetadata = self.wrapped_metadata(&token_hash);
+        metadata.set_resolver(resolver);
+        self.token
+            .set_token_metadata_unchecked(&token_hash, metadata.json());
+    }
+
+    pub fn assert_is_owner(&self, token_hash: &String, address: Address) {
+        let owner = self.token.owner_of_by_id(token_hash);
+        if owner != address {
+            self.revert(NameTokenError::InvalidTokenOwner);
+        }
+    }
+
+    pub fn is_token_valid(&self, token_hash: &String) -> bool {
+        if !self.token.token_exists_by_hash(token_hash) {
+            return false;
+        }
+
+        let metadata: NameTokenMetadata = self.wrapped_metadata(token_hash);
+        if metadata.expiration().unwrap_or_revert(self) < self.env().get_block_time() {
+            return false;
+        }
+        true
+    }
+
     pub fn transfer_by_hash(
         &mut self,
         token_hash: String,
@@ -224,8 +227,8 @@ impl NameToken {
 
 impl NameToken {
     #[inline]
-    pub fn wrapped_metadata(&self, token_hash: &String) -> NameTokenMetadata {
-        self.metadata_by_hash(token_hash)
+    pub fn wrapped_metadata(&self, token_hash: &str) -> NameTokenMetadata {
+        self.metadata_by_hash(token_hash.to_owned())
             .try_into()
             .unwrap_or_revert(self)
     }
@@ -244,7 +247,7 @@ mod tests {
     use odra::OdraResult;
 
     use super::*;
-    use crate::test_context::{TestContext, INIT_TIME};
+    use crate::test_context::{TestContext, INIT_TIME, TOKEN_EXPIRATION};
 
     #[test]
     fn test_token_exists() {
@@ -497,7 +500,8 @@ mod tests {
 
     fn mint_for(ctx: &mut TestContext, owner: Address, name: &str) {
         ctx.set_caller(ctx.admin);
-        let token_meta_data = NameTokenMetadata::with_no_resolver(name, 0);
+        let token_meta_data =
+            NameTokenMetadata::with_no_resolver(name, INIT_TIME + TOKEN_EXPIRATION);
         ctx.token
             .mint(owner, token_meta_data.json(), Maybe::Some(name.to_owned()));
     }

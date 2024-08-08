@@ -17,19 +17,14 @@ loop N times
     NameToken -> Registrar
     Registrar -> Registrar: check expiry date
     group expiration + grace_period + pending_delete_period < blocktime
-        group Resolver is default resolver
-            Registrar -> Resolver: cleanup(name_hash)
-            Resolver -> Registrar:
-        end
-        Registrar -> Registrar: clear resolver address
-        Registrar -> NameToken: set_token_metadata(name_hash, new_metadata)
-        activate NameToken
-            NameToken -> NameToken: update metadata
-            NameToken -> "Events": MetadataUpdated event
-            NameToken -> Registrar
-            deactivate NameToken
         Registrar -> NameToken: burn(name_hash)
         activate NameToken
+        group Resolver is default resolver
+            NameToken -> Resolver: cleanup(name_hash)
+            Resolver -> NameToken:
+        end
+        NameToken -> NameToken: clear resolver address
+        NameToken -> "Events": MetadataUpdated event
         NameToken -> NameToken: burn token
         NameToken -> "Events": Burn event
         NameToken -> Registrar

@@ -14,8 +14,6 @@ NameToken -> NameToken: check expiration date
 alt expiration < blocktime
     NameToken ->X Owner: Revert with cannot_transfer error
 end
-NameToken -> NameToken: clear resolver
-NameToken -> "Events": MetadataUpdated event
 NameToken -> NameToken: clear operator
 NameToken -> NameToken : set new owner
 NameToken -> "Events": Transfer event

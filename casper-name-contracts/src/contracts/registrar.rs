@@ -199,7 +199,8 @@ impl Registrar {
 
     fn expire_single(&mut self, token_hash: String, block_time: u64, grace_period: u64) {
         let metadata = self.wrapped_metadata(&token_hash);
-        if metadata.expiration().unwrap_or_revert(self) + grace_period < block_time {
+        let token_expiration = metadata.expiration().unwrap_or_revert(self);
+        if self.is_token_expired(token_expiration, grace_period, block_time) {
             self.burn(&token_hash, &metadata);
         }
     }
@@ -211,8 +212,8 @@ impl Registrar {
 
     #[inline]
     fn assert_token_expired(&self, token_expiration: u64, block_time: u64) {
-        let rebuy_time = token_expiration + self.grace_period() + PENDING_DELETE_PERIOD;
-        if block_time < rebuy_time {
+        let grace_period = self.grace_period();
+        if !self.is_token_expired(token_expiration, grace_period, block_time) {
             self.revert(RegistrarError::TokenNotExpired);
         }
     }
@@ -254,6 +255,11 @@ impl Registrar {
             .metadata_by_hash(token_hash)
             .try_into()
             .unwrap_or_revert(self)
+    }
+
+    #[inline]
+    fn is_token_expired(&self, token_expiration: u64, grace_period: u64, block_time: u64) -> bool {
+        block_time > token_expiration + grace_period + PENDING_DELETE_PERIOD
     }
 }
 

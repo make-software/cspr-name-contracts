@@ -1,5 +1,6 @@
 use casper_name_contracts::contracts::{
-    controller::Controller, name_token::NameToken, registrar::Registrar, resolver::DefaultResolver,
+    controller::Controller, marketplace::SecondaryMarket, name_token::NameToken,
+    registrar::Registrar, resolver::DefaultResolver,
 };
 use deploy::DeployScript;
 use odra_cli::OdraCli;
@@ -16,6 +17,7 @@ pub fn cli() {
         .contract::<Controller>()
         .contract::<Registrar>()
         .contract::<NameToken>()
+        .contract::<SecondaryMarket>()
         .scenario(SetConfigScript)
         .scenario(RegisterTokenScenario)
         .scenario(CalculateTokenHash)

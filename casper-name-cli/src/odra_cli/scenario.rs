@@ -42,10 +42,20 @@ impl odra_cli::scenario::Scenario for SetConfigScript {
         let controller_address = *container.get_ref::<Controller>(env)?.address();
 
         let mut registrar = container.get_ref::<Registrar>(env)?;
+        let mut name_token = container.get_ref::<NameToken>(env)?;
+
+        // Set default resolver.
+        env.set_gas(1_000_000_000);
+        name_token.set_variables(
+            Maybe::Some(true),
+            Maybe::Some(vec![env.get_account(0)]),
+            Maybe::None,
+        );
+        name_token.set_default_resolver(resolver_address);
 
         // Whitelist the registrar in the name token.
         env.set_gas(1_000_000_000);
-        container.get_ref::<NameToken>(env)?.set_variables(
+        name_token.set_variables(
             Maybe::Some(true),
             Maybe::Some(vec![*registrar.address()]),
             Maybe::None,
@@ -58,10 +68,6 @@ impl odra_cli::scenario::Scenario for SetConfigScript {
         // Set the grace period.
         env.set_gas(1_000_000_000);
         registrar.set_grace_period(GRACE_PERIOD);
-
-        // Set default resolver.
-        env.set_gas(1_000_000_000);
-        registrar.set_default_resolver(resolver_address);
 
         Ok(())
     }

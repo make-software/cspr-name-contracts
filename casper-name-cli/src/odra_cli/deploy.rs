@@ -39,7 +39,6 @@ impl odra_cli::deploy::DeployScript for DeployScript {
             &env,
             RegistrarInitArgs {
                 name_token: *token.address(),
-                default_resolver: *resolver.address(),
             },
         )?;
         container.add_contract(&registrar)?;

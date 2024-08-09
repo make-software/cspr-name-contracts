@@ -31,29 +31,15 @@ impl Controller {
             fn has_role(&self, role: &Role, address: &Address) -> bool;
             fn grant_role(&mut self, role: &Role, address: &Address);
             fn revoke_role(&mut self, role: &Role, address: &Address);
+            fn set_signer_public_key(&mut self, signer: PublicKey);
+            fn set_treasury(&mut self, treasury: Address);
+            fn signer_public_key(&self) -> PublicKey;
         }
     }
 
     pub fn init(&mut self, registrar: Address, signer: PublicKey, treasury: Address) {
         self.registrar.set(registrar);
         self.controller.init(signer, treasury);
-    }
-
-    pub fn set_signer_public_key(&mut self, signer: PublicKey) {
-        self.controller.assert_caller_is_admin();
-        self.controller.signer_public_key.set(signer);
-    }
-
-    pub fn set_treasury(&mut self, treasury: Address) {
-        self.controller.assert_caller_is_admin();
-        self.controller.treasury.set(treasury);
-    }
-
-    pub fn signer_public_key(&self) -> PublicKey {
-        self.controller
-            .signer_public_key
-            .get()
-            .unwrap_or_revert(self)
     }
 
     #[odra(payable)]
@@ -100,6 +86,16 @@ impl BaseController {
         let admin = self.env().caller();
         self.access_control
             .unchecked_grant_role(&DEFAULT_ADMIN_ROLE, &admin);
+    }
+
+    pub fn set_signer_public_key(&mut self, signer: PublicKey) {
+        self.assert_caller_is_admin();
+        self.signer_public_key.set(signer);
+    }
+
+    pub fn set_treasury(&mut self, treasury: Address) {
+        self.assert_caller_is_admin();
+        self.treasury.set(treasury);
     }
 
     pub fn signer_public_key(&self) -> PublicKey {

@@ -143,7 +143,7 @@ pub fn parse() {
                 actions::registrar::prolong(&env, name, token_validity)
             }
             RegistrarCommands::SetDefaultResolver { resolver } => {
-                actions::registrar::set_default_resolver(&env, resolver)
+                actions::token::set_default_resolver(&env, resolver)
             }
             RegistrarCommands::Resolve { name } => actions::registrar::resolve(&env, name),
             RegistrarCommands::SetGracePeriod { seconds } => {

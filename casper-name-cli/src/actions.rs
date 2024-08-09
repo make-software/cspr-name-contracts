@@ -58,7 +58,6 @@ pub fn deploy_all(env: &HostEnv) {
         &env,
         RegistrarInitArgs {
             name_token: *token.address(),
-            default_resolver: *resolver.address(),
         },
     );
     contracts.add_contract(&Registrar::ident(), registrar.address());
@@ -99,7 +98,7 @@ pub fn set_config(env: &HostEnv) {
     // Set default resolver.
     env.set_gas(1_000_000_000);
     contracts
-        .registrar
+        .token
         .set_default_resolver(*contracts.resolver.address());
 }
 
@@ -126,14 +125,6 @@ pub mod registrar {
 
         env.set_gas(10_000_000_000);
         contract(env).prolong(voucher);
-    }
-
-    pub fn set_default_resolver(env: &HostEnv, address: String) {
-        let resolver = parse_address(&address);
-        assert!(resolver.is_contract());
-
-        env.set_gas(3_000_000_000);
-        contract(env).set_default_resolver(resolver);
     }
 
     pub fn set_grace_period(env: &HostEnv, seconds: u64) {
@@ -256,6 +247,14 @@ pub mod token {
 
         let message = format!("Balance of {:?}: {}", owner, result);
         prettycli::info(&message);
+    }
+
+    pub fn set_default_resolver(env: &HostEnv, address: String) {
+        let resolver = parse_address(&address);
+        assert!(resolver.is_contract());
+
+        env.set_gas(3_000_000_000);
+        contract(env).set_default_resolver(resolver);
     }
 
     fn contract(env: &HostEnv) -> NameTokenHostRef {

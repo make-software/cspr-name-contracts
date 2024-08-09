@@ -23,7 +23,6 @@ pub struct Registrar {
     name_token: External<NameTokenContractRef>,
     access_control: SubModule<AccessControl>,
     grace_period: Var<u64>,
-    default_resolver: External<ResolverContractRef>,
 }
 
 #[odra::module]
@@ -36,13 +35,11 @@ impl Registrar {
         }
     }
 
-    pub fn init(&mut self, name_token: Address, default_resolver: Address) {
+    pub fn init(&mut self, name_token: Address) {
         let caller = self.env().caller();
 
         // Set NameToken address.
         self.name_token.set(name_token);
-        // Set default resolver address.
-        self.default_resolver.set(default_resolver);
 
         // Init grace period to 0.
         self.grace_period.set(0);
@@ -78,9 +75,9 @@ impl Registrar {
 
     pub fn admin_burn(&mut self, token_hashes: Vec<String>) {
         self.assert_caller_is_admin();
+        let name_token = self.name_token.deref_mut();
         for token_hash in token_hashes {
-            let metadata = self.wrapped_metadata(&token_hash);
-            self.burn(&token_hash, &metadata);
+            burn(name_token, token_hash);
         }
     }
 
@@ -110,14 +107,14 @@ impl Registrar {
             if token_exists {
                 let metadata = self.wrapped_metadata(&token_hash);
                 self.assert_token_expired(metadata.expiration().unwrap_or_revert(self), block_time);
-                self.burn(&token_hash, &metadata);
+                burn(self.name_token.deref_mut(), token_hash.clone());
             }
 
             // Mint token.
             let metadata = NameTokenMetadata::with_resolver(
                 &info.label,
                 info.token_expiration,
-                *self.default_resolver.address(),
+                self.name_token.get_default_resolver(),
             );
             let metadata = metadata.json();
             mint(
@@ -151,11 +148,6 @@ impl Registrar {
                 metadata.json().to_string(),
             );
         }
-    }
-
-    pub fn set_default_resolver(&mut self, resolver: Address) {
-        self.assert_caller_is_admin();
-        self.default_resolver.set(resolver);
     }
 
     pub fn resolve(&self, full_domain: String) -> Option<Address> {
@@ -201,7 +193,7 @@ impl Registrar {
         let metadata = self.wrapped_metadata(token_hash);
         let token_expiration = metadata.expiration().unwrap_or_revert(self);
         if self.is_token_expired(token_expiration, grace_period, block_time) {
-            self.burn(token_hash, &metadata);
+            burn(self.name_token.deref_mut(), token_hash.to_owned());
         }
     }
 
@@ -223,25 +215,6 @@ impl Registrar {
         if voucher.expiration_time() < block_time {
             self.revert(RegistrarError::VoucherExpired);
         }
-    }
-
-    #[inline]
-    fn burn(&mut self, token_hash: &str, metadata: &NameTokenMetadata) {
-        let resolver = self.name_token.resolver(token_hash.to_owned());
-        if let Some(resolver) = resolver {
-            // Cleanup only default resolver.
-            if resolver == *self.default_resolver.address() {
-                self.resolver(resolver).cleanup(token_hash.to_owned());
-            }
-        }
-        let mut metadata = metadata.clone();
-        metadata.clear_resolver();
-
-        let token_meta_data = metadata.json();
-
-        let name_token = self.name_token.deref_mut();
-        set_token_metadata(name_token, token_hash.to_owned(), token_meta_data);
-        burn(name_token, token_hash.to_owned());
     }
 
     #[inline]
@@ -630,23 +603,23 @@ mod tests {
         assert_eq!(result, Err(RegistrarError::GracePeriodExpired.into()));
     }
 
-    #[test]
-    fn test_set_default_resolver() {
-        let mut ctx = TestContext::install_and_setup();
-        let (admin, alice, resolver) = (ctx.admin, ctx.alice, *ctx.default_resolver.address());
+    // #[test]
+    // fn test_set_default_resolver() {
+    //     let mut ctx = TestContext::install_and_setup();
+    //     let (admin, alice, resolver) = (ctx.admin, ctx.alice, *ctx.default_resolver.address());
 
-        // When Admin sets default resolver.
-        ctx.set_caller(admin);
-        let result = ctx.registrar.try_set_default_resolver(resolver);
-        // Then the operation succeeds.
-        assert_eq!(result, Ok(()));
+    //     // When Admin sets default resolver.
+    //     ctx.set_caller(admin);
+    //     let result = ctx.registrar.try_set_default_resolver(resolver);
+    //     // Then the operation succeeds.
+    //     assert_eq!(result, Ok(()));
 
-        // When Admin sets default resolver.
-        ctx.set_caller(alice);
-        let result = ctx.registrar.try_set_default_resolver(resolver);
-        // Then the operation fails.
-        assert!(result.is_err());
-    }
+    //     // When Admin sets default resolver.
+    //     ctx.set_caller(alice);
+    //     let result = ctx.registrar.try_set_default_resolver(resolver);
+    //     // Then the operation fails.
+    //     assert!(result.is_err());
+    // }
 
     #[test]
     fn resolve_with_invalid_domain() {

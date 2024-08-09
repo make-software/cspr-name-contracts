@@ -1,7 +1,8 @@
+#![allow(unused_variables)]
 use crate::data_structures::NameTokenMetadata;
 use odra::args::Maybe;
 use odra::module::Revertible;
-use odra::{prelude::*, UnwrapOrRevert};
+use odra::{prelude::*, External, UnwrapOrRevert};
 use odra::{Address, SubModule};
 use odra_modules::cep78::modalities::{
     BurnMode, EventsMode, MetadataMutability, MintingMode, NFTHolderMode, NFTIdentifierMode,
@@ -9,9 +10,12 @@ use odra_modules::cep78::modalities::{
 };
 use odra_modules::cep78::token::Cep78;
 
+use super::resolver::ResolverContractRef;
+
 #[odra::module]
 pub struct NameToken {
     token: SubModule<Cep78>,
+    default_resolver: External<ResolverContractRef>,
 }
 
 #[odra::module]
@@ -115,28 +119,49 @@ impl NameToken {
     }
 
     pub fn burn(&mut self, token_id: Maybe<u64>, token_hash: Maybe<String>) {
-        let caller = self.env().caller();
-        if !self.token.is_whitelisted(&caller) {
-            self.revert(NameTokenError::NotWhitelisted);
-        }
+        if let Maybe::Some(token_hash) = token_hash {
+            let caller = self.env().caller();
+            if !self.token.is_whitelisted(&caller) {
+                self.revert(NameTokenError::NotWhitelisted);
+            }
 
-        let token_identifier = self.token.token_identifier(token_id, token_hash);
-        let token_id = token_identifier.to_string();
-        self.token.burn_token_unchecked(token_id, caller);
+            // cleanup the resolver is the default resolver and update metadata
+            let mut metadata = self.wrapped_metadata(&token_hash);
+            if let Some(resolver) = metadata.resolver().unwrap_or_revert(self) {
+                if &resolver == self.default_resolver.address() {
+                    self.default_resolver.cleanup(token_hash.clone());
+                }
+            }
+            metadata.clear_resolver();
+            self._set_token_metadata(token_hash.clone(), metadata.json());
+
+            // burn the token
+            self.token.burn_token_unchecked(token_hash, caller);
+        } else {
+            self.revert(NameTokenError::InvalidTokenIdentifier);
+        }
     }
 
     pub fn admin_transfer(&mut self, recipient: Address, token_hashes: Vec<String>) {
-        let spender = self.env().caller();
-        if !self.token.is_whitelisted(&spender) {
-            self.revert(NameTokenError::NotWhitelisted);
-        }
+        let caller = self.env().caller();
+        self.assert_is_whitelisted(&caller);
+
         for token_hash in token_hashes {
             let owner = self.token.owner_of_by_id(&token_hash);
             if !self.is_token_valid(&token_hash) {
                 self.revert(NameTokenError::ExpiredTokenTransfer);
             }
-            self.token
-                .transfer_unchecked(token_hash, owner, Some(spender), recipient);
+            // if called by an operator
+            if caller != owner {
+                self.cleanup(token_hash.clone());
+                self.token
+                    .transfer_unchecked(token_hash.clone(), owner, Some(caller), recipient);
+                // make sure there were no previous records for the new owner
+                self.default_resolver.cleanup(token_hash);
+            } else {
+                self.token
+                    .transfer_unchecked(token_hash.clone(), owner, Some(caller), recipient);
+            }
         }
     }
 
@@ -147,13 +172,23 @@ impl NameToken {
         source_key: Address,
         target_key: Address,
     ) {
-        match token_hash {
-            Maybe::Some(token_hash) => {
-                if !self.is_token_valid(&token_hash) {
+        match token_hash.clone() {
+            Maybe::Some(token_hash_value) => {
+                if !self.is_token_valid(&token_hash_value) {
                     self.revert(NameTokenError::ExpiredTokenTransfer);
                 }
-                self.token
-                    .transfer(token_id, Maybe::Some(token_hash), source_key, target_key);
+                let caller = self.env().caller();
+                let owner = self.token.owner_of_by_id(&token_hash_value);
+                // if called by an operator
+                if caller != owner {
+                    self.cleanup(token_hash_value.clone());
+                    self.token
+                        .transfer(token_id, token_hash, source_key, target_key);
+                    self.default_resolver.cleanup(token_hash_value);
+                } else {
+                    self.token
+                        .transfer(token_id, token_hash, source_key, target_key);
+                }
             }
             Maybe::None => self.revert(NameTokenError::InvalidTokenIdentifier),
         }
@@ -166,9 +201,7 @@ impl NameToken {
         token_meta_data: String,
     ) {
         let caller = self.env().caller();
-        if !self.token.is_whitelisted(&caller) {
-            self.revert(NameTokenError::NotWhitelisted);
-        }
+        self.assert_is_whitelisted(&caller);
         let token_id = self
             .token
             .token_identifier(token_id, token_hash)
@@ -215,13 +248,14 @@ impl NameToken {
         true
     }
 
-    pub fn transfer_by_hash(
-        &mut self,
-        token_hash: String,
-        source_key: Address,
-        target_key: Address,
-    ) {
-        self.transfer(Maybe::None, Maybe::Some(token_hash), source_key, target_key);
+    pub fn set_default_resolver(&mut self, resolver: Address) {
+        let caller = self.env().caller();
+        self.assert_is_whitelisted(&caller);
+        self.default_resolver.set(resolver);
+    }
+
+    pub fn get_default_resolver(&self) -> Address {
+        *self.default_resolver.address()
     }
 }
 
@@ -231,6 +265,30 @@ impl NameToken {
         self.metadata_by_hash(token_hash.to_owned())
             .try_into()
             .unwrap_or_revert(self)
+    }
+
+    #[inline]
+    fn assert_is_whitelisted(&self, address: &Address) {
+        if !self.token.is_whitelisted(address) {
+            self.revert(NameTokenError::NotWhitelisted);
+        }
+    }
+
+    fn _set_token_metadata(&mut self, token_hash: String, json: String) {
+        self.set_token_metadata(Maybe::None, Maybe::Some(token_hash), json);
+    }
+
+    fn cleanup(&mut self, token_hash: String) {
+        let mut metadata = self.wrapped_metadata(&token_hash);
+        if let Some(resolver) = metadata.resolver().unwrap_or_revert(self) {
+            if &resolver == self.default_resolver.address() {
+                self.default_resolver.cleanup(token_hash);
+            }
+        } else {
+            let default_resolver = *self.default_resolver.address();
+            metadata.set_resolver(default_resolver);
+            self._set_token_metadata(token_hash.clone(), metadata.json());
+        }
     }
 }
 

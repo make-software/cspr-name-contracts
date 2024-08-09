@@ -65,7 +65,6 @@ impl TestContext {
             &env,
             RegistrarInitArgs {
                 name_token: *name_token.address(),
-                default_resolver: *resolver.address(),
             },
         );
         let controller = ControllerHostRef::deploy(
@@ -98,10 +97,13 @@ impl TestContext {
     pub fn install_and_setup() -> TestContext {
         let mut contracts = TestContext::install_raw();
 
+        // register default resolver
+        contracts.whitelist_admin_in_name_token();
+        contracts.register_default_resolver_in_name_token();
         // Setup access.
         contracts.whitelist_registrar_in_name_token();
         contracts.set_controller_in_registrar();
-        contracts.set_registrar_in_resolver();
+        contracts.set_name_token_in_resolver();
 
         // Setup grace period.
         contracts.registrar.set_grace_period(GRACE_PERIOD);
@@ -130,9 +132,14 @@ impl TestContext {
             .grant_role(&CONTROLLER_ROLE, self.controller.address());
     }
 
-    pub fn set_registrar_in_resolver(&mut self) {
+    pub fn set_name_token_in_resolver(&mut self) {
         self.default_resolver
-            .grant_role(&DEFAULT_ADMIN_ROLE, self.registrar.address());
+            .grant_role(&DEFAULT_ADMIN_ROLE, self.token.address());
+    }
+
+    pub fn register_default_resolver_in_name_token(&mut self) {
+        let address = *self.default_resolver.address();
+        self.token.set_default_resolver(address);
     }
 
     pub fn sign<T: ToBytes>(&self, data: &T) -> Bytes {

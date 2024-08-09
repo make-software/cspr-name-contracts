@@ -278,7 +278,7 @@ mod tests {
             blake2b, TestContext, GRACE_PERIOD, INIT_TIME, TOKEN_EXPIRATION, TOKEN_NAME,
         },
     };
-    use odra::host::HostRef;
+    use odra::{casper_types::ContractPackageHash, host::HostRef};
     use odra_modules::{access::errors::Error as AccessControlError, cep78::events::Burn};
 
     #[test]
@@ -478,6 +478,38 @@ mod tests {
     }
 
     #[test]
+    fn on_expiration_default_resolver_is_cleanup() {
+        let mut ctx = TestContext::install_and_setup();
+        let (admin, alice) = (ctx.admin, ctx.alice);
+
+        let full_domain = format!("{}.cspr", TOKEN_NAME);
+
+        // Given Alice has a token.
+        ctx.with_name_registered(admin, alice, TOKEN_NAME);
+        // And a resolution for the token is set.
+        ctx.set_caller(alice);
+        ctx.default_resolver
+            .set_resolution(full_domain.clone(), Some(alice));
+        assert_eq!(
+            ctx.default_resolver.resolve(full_domain.clone()),
+            Some(alice)
+        );
+        assert_eq!(
+            ctx.token.resolver(blake2b(TOKEN_NAME)),
+            Some(*ctx.default_resolver.address())
+        );
+
+        // And is after grace period.
+        ctx.advance_block_time(TOKEN_EXPIRATION + GRACE_PERIOD + PENDING_DELETE_PERIOD + 1);
+
+        // When anyone tries to expire the token.
+        ctx.with_name_expired(TOKEN_NAME);
+
+        // Then the resolution is cleared.
+        assert_eq!(ctx.default_resolver.resolve(full_domain), None);
+    }
+
+    #[test]
     fn test_multi_tokens_expiration_after_grace_period() {
         let mut ctx = TestContext::install_and_setup();
         let (admin, alice) = (ctx.admin, ctx.alice);
@@ -512,6 +544,65 @@ mod tests {
     }
 
     #[test]
+    fn test_admin_transfer_clears_default_resolver() {
+        let mut ctx = TestContext::install_and_setup();
+        let (admin, alice, bob) = (ctx.admin, ctx.alice, ctx.bob);
+        let full_domain = format!("{}.cspr", TOKEN_NAME);
+
+        // Given Alice has a token.
+        ctx.with_name_registered(admin, alice, TOKEN_NAME);
+
+        // And a resolution for the token is set
+        ctx.set_caller(alice);
+        ctx.default_resolver
+            .set_resolution(full_domain.clone(), Some(alice));
+        assert_eq!(
+            ctx.default_resolver.resolve(full_domain.clone()),
+            Some(alice)
+        );
+        assert_eq!(
+            ctx.token.resolver(blake2b(TOKEN_NAME)),
+            Some(*ctx.default_resolver.address())
+        );
+
+        ctx.admin_transfer(bob, vec![TOKEN_NAME]);
+
+        // Then the resolution is cleared.
+        assert_eq!(ctx.default_resolver.resolve(full_domain), None);
+    }
+
+    #[test]
+    fn test_admin_transfer_sets_default_resolver() {
+        let mut ctx = TestContext::install_and_setup();
+        let (admin, alice, bob) = (ctx.admin, ctx.alice, ctx.bob);
+
+        // Given Alice has a token.
+        ctx.with_name_registered(admin, alice, TOKEN_NAME);
+
+        // And change the resolver
+        let resolver = Address::Contract(ContractPackageHash::new([1u8; 32]));
+        ctx.set_caller(alice);
+        ctx.token.set_resolver(blake2b(TOKEN_NAME), resolver);
+
+        let json = ctx.token.metadata_by_hash(blake2b(TOKEN_NAME));
+        let actual_resolver = NameTokenMetadata::try_from(json)
+            .unwrap()
+            .resolver()
+            .unwrap();
+        assert_eq!(actual_resolver, Some(resolver));
+
+        ctx.admin_transfer(bob, vec![TOKEN_NAME]);
+
+        // Then the resolution is cleared.
+        let json = ctx.token.metadata_by_hash(blake2b(TOKEN_NAME));
+        let actual_resolver = NameTokenMetadata::try_from(json)
+            .unwrap()
+            .resolver()
+            .unwrap();
+        assert_eq!(actual_resolver, Some(ctx.token.get_default_resolver()));
+    }
+
+    #[test]
     fn test_admin_burn() {
         let mut ctx = TestContext::install_and_setup();
         let (admin, alice) = (ctx.admin, ctx.alice);
@@ -523,6 +614,34 @@ mod tests {
 
         // Then Alice's token is burned.
         assert_eq!(ctx.token.balance_of(alice), 0);
+    }
+
+    #[test]
+    fn test_admin_burn_clears_default_resolver() {
+        let mut ctx = TestContext::install_and_setup();
+        let (admin, alice) = (ctx.admin, ctx.alice);
+        let full_domain = format!("{}.cspr", TOKEN_NAME);
+
+        // Given Alice has a token.
+        ctx.with_name_registered(admin, alice, TOKEN_NAME);
+
+        // And a resolution for the token is set
+        ctx.set_caller(alice);
+        ctx.default_resolver
+            .set_resolution(full_domain.clone(), Some(alice));
+        assert_eq!(
+            ctx.default_resolver.resolve(full_domain.clone()),
+            Some(alice)
+        );
+        assert_eq!(
+            ctx.token.resolver(blake2b(TOKEN_NAME)),
+            Some(*ctx.default_resolver.address())
+        );
+
+        ctx.admin_burn(vec![TOKEN_NAME]);
+
+        // Then the resolution is cleared.
+        assert_eq!(ctx.default_resolver.resolve(full_domain), None);
     }
 
     #[test]
@@ -603,24 +722,6 @@ mod tests {
         assert_eq!(result, Err(RegistrarError::GracePeriodExpired.into()));
     }
 
-    // #[test]
-    // fn test_set_default_resolver() {
-    //     let mut ctx = TestContext::install_and_setup();
-    //     let (admin, alice, resolver) = (ctx.admin, ctx.alice, *ctx.default_resolver.address());
-
-    //     // When Admin sets default resolver.
-    //     ctx.set_caller(admin);
-    //     let result = ctx.registrar.try_set_default_resolver(resolver);
-    //     // Then the operation succeeds.
-    //     assert_eq!(result, Ok(()));
-
-    //     // When Admin sets default resolver.
-    //     ctx.set_caller(alice);
-    //     let result = ctx.registrar.try_set_default_resolver(resolver);
-    //     // Then the operation fails.
-    //     assert!(result.is_err());
-    // }
-
     #[test]
     fn resolve_with_invalid_domain() {
         let mut ctx = TestContext::install_and_setup();
@@ -668,6 +769,4 @@ mod tests {
         // Then the result is the token owner.
         assert_eq!(result, Some(alice));
     }
-
-    // TODO: test scenarios of burn when the default resolver is set, and a custom one to verify the correctness of the resolver cleanup
 }

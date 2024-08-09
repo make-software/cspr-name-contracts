@@ -251,6 +251,9 @@ impl NameToken {
     pub fn set_default_resolver(&mut self, resolver: Address) {
         let caller = self.env().caller();
         self.assert_is_whitelisted(&caller);
+        if !resolver.is_contract() {
+            self.revert(NameTokenError::InvalidResolver);
+        }
         self.default_resolver.set(resolver);
     }
 
@@ -280,10 +283,9 @@ impl NameToken {
 
     fn cleanup(&mut self, token_hash: String) {
         let mut metadata = self.wrapped_metadata(&token_hash);
-        if let Some(resolver) = metadata.resolver().unwrap_or_revert(self) {
-            if &resolver == self.default_resolver.address() {
-                self.default_resolver.cleanup(token_hash);
-            }
+        let resolver = metadata.resolver().unwrap_or_revert(self);
+        if resolver == Some(*self.default_resolver.address()) {
+            self.default_resolver.cleanup(token_hash);
         } else {
             let default_resolver = *self.default_resolver.address();
             metadata.set_resolver(default_resolver);
@@ -298,11 +300,12 @@ pub enum NameTokenError {
     InvalidTokenOwner = 1302,
     ExpiredTokenTransfer = 1303,
     InvalidTokenIdentifier = 1304,
+    InvalidResolver = 1305,
 }
 
 #[cfg(test)]
 mod tests {
-    use odra::OdraResult;
+    use odra::{casper_types::ContractPackageHash, OdraResult};
 
     use super::*;
     use crate::test_context::{TestContext, INIT_TIME, TOKEN_EXPIRATION};
@@ -554,6 +557,19 @@ mod tests {
         assert!(try_burn(&mut ctx, name).is_ok());
         // Then the token should not be valid
         assert!(!ctx.token.is_token_valid(&name.to_string()));
+    }
+
+    #[test]
+    fn only_whitelisted_user_can_set_default_resolver() {
+        let mut ctx = TestContext::install_raw();
+
+        let resolver = Address::Contract(ContractPackageHash::new([0u8; 32]));
+        assert!(ctx.token.try_set_default_resolver(resolver).is_err());
+
+        ctx.whitelist_admin_in_name_token();
+        assert!(ctx.token.try_set_default_resolver(resolver).is_ok());
+
+        assert_eq!(ctx.token.get_default_resolver(), resolver);
     }
 
     fn mint_for(ctx: &mut TestContext, owner: Address, name: &str) {

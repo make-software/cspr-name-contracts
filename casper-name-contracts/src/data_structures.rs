@@ -76,9 +76,9 @@ impl TryFrom<String> for NameTokenMetadata {
     type Error = NameTokenError;
 
     fn try_from(value: String) -> Result<Self, Self::Error> {
-        Value::from_str(&value)
-            .map(|value| Self { value })
-            .map_err(|_| NameTokenError::DeserializationError)
+        let result = Value::from_str(&value).map(|value| Self { value });
+
+        result.map_err(|_| NameTokenError::DeserializationError)
     }
 }
 

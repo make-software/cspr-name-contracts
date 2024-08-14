@@ -10,9 +10,12 @@ use odra::{prelude::*, Address};
 use odra_modules::access::DEFAULT_ADMIN_ROLE;
 use odra_modules::cep78::events::Mint;
 
-use crate::contracts::controller::{self, ControllerHostRef};
-use crate::contracts::registrar::{RegistrarInitArgs, CONTROLLER_ROLE};
-use crate::contracts::resolver::{DefaultResolverHostRef, DefaultResolverInitArgs};
+use crate::contracts::controller::{self, Controller, ControllerHostRef};
+use crate::contracts::name_token::NameToken;
+use crate::contracts::registrar::{Registrar, RegistrarInitArgs, CONTROLLER_ROLE};
+use crate::contracts::resolver::{
+    DefaultResolver, DefaultResolverHostRef, DefaultResolverInitArgs,
+};
 use crate::contracts::{
     name_token::{NameTokenHostRef, NameTokenInitArgs},
     registrar::RegistrarHostRef,
@@ -48,26 +51,26 @@ impl TestContext {
         let signer = env.get_account(10);
         let treasury = env.get_account(11);
 
-        let name_token = NameTokenHostRef::deploy(
+        let name_token = NameToken::deploy(
             &env,
             NameTokenInitArgs {
                 name: String::from(NAME_TOKEN_NAME),
                 symbol: String::from(NAME_TOKEN_SYMBOL),
             },
         );
-        let resolver = DefaultResolverHostRef::deploy(
+        let resolver = DefaultResolver::deploy(
             &env,
             DefaultResolverInitArgs {
                 name_token: *name_token.address(),
             },
         );
-        let registrar = RegistrarHostRef::deploy(
+        let registrar = Registrar::deploy(
             &env,
             RegistrarInitArgs {
                 name_token: *name_token.address(),
             },
         );
-        let controller = ControllerHostRef::deploy(
+        let controller = Controller::deploy(
             &env,
             controller::ControllerInitArgs {
                 registrar: *registrar.address(),

@@ -3,26 +3,29 @@
 
 'autonumber
 participant "Contract" #lightblue
-participant "CSPR.name helper"
+participant "Registrar"
 participant "NameToken"
 participant "Resolver"
 
 == On-chain name resolution (wrapped) ==
 
 activate "Contract"
-Contract -> "CSPR.name helper": resolve('xyz*cspr')
-activate "CSPR.name helper"
-"CSPR.name helper" -> "NameToken": metadata(name_hash)
-"NameToken" -> "CSPR.name helper": token metadata
-"CSPR.name helper" -> "CSPR.name helper": check expiry date
-
-group blocktime < expiry date
-    "CSPR.name helper" -> Resolver: address_of(name_hash)
-    Resolver -> "CSPR.name helper": account address for name
-    "CSPR.name helper" -> Contract: account address for name
+Contract -> "Registrar": resolve(full_domain)
+activate "Registrar"
+"Registrar" -> "NameToken": is_token_valid(name_hash)
+"NameToken" -> "Registrar"
+alt token not found or expired
+    Registrar -> "Contract": None
 end
+"Registrar" -> Resolver: resolve(full_domain)
+alt no resolution found
+    Resolver -> Registrar: None
+    Registrar -> "Contract": None
+end
+    Resolver -> "Registrar": Some(address)
+    "Registrar" -> Contract: Some(address)
 
-deactivate "CSPR.name helper"
+deactivate "Registrar"
 
 == ==
 

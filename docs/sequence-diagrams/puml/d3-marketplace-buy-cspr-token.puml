@@ -7,6 +7,7 @@ participant "d3.app" as d3 #lightblue
 participant "D3 Operator" as d3Op
 participant "NameToken"
 participant "Registrar"
+participant "Resolver"
 boundary "Events"
 
 == Buy *cspr names from D3 Marketplace with CSPR payment ==
@@ -29,10 +30,17 @@ loop N times
     alt expiration < blocktime
         NameToken ->X d3Op: Revert with cannot_transfer error
     end
-    NameToken -> NameToken: clear Resolver
-    NameToken -> "Events": MetadataUpdated event
+    alt Resolver is default resolver
+        NameToken -> Resolver: cleanup(name_hash)
+        Resolver -> NameToken:
+    else
+        NameToken -> NameToken : set default resolver
+        NameToken -> "Events": MetadataUpdated event
+    end
     NameToken -> NameToken: clear operator
     NameToken -> NameToken : set new owner
+    NameToken -> Resolver: cleanup(name_hash)
+    Resolver -> NameToken:
     NameToken -> "Events": Transfer event
     NameToken -> d3Op
     deactivate NameToken

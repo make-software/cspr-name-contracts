@@ -9,13 +9,18 @@ boundary "Events"
 
 == Set account address record ==
 
-"Domain owner" -> Resolver: set_address(name_hash, address)
+"Domain owner" -> Resolver: set_address(full_domain, address)
 activate Resolver
+Resolver -> NameToken: is_token_valid(name_hash)
+NameToken -> Resolver
+alt token not found or expired
+    Resolver ->x "Domain owner": revert with\ninvalid token error
+end
 Resolver -> NameToken: owner_of(name_hash)
 NameToken -> Resolver: owner address
 group caller == owner
     Resolver -> Resolver: set record
-    Resolver -> Events: SetAccountAddress event
+    Resolver -> Events: ResolutionChanged event
 end
 Resolver -> "Domain owner"
 deactivate Resolver

@@ -132,31 +132,6 @@
     },
     {
       "struct": {
-        "name": "NameTokenMetadata",
-        "description": null,
-        "members": [
-          {
-            "name": "name",
-            "description": null,
-            "ty": "String"
-          },
-          {
-            "name": "expiration",
-            "description": null,
-            "ty": "U64"
-          },
-          {
-            "name": "resolver",
-            "description": null,
-            "ty": {
-              "Option": "Key"
-            }
-          }
-        ]
-      }
-    },
-    {
-      "struct": {
         "name": "RevokedForAll",
         "description": null,
         "members": [
@@ -1013,6 +988,11 @@
       "discriminant": 42
     },
     {
+      "name": "ReverseLookupIntegrityViolation",
+      "description": "",
+      "discriminant": 172
+    },
+    {
       "name": "TokenAlreadyApproved",
       "description": "",
       "discriminant": 52
@@ -1051,6 +1031,11 @@
       "name": "UnregisteredOwnerFromMigration",
       "description": "",
       "discriminant": 132
+    },
+    {
+      "name": "UnregisteredOwnerInBurn",
+      "description": "",
+      "discriminant": 173
     },
     {
       "name": "UnregisteredOwnerInMint",
@@ -1113,7 +1098,7 @@
       "is_mutable": true,
       "arguments": [
         {
-          "name": "reciepient",
+          "name": "recipient",
           "description": null,
           "ty": "Key",
           "optional": false
@@ -1124,6 +1109,40 @@
           "ty": {
             "List": "String"
           },
+          "optional": false
+        }
+      ],
+      "return_ty": "Unit",
+      "is_contract_context": true,
+      "access": "public"
+    },
+    {
+      "name": "transfer",
+      "description": "",
+      "is_mutable": true,
+      "arguments": [
+        {
+          "name": "token_id",
+          "description": null,
+          "ty": "U64",
+          "optional": true
+        },
+        {
+          "name": "token_hash",
+          "description": null,
+          "ty": "String",
+          "optional": true
+        },
+        {
+          "name": "source_key",
+          "description": null,
+          "ty": "Key",
+          "optional": false
+        },
+        {
+          "name": "target_key",
+          "description": null,
+          "ty": "Key",
           "optional": false
         }
       ],
@@ -1171,7 +1190,7 @@
           "optional": false
         }
       ],
-      "return_ty": "NameTokenMetadata",
+      "return_ty": "String",
       "is_contract_context": true,
       "access": "public"
     },
@@ -1181,7 +1200,7 @@
       "is_mutable": false,
       "arguments": [
         {
-          "name": "token_id",
+          "name": "token_hash",
           "description": null,
           "ty": "String",
           "optional": false
@@ -1199,7 +1218,7 @@
       "is_mutable": true,
       "arguments": [
         {
-          "name": "token_id",
+          "name": "token_hash",
           "description": null,
           "ty": "String",
           "optional": false
@@ -1221,7 +1240,7 @@
       "is_mutable": false,
       "arguments": [
         {
-          "name": "token_id",
+          "name": "token_hash",
           "description": null,
           "ty": "String",
           "optional": false
@@ -1250,6 +1269,31 @@
         }
       ],
       "return_ty": "Bool",
+      "is_contract_context": true,
+      "access": "public"
+    },
+    {
+      "name": "set_default_resolver",
+      "description": "",
+      "is_mutable": true,
+      "arguments": [
+        {
+          "name": "resolver",
+          "description": null,
+          "ty": "Key",
+          "optional": false
+        }
+      ],
+      "return_ty": "Unit",
+      "is_contract_context": true,
+      "access": "public"
+    },
+    {
+      "name": "get_default_resolver",
+      "description": "",
+      "is_mutable": false,
+      "arguments": [],
+      "return_ty": "Key",
       "is_contract_context": true,
       "access": "public"
     },
@@ -1323,40 +1367,6 @@
           "description": null,
           "ty": "String",
           "optional": true
-        }
-      ],
-      "return_ty": "Unit",
-      "is_contract_context": true,
-      "access": "public"
-    },
-    {
-      "name": "transfer",
-      "description": "Delegated. See `self.token.transfer()` for details.",
-      "is_mutable": true,
-      "arguments": [
-        {
-          "name": "token_id",
-          "description": null,
-          "ty": "U64",
-          "optional": true
-        },
-        {
-          "name": "token_hash",
-          "description": null,
-          "ty": "String",
-          "optional": true
-        },
-        {
-          "name": "source_key",
-          "description": null,
-          "ty": "Key",
-          "optional": false
-        },
-        {
-          "name": "target_key",
-          "description": null,
-          "ty": "Key",
-          "optional": false
         }
       ],
       "return_ty": "Unit",

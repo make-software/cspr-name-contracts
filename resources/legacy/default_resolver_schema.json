@@ -26,7 +26,7 @@
       "name": "ResolutionCleared",
       "args": [
         {
-          "name": "token_name",
+          "name": "token_hash",
           "ty": "String",
           "is_ref": false,
           "is_slice": false,
@@ -203,7 +203,7 @@
       "name": "cleanup",
       "args": [
         {
-          "name": "token_name",
+          "name": "token_hash",
           "ty": "String",
           "is_ref": false,
           "is_slice": false,

@@ -148,14 +148,6 @@
       "attributes": []
     },
     {
-      "name": "signer_public_key",
-      "args": [],
-      "is_mutable": false,
-      "return_ty": "PublicKey",
-      "ty": "Public",
-      "attributes": []
-    },
-    {
       "name": "buy",
       "args": [
         {
@@ -299,6 +291,46 @@
       ],
       "is_mutable": true,
       "return_ty": "Unit",
+      "ty": "Public",
+      "attributes": []
+    },
+    {
+      "name": "set_signer_public_key",
+      "args": [
+        {
+          "name": "signer",
+          "ty": "PublicKey",
+          "is_ref": false,
+          "is_slice": false,
+          "is_required": true
+        }
+      ],
+      "is_mutable": true,
+      "return_ty": "Unit",
+      "ty": "Public",
+      "attributes": []
+    },
+    {
+      "name": "set_treasury",
+      "args": [
+        {
+          "name": "treasury",
+          "ty": "Key",
+          "is_ref": false,
+          "is_slice": false,
+          "is_required": true
+        }
+      ],
+      "is_mutable": true,
+      "return_ty": "Unit",
+      "ty": "Public",
+      "attributes": []
+    },
+    {
+      "name": "signer_public_key",
+      "args": [],
+      "is_mutable": false,
+      "return_ty": "PublicKey",
       "ty": "Public",
       "attributes": []
     }

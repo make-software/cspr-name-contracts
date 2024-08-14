@@ -33,7 +33,7 @@
         "description": null,
         "members": [
           {
-            "name": "token_name",
+            "name": "token_hash",
             "description": null,
             "ty": "String"
           }
@@ -212,7 +212,7 @@
       "is_mutable": true,
       "arguments": [
         {
-          "name": "token_name",
+          "name": "token_hash",
           "description": null,
           "ty": "String",
           "optional": false

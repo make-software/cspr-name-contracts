@@ -12,6 +12,13 @@
 
 _used also to delist a registrar_
 
+### Set Default Resolver address
+
+> As the NameToken contract admin, I should be able to update the default resolver contract address.
+
+![](puml/set-default-resolver.png)
+[🔗](puml/set-default-resolver.puml)
+
 ## Registrar admin functions
 
 ### Whitelist a controller contract or admin address

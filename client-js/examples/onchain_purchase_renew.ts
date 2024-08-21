@@ -1,7 +1,7 @@
 import {Keys } from "casper-js-sdk";
 
 import { Controller } from "../src/controller";
-import { RenewalPaymentVaucher } from "../src/types";
+import { RenewalPaymentVoucher } from "../src/types";
 import { waitForDeploy } from "./common";
 import { config } from "./config";
 
@@ -20,7 +20,7 @@ const run = async () => {
   const expiration = new Date();
   expiration.setFullYear(new Date().getFullYear() + 1, 1, 1);
 
-  const vaucher: RenewalPaymentVaucher = {
+  const voucher: RenewalPaymentVoucher = {
     payment: {
       buyer: buyerKeypair.accountHex(),
       payment_id: "payment:1",
@@ -39,10 +39,10 @@ const run = async () => {
     config.controllerContractHash,
   );
 
-  const signature = controllerContract.signPaymentInfo(vaucher.payment, adminKeypair);
+  const signature = controllerContract.signPaymentInfo(voucher.payment, adminKeypair);
 
   const deploy = controllerContract.renew(
-    vaucher,
+    voucher,
     signature,
     10000,
     buyerKeypair.publicKey,

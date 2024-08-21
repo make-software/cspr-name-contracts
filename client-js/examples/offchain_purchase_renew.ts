@@ -1,7 +1,7 @@
 import { Keys } from "casper-js-sdk";
 
 import { Registrar } from "../src/registrar";
-import { RenewalVaucher } from "../src/types";
+import { RenewalVoucher } from "../src/types";
 import { waitForDeploy } from "./common";
 import { config } from "./config";
 
@@ -15,7 +15,7 @@ const run = async () => {
   const expiration = new Date();
   expiration.setFullYear(new Date().getFullYear() + 1, 1, 1);
 
-  const vaucher: RenewalVaucher = {
+  const voucher: RenewalVoucher = {
     tokens: [{
       // sld.cspr
       token_id: "some-id",
@@ -30,7 +30,7 @@ const run = async () => {
   );
 
   const deploy = registrarContract.prolong(
-    vaucher,
+    voucher,
     10000,
     adminKeypair.publicKey,
   );

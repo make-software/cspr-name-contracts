@@ -10,13 +10,13 @@ interface NameMintInfo {
   token_expiration: Date
 }
 
-export interface PaymentVaucher {
+export interface PaymentVoucher {
   payment: PaymentInfo
   names: NameMintInfo[]
   voucher_expiration: Date
 }
 
-export interface TokenizationVaucher {
+export interface TokenizationVoucher {
   names: NameMintInfo[]
   voucher_expiration: Date
 }
@@ -26,13 +26,13 @@ interface TokenRenewalInfo {
   token_expiration: Date
 }
 
-export interface RenewalPaymentVaucher {
+export interface RenewalPaymentVoucher {
   payment: PaymentInfo
   tokens: TokenRenewalInfo[]
   voucher_expiration: Date
 }
 
-export interface RenewalVaucher {
+export interface RenewalVoucher {
   tokens: TokenRenewalInfo[]
   voucher_expiration: Date
 }

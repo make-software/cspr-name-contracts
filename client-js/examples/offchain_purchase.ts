@@ -1,7 +1,7 @@
 import { encodeBase16, Keys } from "casper-js-sdk";
 
 import { Registrar } from "../src/registrar";
-import { TokenizationVaucher } from "../src/types";
+import { TokenizationVoucher } from "../src/types";
 import { waitForDeploy } from "./common";
 import { config } from "./config";
 
@@ -20,7 +20,7 @@ const run = async () => {
   const expiration = new Date();
   expiration.setFullYear(new Date().getFullYear() + 1, 1, 1);
 
-  const vaucher: TokenizationVaucher = {
+  const voucher: TokenizationVoucher = {
     names: [{
       // sld.cspr
       label: "sld",
@@ -36,7 +36,7 @@ const run = async () => {
   );
 
   const deploy = registrarContract.register(
-    vaucher,
+    voucher,
     10000,
     adminKeypair.publicKey,
   );

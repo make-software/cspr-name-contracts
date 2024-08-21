@@ -1,7 +1,7 @@
 import { Keys } from "casper-js-sdk";
 
 import { Registrar } from "../src/registrar";
-import { RenewalVoucher } from "../src/types";
+import { RenewalVoucher, TokenRenewalInfo } from "../src/types";
 import { waitForDeploy } from "./common";
 import { config } from "./config";
 
@@ -15,14 +15,10 @@ const run = async () => {
   const expiration = new Date();
   expiration.setFullYear(new Date().getFullYear() + 1, 1, 1);
 
-  const voucher: RenewalVoucher = {
-    tokens: [{
-      // sld.cspr
-      token_id: "some-id",
-      token_expiration: expiration,
-    }],
-    voucher_expiration: expiration,
-  };
+  const voucher = new RenewalVoucher(
+    [new TokenRenewalInfo("some-hash", expiration)],
+    expiration,
+  )
 
   const registrarContract = new Registrar(
     config.networkName,

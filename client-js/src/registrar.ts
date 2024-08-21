@@ -1,5 +1,5 @@
 import { BigNumber, BigNumberish } from "@ethersproject/bignumber"
-import { CLList, CLPublicKey, CLStringType, Contracts, DeployUtil, RuntimeArgs } from "casper-js-sdk"
+import { CLList, CLPublicKey, CLU8, Contracts, DeployUtil, RuntimeArgs } from "casper-js-sdk"
 
 import { RenewalVoucher, TokenizationVoucher  } from "./types";
 
@@ -28,12 +28,15 @@ export class Registrar {
     paymentAmount: BigNumberish,
     sender: CLPublicKey,
   ): DeployUtil.Deploy {
-    // eslint-disable-next-line no-console
-    console.log({ voucher });
+    const rawVoucherBytes = voucher.toBytes();
+
+    const voucherBytes: CLU8[] = [];
+    for (let i = 0; i < rawVoucherBytes.length; i += 1) {
+      voucherBytes.push(new CLU8(rawVoucherBytes[i]));
+    }
 
     const runtimeArgs = RuntimeArgs.fromMap({
-      // TODO: Implement serialisation for voucher
-      voucher: new CLList(new CLStringType()),
+      voucher: new CLList(voucherBytes),
     });
 
     return this.contractClient.callEntrypoint(
@@ -57,12 +60,15 @@ export class Registrar {
     paymentAmount: BigNumberish,
     sender: CLPublicKey,
   ): DeployUtil.Deploy {
-    // eslint-disable-next-line no-console
-    console.log({ voucher });
+    const rawVoucherBytes = voucher.toBytes();
+
+    const voucherBytes: CLU8[] = [];
+    for (let i = 0; i < rawVoucherBytes.length; i += 1) {
+      voucherBytes.push(new CLU8(rawVoucherBytes[i]));
+    }
 
     const runtimeArgs = RuntimeArgs.fromMap({
-      // TODO: Implement serialisation for voucher
-      voucher: new CLList(new CLStringType()),
+      voucher: new CLList(voucherBytes),
     });
 
     return this.contractClient.callEntrypoint(

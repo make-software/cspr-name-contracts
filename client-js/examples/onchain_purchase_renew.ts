@@ -1,7 +1,7 @@
 import {Keys } from "casper-js-sdk";
 
 import { Controller } from "../src/controller";
-import { RenewalPaymentVoucher } from "../src/types";
+import { PaymentInfo, RenewalPaymentVoucher, TokenRenewalInfo } from "../src/types";
 import { waitForDeploy } from "./common";
 import { config } from "./config";
 
@@ -20,26 +20,18 @@ const run = async () => {
   const expiration = new Date();
   expiration.setFullYear(new Date().getFullYear() + 1, 1, 1);
 
-  const voucher: RenewalPaymentVoucher = {
-    payment: {
-      buyer: buyerKeypair.accountHex(),
-      payment_id: "payment:1",
-      amount: 10000,
-    },
-    tokens: [{
-      // sld.cspr
-      token_id: "some-hash",
-      token_expiration: expiration,
-    }],
-    voucher_expiration: expiration,
-  };
+  const voucher = new RenewalPaymentVoucher(
+    new PaymentInfo(buyerKeypair.accountHex(), "payment:1", 10000),
+    [new TokenRenewalInfo("some-hash", expiration)],
+    expiration,
+  );
 
   const controllerContract = new Controller(
     config.networkName,
     config.controllerContractHash,
   );
 
-  const signature = controllerContract.signPaymentInfo(voucher.payment, adminKeypair);
+  const signature = adminKeypair.sign(voucher.toBytes());
 
   const deploy = controllerContract.renew(
     voucher,

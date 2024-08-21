@@ -1,5 +1,5 @@
 import { BigNumber, BigNumberish } from "@ethersproject/bignumber"
-import { CLList, CLPublicKey, CLString, CLStringType, Contracts, DeployUtil, Keys, RuntimeArgs } from "casper-js-sdk"
+import { CLList, CLPublicKey, CLU8, Contracts, DeployUtil, Keys, RuntimeArgs } from "casper-js-sdk"
 
 import { PaymentInfo, PaymentVoucher, RenewalPaymentVoucher } from "./types";
 
@@ -26,17 +26,25 @@ export class Controller {
    */
   public buy(
     voucher: PaymentVoucher,
-    signature: string,
+    signature: Uint8Array,
     paymentAmount: BigNumberish,
     sender: CLPublicKey,
   ): DeployUtil.Deploy {
-    // eslint-disable-next-line no-console
-    console.log({ voucher });
+    const rawVoucherBytes = voucher.toBytes();
+
+    const voucherBytes: CLU8[] = [];
+    for (let i = 0; i < rawVoucherBytes.length; i+=1) {
+      voucherBytes.push(new CLU8(rawVoucherBytes[i]));
+    }
+
+    const signatureBytes: CLU8[] = [];
+    for (let i = 0; i < signature.length; i += 1) {
+      signatureBytes.push(new CLU8(signature[i]));
+    }
     
     const runtimeArgs = RuntimeArgs.fromMap({
-      // TODO: Implement serialisation for voucher
-      voucher: new CLList(new CLStringType()),
-      signature: new CLString(signature),
+      voucher: new CLList(voucherBytes),
+      signature: new CLList(signatureBytes),
     });
 
     return this.contractClient.callEntrypoint(
@@ -58,17 +66,25 @@ export class Controller {
    */
   public renew(
     voucher: RenewalPaymentVoucher,
-    signature: string,
+    signature: Uint8Array,
     paymentAmount: BigNumberish,
     sender: CLPublicKey,
   ): DeployUtil.Deploy {
-    // eslint-disable-next-line no-console
-    console.log({ voucher });
+    const rawVoucherBytes = voucher.toBytes();
+
+    const voucherBytes: CLU8[] = [];
+    for (let i = 0; i < rawVoucherBytes.length; i += 1) {
+      voucherBytes.push(new CLU8(rawVoucherBytes[i]));
+    }
+
+    const signatureBytes: CLU8[] = [];
+    for (let i = 0; i < signature.length; i += 1) {
+      signatureBytes.push(new CLU8(signature[i]));
+    }
 
     const runtimeArgs = RuntimeArgs.fromMap({
-      // TODO: Implement serialisation for voucher
-      voucher: new CLList(new CLStringType()),
-      signature: new CLString(signature),
+      voucher: new CLList(voucherBytes),
+      signature: new CLList(signatureBytes),
     });
 
     return this.contractClient.callEntrypoint(

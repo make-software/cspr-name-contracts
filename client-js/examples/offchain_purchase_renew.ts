@@ -7,9 +7,8 @@ import { config } from "./config";
 
 // eslint-disable-next-line @typescript-eslint/require-await
 const run = async () => {
-  const adminKeypair = Keys.Ed25519.parseKeyFiles(
-    `${config.adminPrivateKeypairPath}/public_key.pem`,
-    `${config.adminPrivateKeypairPath}/secret_key.pem`,
+  const adminKeypair = Keys.Ed25519.loadKeyPairFromPrivateFile(
+    `${config.adminPrivateKeyPath}/secret_key.pem`,
   );
 
   const expiration = new Date();
@@ -22,7 +21,7 @@ const run = async () => {
 
   const registrarContract = new Registrar(
     config.networkName,
-    config.controllerContractHash,
+    config.registrarContractHash,
   );
 
   const deploy = registrarContract.prolong(

@@ -9,3 +9,4 @@ Cargo.lock
 .DS_Store
 /.idea
 casper-name-contracts/wasm
+net-1

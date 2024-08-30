@@ -2,17 +2,25 @@
 
 ## Set a resolver
 
-> As a domain owner, I must be able to set a resolver contract address for my domain.
+> As a *cspr name token owner, I must be able to set a resolver contract address for my name token.
 
 ![](puml/set-resolver.png)
 [🔗](puml/set-resolver.puml)
 
 ## Set account address record
 
-> As a domain owner, I must be able to set a record that resolves my domain name to an account address.
+> As a *cspr name token owner, I must be able to set a record that resolves my domain or subdomain to an account address.
 
 ![](puml/set-account-address-record.png)
 [🔗](puml/set-account-address-record.puml)
+
+## Clean up name token
+
+> As an admin or a *cspr name token owner, I must be able to clean up all records resolving addresses for the name token.
+
+![](puml/clean-up-records.png)
+[🔗](puml/clean-up-records.puml)
+
 
 ## Resolve name
 
@@ -21,7 +29,7 @@
 ![](puml/onchain-name-resolution.png)
 [🔗](puml/onchain-name-resolution.puml) 
 
-The logic could be wrapped in a stored session call:
+This logic is offered by the registrar's `resolve()` entry point:
 
 ![](puml/onchain-name-resolution-wrapped.png)
 [🔗](puml/onchain-name-resolution-wrapped.puml)
@@ -32,17 +40,3 @@ The logic could be wrapped in a stored session call:
 
 ![](puml/resolve-name.png)
 [🔗](puml/resolve-name.puml)
-
-# Reverse resolution
-
-24-06-04: Decided to skip on-chain reverse resolution flows from first version of CSPR.name.
-
-## Set reverse resolution
-
-![](puml/set-reverse-resolution.png)
-[🔗](puml/set-reverse-resolution.puml)
-
-## Look up account name
-
-![](puml/lookup-account-name.png)
-[🔗](puml/lookup-account-name.puml)

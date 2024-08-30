@@ -3,23 +3,17 @@
 
 'autonumber
 actor "Domain owner"
-participant "Controller"
-participant "Registrar"
 participant "NameToken"
 boundary "Events"
 
 == Set resolver ==
 
-"Domain owner" -> Controller: set_resolver(cspr_name,resolver_hash)
-activate Controller
-
-Controller -> NameToken: set_token_metadata(name_hash, new_metadata)
+"Domain owner" -> NameToken: set_resolver(token_hash,resolver_address)
 activate NameToken
+NameToken -> NameToken: update metadata
 NameToken -> "Events": MetadataUpdated event
-NameToken -> Controller
+NameToken -> "Domain owner"
 deactivate NameToken
-Controller -> "Domain owner"
-deactivate Controller
 
 == ==
 

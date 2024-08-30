@@ -21,7 +21,7 @@ activate Controller
 Controller -> Controller: verify voucher\nexpiration
 Controller -> Controller: verify voucher\nsignature
 Controller -> Controller: process CSPR payment
-Controller -> "Events": Payment event
+Controller -> "Events": PaymentFulfilled event
 Controller -> Registrar: register(TokenizationVoucher)
 activate Registrar
 Registrar -> Registrar: verify voucher\nexpiration
@@ -30,13 +30,13 @@ Registrar -> Registrar: verify voucher\nexpiration
         NameToken -> Registrar
         alt Token exists
             Registrar -> Registrar: check expiration date
-            alt expiration+grace_period < blocktime
+            alt expiration+grace_period+pending_delete_period < blocktime
                 Registrar -> NameToken: burn(name_hash)
-                NameToken -> NameToken: clear resolver
+                NameToken -> NameToken: clear resolver address
                 NameToken -> "Events": MetadataUpdated event
                 NameToken -> NameToken: burn token
                 NameToken -> "Events": Burn event
-            else expiration+grace_period > blocktime
+            else expiration+grace_period+pending_delete_period > blocktime
                 Registrar ->x d3: Revert with\nnot expired token error
             end
         end

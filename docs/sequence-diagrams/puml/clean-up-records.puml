@@ -1,0 +1,25 @@
+@startuml
+'https://plantuml.com/sequence-diagram
+
+'autonumber
+actor "Domain owner/\nAdmin"
+participant "Resolver"
+participant "NameToken"
+boundary "Events"
+
+== Set account address record ==
+
+"Domain owner/\nAdmin" -> Resolver: clean_up(token_name)
+activate Resolver
+Resolver -> NameToken: owner_of(name_hash)
+NameToken -> Resolver: owner address
+group caller == owner || is_admin(caller)
+    Resolver -> Resolver: clean up records
+    Resolver -> Events: ResolutionCleared event
+end
+Resolver -> "Domain owner/\nAdmin"
+deactivate Resolver
+
+== ==
+
+@enduml

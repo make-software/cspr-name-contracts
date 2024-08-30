@@ -4,12 +4,12 @@
   "authors": [],
   "repository": null,
   "homepage": null,
-  "contract_name": "Registrar",
+  "contract_name": "SecondaryMarket",
   "contract_version": "0.1.0",
   "types": [
     {
       "struct": {
-        "name": "NameMintInfo",
+        "name": "NameTransferInfo",
         "description": null,
         "members": [
           {
@@ -21,31 +21,52 @@
             "name": "owner",
             "description": null,
             "ty": "Key"
-          },
-          {
-            "name": "token_expiration",
-            "description": null,
-            "ty": "U64"
           }
         ]
       }
     },
     {
       "struct": {
-        "name": "RenewalVoucher",
+        "name": "PaymentFulfilled",
         "description": null,
         "members": [
           {
-            "name": "tokens",
+            "name": "payment_id",
             "description": null,
-            "ty": {
-              "List": "TokenRenewalInfo"
-            }
+            "ty": "String"
           },
           {
-            "name": "voucher_expiration",
+            "name": "buyer",
             "description": null,
-            "ty": "U64"
+            "ty": "Key"
+          },
+          {
+            "name": "amount",
+            "description": null,
+            "ty": "U512"
+          }
+        ]
+      }
+    },
+    {
+      "struct": {
+        "name": "PaymentInfo",
+        "description": null,
+        "members": [
+          {
+            "name": "buyer",
+            "description": null,
+            "ty": "Key"
+          },
+          {
+            "name": "payment_id",
+            "description": null,
+            "ty": "String"
+          },
+          {
+            "name": "amount",
+            "description": null,
+            "ty": "U512"
           }
         ]
       }
@@ -131,32 +152,19 @@
     },
     {
       "struct": {
-        "name": "TokenRenewalInfo",
+        "name": "SecondarySaleVoucher",
         "description": null,
         "members": [
           {
-            "name": "token_id",
+            "name": "payment",
             "description": null,
-            "ty": "String"
+            "ty": "PaymentInfo"
           },
-          {
-            "name": "token_expiration",
-            "description": null,
-            "ty": "U64"
-          }
-        ]
-      }
-    },
-    {
-      "struct": {
-        "name": "TokenizationVoucher",
-        "description": null,
-        "members": [
           {
             "name": "names",
             "description": null,
             "ty": {
-              "List": "NameMintInfo"
+              "List": "NameTransferInfo"
             }
           },
           {
@@ -197,143 +205,32 @@
   ],
   "entry_points": [
     {
-      "name": "grace_period",
-      "description": "",
-      "is_mutable": false,
-      "arguments": [],
-      "return_ty": "U64",
-      "is_contract_context": true,
-      "access": "public"
-    },
-    {
-      "name": "set_grace_period",
+      "name": "buy",
       "description": "",
       "is_mutable": true,
       "arguments": [
         {
-          "name": "period",
+          "name": "voucher",
           "description": null,
-          "ty": "U64",
-          "optional": false
-        }
-      ],
-      "return_ty": "Unit",
-      "is_contract_context": true,
-      "access": "public"
-    },
-    {
-      "name": "admin_transfer",
-      "description": "",
-      "is_mutable": true,
-      "arguments": [
-        {
-          "name": "new_owner",
-          "description": null,
-          "ty": "Key",
+          "ty": "SecondarySaleVoucher",
           "optional": false
         },
         {
-          "name": "token_hashes",
+          "name": "signature",
           "description": null,
           "ty": {
-            "List": "String"
+            "List": "U8"
           },
           "optional": false
         }
       ],
       "return_ty": "Unit",
-      "is_contract_context": true,
-      "access": "public"
-    },
-    {
-      "name": "admin_burn",
-      "description": "",
-      "is_mutable": true,
-      "arguments": [
-        {
-          "name": "token_hashes",
-          "description": null,
-          "ty": {
-            "List": "String"
-          },
-          "optional": false
-        }
-      ],
-      "return_ty": "Unit",
-      "is_contract_context": true,
-      "access": "public"
-    },
-    {
-      "name": "expire",
-      "description": "",
-      "is_mutable": true,
-      "arguments": [
-        {
-          "name": "token_hashes",
-          "description": null,
-          "ty": {
-            "List": "String"
-          },
-          "optional": false
-        }
-      ],
-      "return_ty": "Unit",
-      "is_contract_context": true,
-      "access": "public"
-    },
-    {
-      "name": "register",
-      "description": "",
-      "is_mutable": true,
-      "arguments": [
-        {
-          "name": "voucher",
-          "description": null,
-          "ty": "TokenizationVoucher",
-          "optional": false
-        }
-      ],
-      "return_ty": "Unit",
-      "is_contract_context": true,
-      "access": "public"
-    },
-    {
-      "name": "prolong",
-      "description": "",
-      "is_mutable": true,
-      "arguments": [
-        {
-          "name": "voucher",
-          "description": null,
-          "ty": "RenewalVoucher",
-          "optional": false
-        }
-      ],
-      "return_ty": "Unit",
-      "is_contract_context": true,
-      "access": "public"
-    },
-    {
-      "name": "resolve",
-      "description": "",
-      "is_mutable": false,
-      "arguments": [
-        {
-          "name": "full_domain",
-          "description": null,
-          "ty": "String",
-          "optional": false
-        }
-      ],
-      "return_ty": {
-        "Option": "Key"
-      },
       "is_contract_context": true,
       "access": "public"
     },
     {
       "name": "has_role",
-      "description": "Delegated. See `self.access_control.has_role()` for details.",
+      "description": "Delegated. See `self.controller.has_role()` for details.",
       "is_mutable": false,
       "arguments": [
         {
@@ -357,7 +254,7 @@
     },
     {
       "name": "grant_role",
-      "description": "Delegated. See `self.access_control.grant_role()` for details.",
+      "description": "Delegated. See `self.controller.grant_role()` for details.",
       "is_mutable": true,
       "arguments": [
         {
@@ -381,7 +278,7 @@
     },
     {
       "name": "revoke_role",
-      "description": "Delegated. See `self.access_control.revoke_role()` for details.",
+      "description": "Delegated. See `self.controller.revoke_role()` for details.",
       "is_mutable": true,
       "arguments": [
         {
@@ -402,9 +299,54 @@
       "return_ty": "Unit",
       "is_contract_context": true,
       "access": "public"
+    },
+    {
+      "name": "set_signer_public_key",
+      "description": "Delegated. See `self.controller.set_signer_public_key()` for details.",
+      "is_mutable": true,
+      "arguments": [
+        {
+          "name": "signer",
+          "description": null,
+          "ty": "PublicKey",
+          "optional": false
+        }
+      ],
+      "return_ty": "Unit",
+      "is_contract_context": true,
+      "access": "public"
+    },
+    {
+      "name": "set_treasury",
+      "description": "Delegated. See `self.controller.set_treasury()` for details.",
+      "is_mutable": true,
+      "arguments": [
+        {
+          "name": "treasury",
+          "description": null,
+          "ty": "Key",
+          "optional": false
+        }
+      ],
+      "return_ty": "Unit",
+      "is_contract_context": true,
+      "access": "public"
+    },
+    {
+      "name": "signer_public_key",
+      "description": "Delegated. See `self.controller.signer_public_key()` for details.",
+      "is_mutable": false,
+      "arguments": [],
+      "return_ty": "PublicKey",
+      "is_contract_context": true,
+      "access": "public"
     }
   ],
   "events": [
+    {
+      "name": "PaymentFulfilled",
+      "ty": "PaymentFulfilled"
+    },
     {
       "name": "RoleAdminChanged",
       "ty": "RoleAdminChanged"
@@ -419,7 +361,7 @@
     }
   ],
   "call": {
-    "wasm_file_name": "Registrar.wasm",
+    "wasm_file_name": "SecondaryMarket.wasm",
     "description": "",
     "arguments": [
       {
@@ -438,6 +380,18 @@
         "name": "odra_cfg_is_upgradable",
         "description": "The arg name for the contract upgradeability setting.",
         "ty": "Bool",
+        "optional": false
+      },
+      {
+        "name": "signer",
+        "description": null,
+        "ty": "PublicKey",
+        "optional": false
+      },
+      {
+        "name": "treasury",
+        "description": null,
+        "ty": "Key",
         "optional": false
       },
       {

@@ -1,6 +1,32 @@
 {
-  "name": "Registrar",
+  "name": "SecondaryMarket",
   "events": [
+    {
+      "name": "PaymentFulfilled",
+      "args": [
+        {
+          "name": "payment_id",
+          "ty": "String",
+          "is_ref": false,
+          "is_slice": false,
+          "is_required": true
+        },
+        {
+          "name": "buyer",
+          "ty": "Key",
+          "is_ref": false,
+          "is_slice": false,
+          "is_required": true
+        },
+        {
+          "name": "amount",
+          "ty": "U512",
+          "is_ref": false,
+          "is_slice": false,
+          "is_required": true
+        }
+      ]
+    },
     {
       "name": "RoleAdminChanged",
       "args": [
@@ -95,6 +121,20 @@
       "name": "init",
       "args": [
         {
+          "name": "signer",
+          "ty": "PublicKey",
+          "is_ref": false,
+          "is_slice": false,
+          "is_required": true
+        },
+        {
+          "name": "treasury",
+          "ty": "Key",
+          "is_ref": false,
+          "is_slice": false,
+          "is_required": true
+        },
+        {
           "name": "name_token",
           "ty": "Key",
           "is_ref": false,
@@ -108,43 +148,19 @@
       "attributes": []
     },
     {
-      "name": "grace_period",
-      "args": [],
-      "is_mutable": false,
-      "return_ty": "U64",
-      "ty": "Public",
-      "attributes": []
-    },
-    {
-      "name": "set_grace_period",
+      "name": "buy",
       "args": [
         {
-          "name": "period",
-          "ty": "U64",
-          "is_ref": false,
-          "is_slice": false,
-          "is_required": true
-        }
-      ],
-      "is_mutable": true,
-      "return_ty": "Unit",
-      "ty": "Public",
-      "attributes": []
-    },
-    {
-      "name": "admin_transfer",
-      "args": [
-        {
-          "name": "new_owner",
-          "ty": "Key",
+          "name": "voucher",
+          "ty": "Any",
           "is_ref": false,
           "is_slice": false,
           "is_required": true
         },
         {
-          "name": "token_hashes",
+          "name": "signature",
           "ty": {
-            "List": "String"
+            "List": "U8"
           },
           "is_ref": false,
           "is_slice": false,
@@ -154,93 +170,9 @@
       "is_mutable": true,
       "return_ty": "Unit",
       "ty": "Public",
-      "attributes": []
-    },
-    {
-      "name": "admin_burn",
-      "args": [
-        {
-          "name": "token_hashes",
-          "ty": {
-            "List": "String"
-          },
-          "is_ref": false,
-          "is_slice": false,
-          "is_required": true
-        }
-      ],
-      "is_mutable": true,
-      "return_ty": "Unit",
-      "ty": "Public",
-      "attributes": []
-    },
-    {
-      "name": "expire",
-      "args": [
-        {
-          "name": "token_hashes",
-          "ty": {
-            "List": "String"
-          },
-          "is_ref": false,
-          "is_slice": false,
-          "is_required": true
-        }
-      ],
-      "is_mutable": true,
-      "return_ty": "Unit",
-      "ty": "Public",
-      "attributes": []
-    },
-    {
-      "name": "register",
-      "args": [
-        {
-          "name": "voucher",
-          "ty": "Any",
-          "is_ref": false,
-          "is_slice": false,
-          "is_required": true
-        }
-      ],
-      "is_mutable": true,
-      "return_ty": "Unit",
-      "ty": "Public",
-      "attributes": []
-    },
-    {
-      "name": "prolong",
-      "args": [
-        {
-          "name": "voucher",
-          "ty": "Any",
-          "is_ref": false,
-          "is_slice": false,
-          "is_required": true
-        }
-      ],
-      "is_mutable": true,
-      "return_ty": "Unit",
-      "ty": "Public",
-      "attributes": []
-    },
-    {
-      "name": "resolve",
-      "args": [
-        {
-          "name": "full_domain",
-          "ty": "String",
-          "is_ref": false,
-          "is_slice": false,
-          "is_required": true
-        }
-      ],
-      "is_mutable": false,
-      "return_ty": {
-        "Option": "Key"
-      },
-      "ty": "Public",
-      "attributes": []
+      "attributes": [
+        "Payable"
+      ]
     },
     {
       "name": "has_role",
@@ -314,6 +246,46 @@
       ],
       "is_mutable": true,
       "return_ty": "Unit",
+      "ty": "Public",
+      "attributes": []
+    },
+    {
+      "name": "set_signer_public_key",
+      "args": [
+        {
+          "name": "signer",
+          "ty": "PublicKey",
+          "is_ref": false,
+          "is_slice": false,
+          "is_required": true
+        }
+      ],
+      "is_mutable": true,
+      "return_ty": "Unit",
+      "ty": "Public",
+      "attributes": []
+    },
+    {
+      "name": "set_treasury",
+      "args": [
+        {
+          "name": "treasury",
+          "ty": "Key",
+          "is_ref": false,
+          "is_slice": false,
+          "is_required": true
+        }
+      ],
+      "is_mutable": true,
+      "return_ty": "Unit",
+      "ty": "Public",
+      "attributes": []
+    },
+    {
+      "name": "signer_public_key",
+      "args": [],
+      "is_mutable": false,
+      "return_ty": "PublicKey",
       "ty": "Public",
       "attributes": []
     }

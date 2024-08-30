@@ -8,7 +8,7 @@ participant "Registrar"
 participant "NameToken"
 boundary "Events"
 
-== Renew a *cspr name with fiat currency ==
+== Prolong multiple *cspr name tokens with fiat currency ==
 
 Owner -> d3: Renew *cspr name
 activate d3
@@ -16,26 +16,23 @@ d3 -> d3: process fiat payment
 d3 -> Owner
 deactivate d3
 
-d3 -> Registrar: renew(RenewalVoucher)
+d3 -> Registrar: prolong(RenewalVoucher)
 activate Registrar
 Registrar -> Registrar: verify voucher\nexpiration
-Registrar -> NameToken: metadata(name_hash)
-NameToken -> Registrar
-Registrar -> Registrar: check expiration date
-alt expiration+grace_period < blocktime
-    Registrar -> NameToken: burn(name_hash)
-    NameToken -> NameToken: clear resolver
+    loop N times
+    Registrar -> NameToken: metadata(name_hash)
+    NameToken -> Registrar
+    Registrar -> Registrar: check expiration date
+    alt expiration+grace_period < blocktime
+        Registrar ->x d3: Revert with\ngrace_period_expired\nerror
+    end
+    Registrar -> NameToken: set_token_metadata(name_hash, new_metadata)
+    activate NameToken
+    NameToken -> NameToken: update metadata
     NameToken -> "Events": MetadataUpdated event
-    NameToken -> NameToken: burn token
-    NameToken -> "Events": Burn event
-    Registrar ->x d3: Revert with\ngrace_period_expired\nerror
-end
-Registrar -> NameToken: set_token_metadata(name_hash, new_metadata)
-activate NameToken
-NameToken -> NameToken: update metadata
-NameToken -> "Events": MetadataUpdated event
-NameToken -> Registrar
-deactivate NameToken
+    NameToken -> Registrar
+    deactivate NameToken
+    end loop
 Registrar -> d3
 deactivate Registrar
 deactivate d3

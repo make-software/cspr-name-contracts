@@ -262,7 +262,7 @@
       "name": "admin_transfer",
       "args": [
         {
-          "name": "reciepient",
+          "name": "recipient",
           "ty": "Key",
           "is_ref": false,
           "is_slice": false,
@@ -273,6 +273,43 @@
           "ty": {
             "List": "String"
           },
+          "is_ref": false,
+          "is_slice": false,
+          "is_required": true
+        }
+      ],
+      "is_mutable": true,
+      "return_ty": "Unit",
+      "ty": "Public",
+      "attributes": []
+    },
+    {
+      "name": "transfer",
+      "args": [
+        {
+          "name": "token_id",
+          "ty": "U64",
+          "is_ref": false,
+          "is_slice": false,
+          "is_required": false
+        },
+        {
+          "name": "token_hash",
+          "ty": "String",
+          "is_ref": false,
+          "is_slice": false,
+          "is_required": false
+        },
+        {
+          "name": "source_key",
+          "ty": "Key",
+          "is_ref": false,
+          "is_slice": false,
+          "is_required": true
+        },
+        {
+          "name": "target_key",
+          "ty": "Key",
           "is_ref": false,
           "is_slice": false,
           "is_required": true
@@ -325,7 +362,7 @@
         }
       ],
       "is_mutable": false,
-      "return_ty": "Any",
+      "return_ty": "String",
       "ty": "Public",
       "attributes": []
     },
@@ -333,7 +370,7 @@
       "name": "resolver",
       "args": [
         {
-          "name": "token_id",
+          "name": "token_hash",
           "ty": "String",
           "is_ref": false,
           "is_slice": false,
@@ -351,7 +388,7 @@
       "name": "set_resolver",
       "args": [
         {
-          "name": "token_id",
+          "name": "token_hash",
           "ty": "String",
           "is_ref": false,
           "is_slice": false,
@@ -374,7 +411,7 @@
       "name": "assert_is_owner",
       "args": [
         {
-          "name": "token_id",
+          "name": "token_hash",
           "ty": "String",
           "is_ref": false,
           "is_slice": false,
@@ -406,6 +443,30 @@
       ],
       "is_mutable": false,
       "return_ty": "Bool",
+      "ty": "Public",
+      "attributes": []
+    },
+    {
+      "name": "set_default_resolver",
+      "args": [
+        {
+          "name": "resolver",
+          "ty": "Key",
+          "is_ref": false,
+          "is_slice": false,
+          "is_required": true
+        }
+      ],
+      "is_mutable": true,
+      "return_ty": "Unit",
+      "ty": "Public",
+      "attributes": []
+    },
+    {
+      "name": "get_default_resolver",
+      "args": [],
+      "is_mutable": false,
+      "return_ty": "Key",
       "ty": "Public",
       "attributes": []
     },
@@ -480,43 +541,6 @@
           "is_ref": false,
           "is_slice": false,
           "is_required": false
-        }
-      ],
-      "is_mutable": true,
-      "return_ty": "Unit",
-      "ty": "Public",
-      "attributes": []
-    },
-    {
-      "name": "transfer",
-      "args": [
-        {
-          "name": "token_id",
-          "ty": "U64",
-          "is_ref": false,
-          "is_slice": false,
-          "is_required": false
-        },
-        {
-          "name": "token_hash",
-          "ty": "String",
-          "is_ref": false,
-          "is_slice": false,
-          "is_required": false
-        },
-        {
-          "name": "source_key",
-          "ty": "Key",
-          "is_ref": false,
-          "is_slice": false,
-          "is_required": true
-        },
-        {
-          "name": "target_key",
-          "ty": "Key",
-          "is_ref": false,
-          "is_slice": false,
-          "is_required": true
         }
       ],
       "is_mutable": true,

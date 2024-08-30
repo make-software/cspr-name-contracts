@@ -12,7 +12,7 @@ use super::{controller::BaseController, name_token::NameTokenContractRef, utils}
 
 // TODO: on the diagrams is called D3Operator, shouldn't we change it?
 #[odra::module]
-struct SecondaryMarket {
+pub struct SecondaryMarket {
     controller: SubModule<BaseController>,
     name_token: External<NameTokenContractRef>,
 }

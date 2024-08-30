@@ -9,6 +9,29 @@
   "types": [
     {
       "struct": {
+        "name": "NameMintInfo",
+        "description": null,
+        "members": [
+          {
+            "name": "label",
+            "description": null,
+            "ty": "String"
+          },
+          {
+            "name": "owner",
+            "description": null,
+            "ty": "Key"
+          },
+          {
+            "name": "token_expiration",
+            "description": null,
+            "ty": "U64"
+          }
+        ]
+      }
+    },
+    {
+      "struct": {
         "name": "PaymentFulfilled",
         "description": null,
         "members": [
@@ -181,6 +204,24 @@
           }
         ]
       }
+    },
+    {
+      "struct": {
+        "name": "TokenRenewalInfo",
+        "description": null,
+        "members": [
+          {
+            "name": "token_id",
+            "description": null,
+            "ty": "String"
+          },
+          {
+            "name": "token_expiration",
+            "description": null,
+            "ty": "U64"
+          }
+        ]
+      }
     }
   ],
   "errors": [
@@ -211,15 +252,6 @@
     }
   ],
   "entry_points": [
-    {
-      "name": "signer_public_key",
-      "description": "",
-      "is_mutable": false,
-      "arguments": [],
-      "return_ty": "PublicKey",
-      "is_contract_context": true,
-      "access": "public"
-    },
     {
       "name": "buy",
       "description": "",
@@ -288,7 +320,7 @@
     },
     {
       "name": "has_role",
-      "description": "Delegated. See `self.access_control.has_role()` for details.",
+      "description": "Delegated. See `self.controller.has_role()` for details.",
       "is_mutable": false,
       "arguments": [
         {
@@ -312,7 +344,7 @@
     },
     {
       "name": "grant_role",
-      "description": "Delegated. See `self.access_control.grant_role()` for details.",
+      "description": "Delegated. See `self.controller.grant_role()` for details.",
       "is_mutable": true,
       "arguments": [
         {
@@ -336,7 +368,7 @@
     },
     {
       "name": "revoke_role",
-      "description": "Delegated. See `self.access_control.revoke_role()` for details.",
+      "description": "Delegated. See `self.controller.revoke_role()` for details.",
       "is_mutable": true,
       "arguments": [
         {
@@ -355,6 +387,47 @@
         }
       ],
       "return_ty": "Unit",
+      "is_contract_context": true,
+      "access": "public"
+    },
+    {
+      "name": "set_signer_public_key",
+      "description": "Delegated. See `self.controller.set_signer_public_key()` for details.",
+      "is_mutable": true,
+      "arguments": [
+        {
+          "name": "signer",
+          "description": null,
+          "ty": "PublicKey",
+          "optional": false
+        }
+      ],
+      "return_ty": "Unit",
+      "is_contract_context": true,
+      "access": "public"
+    },
+    {
+      "name": "set_treasury",
+      "description": "Delegated. See `self.controller.set_treasury()` for details.",
+      "is_mutable": true,
+      "arguments": [
+        {
+          "name": "treasury",
+          "description": null,
+          "ty": "Key",
+          "optional": false
+        }
+      ],
+      "return_ty": "Unit",
+      "is_contract_context": true,
+      "access": "public"
+    },
+    {
+      "name": "signer_public_key",
+      "description": "Delegated. See `self.controller.signer_public_key()` for details.",
+      "is_mutable": false,
+      "arguments": [],
+      "return_ty": "PublicKey",
       "is_contract_context": true,
       "access": "public"
     }

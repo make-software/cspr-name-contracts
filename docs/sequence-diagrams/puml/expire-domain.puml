@@ -5,6 +5,7 @@
 actor "Anyone"
 participant "Registrar"
 participant "NameToken"
+participant "Resolver"
 boundary "Events"
 
 == Expire a domain ==
@@ -15,10 +16,14 @@ loop N times
     Registrar -> NameToken: metadata(name_hash)
     NameToken -> Registrar
     Registrar -> Registrar: check expiry date
-    group expiration + grace_period < blocktime
+    group expiration + grace_period + pending_delete_period < blocktime
         Registrar -> NameToken: burn(name_hash)
         activate NameToken
-        NameToken -> NameToken: clear resolver
+        group Resolver is default resolver
+            NameToken -> Resolver: cleanup(name_hash)
+            Resolver -> NameToken:
+        end
+        NameToken -> NameToken: clear resolver address
         NameToken -> "Events": MetadataUpdated event
         NameToken -> NameToken: burn token
         NameToken -> "Events": Burn event

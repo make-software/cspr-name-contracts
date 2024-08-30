@@ -4,6 +4,25 @@
 It's recommended to install 
 [cargo-odra](https://github.com/odradev/cargo-odra) first.
 
+### Prerequisites
+
+Install wasm-opt tool (it is needed for building contracts)
+```
+$ cargo install wasm-opt --locked
+```
+
+if you run casper node localy (nctl), you need to copy files to have access to the accounts keys from the host
+```
+$ docker run --rm -it --name mynctl -d -p 11101:11101 -p 14101:14101 -p 18101:18101 makesoftware/casper-nctl
+
+$ docker cp mynctl:/home/casper/casper-node/utils/nctl/assets/net-1 .
+```
+
+Copy example env file and make appropriate adjustments (default values work with nctl)
+```
+$ cp .env.example .env
+```
+
 ### Build
 
 ```
@@ -14,6 +33,12 @@ The result files will be placed in `${project-root}/wasm` directory.
 
 ```
 $ cargo odra build -b casper
+```
+
+### Deploy
+
+```
+$ cargo run -p casper-name-cli deploy
 ```
 
 ### Test

@@ -1,7 +1,7 @@
 import { BigNumber, BigNumberish } from "@ethersproject/bignumber"
-import { CLList, CLPublicKey, CLU8, Contracts, DeployUtil, Keys, RuntimeArgs } from "casper-js-sdk"
+import { CLList, CLPublicKey, CLU8, Contracts, DeployUtil, RuntimeArgs } from "casper-js-sdk"
 
-import { PaymentInfo, PaymentVoucher, RenewalPaymentVoucher } from "./types";
+import { PaymentVoucher, RenewalPaymentVoucher } from "./types";
 
 // eslint-disable-next-line import/prefer-default-export
 export class Controller {
@@ -94,11 +94,5 @@ export class Controller {
       this.networkName,
       BigNumber.from(paymentAmount).toString(),
     );
-  }
-
-  // eslint-disable-next-line class-methods-use-this, unused-imports/no-unused-vars
-  public signPaymentInfo(paymentInfo: PaymentInfo, signingKey: Keys.AsymmetricKey): string {
-    // TODO: Implement signing for PaymentInfo
-    return ""
   }
 }

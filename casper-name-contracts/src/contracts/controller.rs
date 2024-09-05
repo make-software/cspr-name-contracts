@@ -45,13 +45,13 @@ impl Controller {
     #[odra(payable)]
     pub fn buy(&mut self, voucher: PaymentVoucher, signature: Bytes) {
         self.controller.process_payment_voucher(&voucher, signature);
-        self.registrar.register(voucher.into());
+        self.registrar.controller_register(voucher.into());
     }
 
     #[odra(payable)]
     pub fn renew(&mut self, voucher: RenewalPaymentVoucher, signature: Bytes) {
         self.controller.process_payment_voucher(&voucher, signature);
-        self.registrar.prolong(voucher.into());
+        self.registrar.controller_prolong(voucher.into());
     }
 
     pub fn resolve(&self, full_domain: String) -> Option<Address> {

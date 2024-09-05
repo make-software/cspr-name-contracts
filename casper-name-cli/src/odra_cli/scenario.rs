@@ -1,10 +1,7 @@
 use blake2::{digest::VariableOutput, Blake2bVar};
 use casper_name_contracts::{
     contracts::{
-        controller::Controller,
-        name_token::NameToken,
-        registrar::{Registrar, CONTROLLER_ROLE},
-        resolver::DefaultResolver,
+        controller::Controller, marketplace::SecondaryMarket, name_token::NameToken, registrar::{Registrar, CONTROLLER_ROLE}, resolver::DefaultResolver
     },
     data_structures::{NameMintInfo, PaymentVoucher, TokenizationVoucher},
 };
@@ -40,6 +37,7 @@ impl odra_cli::scenario::Scenario for SetConfigScript {
     ) -> Result<(), odra_cli::scenario::Error> {
         let resolver_address = *container.get_ref::<DefaultResolver>(env)?.address();
         let controller_address = *container.get_ref::<Controller>(env)?.address();
+        let marketplace_address = *container.get_ref::<SecondaryMarket>(env)?.address();
 
         let mut registrar = container.get_ref::<Registrar>(env)?;
         let mut name_token = container.get_ref::<NameToken>(env)?;
@@ -61,9 +59,10 @@ impl odra_cli::scenario::Scenario for SetConfigScript {
             Maybe::None,
         );
 
-        // Whitelist the controller in the registrar.
+        // Whitelist controllers in the registrar.
         env.set_gas(1_000_000_000);
         registrar.grant_role(&CONTROLLER_ROLE, &controller_address);
+        registrar.grant_role(&CONTROLLER_ROLE, &marketplace_address);
 
         // Set the grace period.
         env.set_gas(1_000_000_000);
@@ -103,7 +102,7 @@ impl odra_cli::scenario::Scenario for RegisterTokenScenario {
         container
             .get_ref::<Registrar>(env)
             .unwrap()
-            .register(voucher);
+            .controller_register(voucher);
         Ok(())
     }
 

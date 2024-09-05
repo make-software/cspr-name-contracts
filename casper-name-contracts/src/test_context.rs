@@ -161,7 +161,7 @@ impl TestContext {
         let names = vec![NameMintInfo::new(token_name, recipient, token_expiration)];
         let voucher = TokenizationVoucher::new(names, voucher_expiration);
         self.set_caller(caller);
-        self.registrar.try_register(voucher)
+        self.registrar.try_controller_register(voucher)
     }
 
     pub fn with_name_registered(&mut self, caller: Address, recipient: Address, token_name: &str) {
@@ -191,7 +191,7 @@ impl TestContext {
             .collect();
         let voucher = TokenizationVoucher::new(names, voucher_expiration);
         self.set_caller(caller);
-        self.registrar.try_register(voucher).unwrap()
+        self.registrar.try_controller_register(voucher).unwrap()
     }
 
     pub fn expect_name_is_registered(&self, owner: Address, token_name: &str) {

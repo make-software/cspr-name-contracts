@@ -1,7 +1,11 @@
 use blake2::{digest::VariableOutput, Blake2bVar};
 use casper_name_contracts::{
     contracts::{
-        controller::Controller, marketplace::SecondaryMarket, name_token::NameToken, registrar::{Registrar, CONTROLLER_ROLE}, resolver::DefaultResolver
+        controller::Controller,
+        marketplace::SecondaryMarket,
+        name_token::NameToken,
+        registrar::{Registrar, CONTROLLER_ROLE},
+        resolver::DefaultResolver,
     },
     data_structures::{NameMintInfo, PaymentVoucher, TokenizationVoucher},
 };

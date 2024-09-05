@@ -1,5 +1,9 @@
 use casper_name_contracts::contracts::{
-    controller::{Controller, ControllerInitArgs}, marketplace::{SecondaryMarket, SecondaryMarketInitArgs}, name_token::{NameToken, NameTokenInitArgs}, registrar::{Registrar, RegistrarInitArgs}, resolver::{DefaultResolver, DefaultResolverInitArgs}
+    controller::{Controller, ControllerInitArgs},
+    marketplace::{SecondaryMarket, SecondaryMarketInitArgs},
+    name_token::{NameToken, NameTokenInitArgs},
+    registrar::{Registrar, RegistrarInitArgs},
+    resolver::{DefaultResolver, DefaultResolverInitArgs},
 };
 use odra::{host::Deployer, Addressable};
 
@@ -52,7 +56,8 @@ impl odra_cli::deploy::DeployScript for DeployScript {
         container.add_contract(&controller)?;
 
         env.set_gas(250_000_000_000);
-        let market = SecondaryMarket::try_deploy(&env,
+        let market = SecondaryMarket::try_deploy(
+            &env,
             SecondaryMarketInitArgs {
                 signer: env.public_key(&admin),
                 treasury: admin,

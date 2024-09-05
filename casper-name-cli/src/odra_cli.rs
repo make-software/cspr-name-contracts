@@ -17,7 +17,7 @@ pub fn cli() {
         .contract::<Controller>()
         .contract::<Registrar>()
         .contract::<NameToken>()
-    //   .contract::<SecondaryMarket>()
+        //   .contract::<SecondaryMarket>()
         .scenario(SetConfigScript)
         .scenario(RegisterTokenScenario)
         .scenario(CalculateTokenHash)

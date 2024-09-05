@@ -8,7 +8,6 @@ odra = { git = "https://github.com/odradev/odra", branch = "release/1.3.0",  fea
 odra-modules = { git = "https://github.com/odradev/odra", branch = "release/1.3.0", features = [], default-features = false }
 hex = { version = "0.4.3", default-features = false }
 serde = { version = "1.0.80", default-features = false }
-serde_json = { version = "1.0.59", default-features = false }
 serde-json-wasm = { version = "1.0.1", default-features = false }
 
 [target.'cfg(not(target_arch = "wasm32"))'.dependencies]

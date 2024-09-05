@@ -1,17 +1,21 @@
-time = "2024-07-24T13:18:49Z"
+time = "2024-09-05T21:42:13Z"
 
 [[contracts]]
 name = "NameToken"
-package_hash = "hash-3619b74a5975ebca1e5bb1512aeb774fb985aa19293c0a6a5454a0c31c47cb03"
-
-[[contracts]]
-name = "Registrar"
-package_hash = "hash-27fa25167d5a744ac7daf34ac0c8e1aba42574bef234cc54db2942dc5d6a7d6e"
-
-[[contracts]]
-name = "Controller"
-package_hash = "hash-44af251078f945d49e0d1cc7e2f4edd34e4eb82555c07f4b335e7f0ec256c772"
+package_hash = "hash-a3816c2adae3cfdf4c50ffa3c1ccaf589c7f00f40c222a15558ecda967017777"
 
 [[contracts]]
 name = "DefaultResolver"
-package_hash = "hash-3f817f28c9ff1c0aef0d7b335c496df4321c4425fb4287c85ad9192bd41ce743"
+package_hash = "hash-ce6614cb01d812bc30814146299a8d11bc79743dcd5115e3612d106596c0ce5c"
+
+[[contracts]]
+name = "Registrar"
+package_hash = "hash-44dc02f7e1ad5ab4f08b2a2ee25710fe393d4b7410174317491d11aa47d3fd8b"
+
+[[contracts]]
+name = "Controller"
+package_hash = "hash-d80737a6f26242b8906efcd731b84dd2d9a45d5b9d1d2287fe8564148f977f2f"
+
+[[contracts]]
+name = "SecondaryMarket"
+package_hash = "hash-4ce2503859757e9aa982d9f76ae0a6a1e0c775fd0fce24d93bae80c216781518"

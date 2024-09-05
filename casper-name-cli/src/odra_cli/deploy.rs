@@ -16,7 +16,7 @@ impl odra_cli::deploy::DeployScript for DeployScript {
         container: &mut odra_cli::DeployedContractsContainer,
     ) -> Result<(), odra_cli::deploy::Error> {
         let admin = env.get_account(0);
-        env.set_gas(300_000_000_000);
+        env.set_gas(500_000_000_000);
         let token = NameToken::try_deploy(
             &env,
             NameTokenInitArgs {
@@ -26,7 +26,7 @@ impl odra_cli::deploy::DeployScript for DeployScript {
         )?;
         container.add_contract(&token)?;
 
-        env.set_gas(200_000_000_000);
+        env.set_gas(300_000_000_000);
         let resolver = DefaultResolver::try_deploy(
             &env,
             DefaultResolverInitArgs {
@@ -35,7 +35,7 @@ impl odra_cli::deploy::DeployScript for DeployScript {
         )?;
         container.add_contract(&resolver)?;
 
-        env.set_gas(150_000_000_000);
+        env.set_gas(300_000_000_000);
         let registrar = Registrar::try_deploy(
             &env,
             RegistrarInitArgs {
@@ -44,7 +44,7 @@ impl odra_cli::deploy::DeployScript for DeployScript {
         )?;
         container.add_contract(&registrar)?;
 
-        env.set_gas(250_000_000_000);
+        env.set_gas(300_000_000_000);
         let controller = Controller::try_deploy(
             &env,
             ControllerInitArgs {

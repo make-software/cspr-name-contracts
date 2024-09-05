@@ -109,10 +109,19 @@ impl Registrar {
         self.prolong(tokens);
     }
 
-    pub fn admin_register(&mut self, voucher: TokenizationVoucher) {
+    pub fn admin_register(&mut self, names: Vec<NameMintInfo>) {
         self.assert_caller_is_admin();
-        self.assert_voucher_not_expired(&voucher);
-        self.register(voucher.names);
+        self.register(names);
+    }
+
+    pub fn admin_prolong_and_register(
+        &mut self,
+        renewal_tokens: Vec<TokenRenewalInfo>,
+        new_tokens: Vec<NameMintInfo>,
+    ) {
+        self.assert_caller_is_admin();
+        self.prolong(renewal_tokens);
+        self.register(new_tokens);
     }
 
     // Controller functions.
@@ -127,6 +136,18 @@ impl Registrar {
         self.assert_voucher_not_expired(&voucher);
         self.assert_caller_is_controller();
         self.register(voucher.names);
+    }
+
+    pub fn controller_prolong_and_register(
+        &mut self,
+        renewal_voucher: RenewalVoucher,
+        tokenization_voucher: TokenizationVoucher,
+    ) {
+        self.assert_caller_is_controller();
+        self.assert_voucher_not_expired(&renewal_voucher);
+        self.assert_voucher_not_expired(&tokenization_voucher);
+        self.prolong(renewal_voucher.tokens);
+        self.register(tokenization_voucher.names);
     }
 }
 

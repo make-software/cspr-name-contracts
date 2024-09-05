@@ -1,6 +1,6 @@
 {
   "casper_contract_schema_version": 1,
-  "toolchain": "rustc 1.78.0-nightly (98aa3624b 2024-02-08)",
+  "toolchain": "rustc 1.79.0-nightly (3a36386dc 2024-04-25)",
   "authors": [],
   "repository": null,
   "homepage": null,
@@ -289,6 +289,44 @@
         },
         {
           "name": "signature",
+          "description": null,
+          "ty": {
+            "List": "U8"
+          },
+          "optional": false
+        }
+      ],
+      "return_ty": "Unit",
+      "is_contract_context": true,
+      "access": "public"
+    },
+    {
+      "name": "buy_and_renew",
+      "description": "",
+      "is_mutable": true,
+      "arguments": [
+        {
+          "name": "payment_voucher",
+          "description": null,
+          "ty": "PaymentVoucher",
+          "optional": false
+        },
+        {
+          "name": "payment_signature",
+          "description": null,
+          "ty": {
+            "List": "U8"
+          },
+          "optional": false
+        },
+        {
+          "name": "renewal_voucher",
+          "description": null,
+          "ty": "RenewalPaymentVoucher",
+          "optional": false
+        },
+        {
+          "name": "renewal_signature",
           "description": null,
           "ty": {
             "List": "U8"

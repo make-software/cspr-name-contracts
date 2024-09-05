@@ -202,6 +202,49 @@
       ]
     },
     {
+      "name": "buy_and_renew",
+      "args": [
+        {
+          "name": "payment_voucher",
+          "ty": "Any",
+          "is_ref": false,
+          "is_slice": false,
+          "is_required": true
+        },
+        {
+          "name": "payment_signature",
+          "ty": {
+            "List": "U8"
+          },
+          "is_ref": false,
+          "is_slice": false,
+          "is_required": true
+        },
+        {
+          "name": "renewal_voucher",
+          "ty": "Any",
+          "is_ref": false,
+          "is_slice": false,
+          "is_required": true
+        },
+        {
+          "name": "renewal_signature",
+          "ty": {
+            "List": "U8"
+          },
+          "is_ref": false,
+          "is_slice": false,
+          "is_required": true
+        }
+      ],
+      "is_mutable": true,
+      "return_ty": "Unit",
+      "ty": "Public",
+      "attributes": [
+        "Payable"
+      ]
+    },
+    {
       "name": "resolve",
       "args": [
         {

@@ -54,6 +54,22 @@ impl Controller {
         self.registrar.controller_prolong(voucher.into());
     }
 
+    #[odra(payable)]
+    pub fn buy_and_renew(
+        &mut self,
+        payment_voucher: PaymentVoucher,
+        payment_signature: Bytes,
+        renewal_voucher: RenewalPaymentVoucher,
+        renewal_signature: Bytes,
+    ) {
+        self.controller
+            .process_payment_voucher(&payment_voucher, payment_signature);
+        self.controller
+            .process_payment_voucher(&renewal_voucher, renewal_signature);
+        self.registrar
+            .controller_prolong_and_register(renewal_voucher.into(), payment_voucher.into());
+    }
+
     pub fn resolve(&self, full_domain: String) -> Option<Address> {
         self.registrar.resolve(full_domain)
     }

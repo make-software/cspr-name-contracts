@@ -1,7 +1,7 @@
 import { BigNumber, BigNumberish } from "@ethersproject/bignumber"
-import { CLAccountHash,CLKey, CLList, CLPublicKey, CLString,CLU8, CLU64, Contracts, decodeBase16,DeployUtil, RuntimeArgs } from "casper-js-sdk"
+import { CLAccountHash,CLKey, CLList, CLPublicKey, CLString,CLU8, CLU32,CLU32BytesParser, CLU64, Contracts, decodeBase16,DeployUtil,RuntimeArgs } from "casper-js-sdk"
 
-import { RenewalVoucher, TokenizationVoucher  } from "./types";
+import { NameMintInfo, TokenRenewalInfo  } from "./types";
 
 // eslint-disable-next-line import/prefer-default-export
 export class Registrar {
@@ -23,24 +23,27 @@ export class Registrar {
    * @param sender the CLPublicKey of deploy submitter account (admin)
    * @returns Deploy object which can be send to the node.
    */
-  public register(
-    voucher: TokenizationVoucher,
+  public adminRegister(
+    nameMintInfos: NameMintInfo[],
     paymentAmount: BigNumberish,
     sender: CLPublicKey,
   ): DeployUtil.Deploy {
-    const rawVoucherBytes = voucher.toBytes();
+    const nameMintInfosLength = new CLU32BytesParser().toBytes(new CLU32(nameMintInfos.length)).unwrap()
+    
+    let bytes = Array.from(nameMintInfosLength)
+    bytes = nameMintInfos.reduce((b, name) => b.concat(Array.from(name.toBytes())), bytes)
 
-    const voucherBytes: CLU8[] = [];
-    for (let i = 0; i < rawVoucherBytes.length; i += 1) {
-      voucherBytes.push(new CLU8(rawVoucherBytes[i]));
+    const namesBytes: CLU8[] = [];
+    for (let i = 0; i < bytes.length; i += 1) {
+      namesBytes.push(new CLU8(bytes[i]));
     }
 
     const runtimeArgs = RuntimeArgs.fromMap({
-      voucher: new CLList(voucherBytes),
+      names: new CLList(namesBytes),
     });
 
     return this.contractClient.callEntrypoint(
-      'buy',
+      'admin_register',
       runtimeArgs,
       sender,
       this.networkName,
@@ -55,24 +58,74 @@ export class Registrar {
    * @param sender the CLPublicKey of deploy submitter account
    * @returns Deploy object which can be send to the node.
    */
-  public prolong(
-    voucher: RenewalVoucher,
+  public adminProlong(
+    tokenRenewalInfos: TokenRenewalInfo[],
     paymentAmount: BigNumberish,
     sender: CLPublicKey,
   ): DeployUtil.Deploy {
-    const rawVoucherBytes = voucher.toBytes();
+    const tokenRenewalInfosLength = new CLU32BytesParser().toBytes(new CLU32(tokenRenewalInfos.length)).unwrap()
 
-    const voucherBytes: CLU8[] = [];
-    for (let i = 0; i < rawVoucherBytes.length; i += 1) {
-      voucherBytes.push(new CLU8(rawVoucherBytes[i]));
+    let bytes = Array.from(tokenRenewalInfosLength)
+    bytes = tokenRenewalInfos.reduce((b, name) => b.concat(Array.from(name.toBytes())), bytes)
+
+    const tokensBytes: CLU8[] = [];
+    for (let i = 0; i < bytes.length; i += 1) {
+      tokensBytes.push(new CLU8(bytes[i]));
     }
 
     const runtimeArgs = RuntimeArgs.fromMap({
-      voucher: new CLList(voucherBytes),
+      tokens: new CLList(tokensBytes),
     });
 
     return this.contractClient.callEntrypoint(
-      'prolong',
+      'admin_prolong',
+      runtimeArgs,
+      sender,
+      this.networkName,
+      BigNumber.from(paymentAmount).toString(),
+    );
+  }
+
+  /**
+   * Buys CSPR.name for an account
+   * @param voucher @see {@link RenewalVoucher} PaymentVoucher that was created by CSPR.name provider
+   * @param paymentAmount the amount of gas price that should be payed in motes
+   * @param sender the CLPublicKey of deploy submitter account
+   * @returns Deploy object which can be send to the node.
+   */
+  public adminProlongAndRegister(
+    tokenRenewalInfos: TokenRenewalInfo[],
+    nameMintInfos: NameMintInfo[],
+    paymentAmount: BigNumberish,
+    sender: CLPublicKey,
+  ): DeployUtil.Deploy {
+    const tokenRenewalInfosLength = new CLU32BytesParser().toBytes(new CLU32(tokenRenewalInfos.length)).unwrap()
+
+    let tokenRenewalBytes = Array.from(tokenRenewalInfosLength)
+    tokenRenewalBytes = tokenRenewalInfos.reduce((b, name) => b.concat(Array.from(name.toBytes())), tokenRenewalBytes)
+
+    const tokensBytes: CLU8[] = [];
+    for (let i = 0; i < tokenRenewalBytes.length; i += 1) {
+      tokensBytes.push(new CLU8(tokenRenewalBytes[i]));
+    }
+
+    const nameMintInfosLength = new CLU32BytesParser().toBytes(new CLU32(nameMintInfos.length)).unwrap()
+
+    let nameMintInfosBytes = Array.from(nameMintInfosLength)
+    nameMintInfosBytes = nameMintInfos.reduce((b, name) => b.concat(Array.from(name.toBytes())), nameMintInfosBytes)
+
+    const nameMintsBytes: CLU8[] = [];
+    for (let i = 0; i < nameMintInfosBytes.length; i += 1) {
+      nameMintsBytes.push(new CLU8(nameMintInfosBytes[i]));
+    }
+
+    const runtimeArgs = RuntimeArgs.fromMap({
+      renewal_tokens: new CLList(tokensBytes),
+      new_tokens: new CLList(nameMintsBytes),
+    });
+
+    return this.contractClient.callEntrypoint(
+      'admin_prolong_and_register',
       runtimeArgs,
       sender,
       this.networkName,

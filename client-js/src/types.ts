@@ -15,9 +15,9 @@ export class PaymentInfo {
     const paymentId = new CLStringBytesParser().toBytes(new CLString(this.paymentId)).unwrap()
     const amount = new CLU512BytesParser().toBytes(new CLU512(this.amount)).unwrap()
 
-    const bytes = Array.from(buyer);
-    bytes.concat(Array.from(paymentId));
-    bytes.concat(Array.from(amount));
+    const bytes = Array.from(buyer)
+      .concat(Array.from(paymentId))
+      .concat(Array.from(amount));
 
     return Uint8Array.from(bytes);
   }
@@ -35,9 +35,9 @@ export class NameMintInfo {
     const ownerBytes = new CLKeyBytesParser().toBytes(new CLKey(new CLAccountHash(decodeBase16(this.owner)))).unwrap()
     const tokenExpirationBytes = new CLU64BytesParser().toBytes(new CLU64(this.tokenExpiration.getMilliseconds())).unwrap()
 
-    const bytes = Array.from(labelBytes);
-    bytes.concat(Array.from(ownerBytes));
-    bytes.concat(Array.from(tokenExpirationBytes));
+    const bytes = Array.from(labelBytes)
+      .concat(Array.from(ownerBytes))
+      .concat(Array.from(tokenExpirationBytes));
 
     return Uint8Array.from(bytes);
   }
@@ -57,14 +57,15 @@ export class PaymentVoucher {
       return this.bytes;
     }
 
-    const bytes = Array.from(this.payment.toBytes())
+    let bytes = Array.from(this.payment.toBytes())
 
     const sizeBytes = new CLU32BytesParser().toBytes(new CLU32(this.names.length)).unwrap()
-    bytes.concat(Array.from(sizeBytes))
+    bytes = bytes.concat(Array.from(sizeBytes))
 
-    this.names.forEach(name => bytes.concat(Array.from(name.toBytes())))
+    bytes = this.names.reduce((b, name) => b.concat(Array.from(name.toBytes())), bytes)
+
     const voucherExpirationBytes = new CLU64BytesParser().toBytes(new CLU64(this.voucherExpiration.getMilliseconds())).unwrap()
-    bytes.concat(Array.from(voucherExpirationBytes))
+    bytes = bytes.concat(Array.from(voucherExpirationBytes))
 
     this.bytes = Uint8Array.from(bytes)
 
@@ -85,14 +86,19 @@ export class TokenizationVoucher {
       return this.bytes;
     }
 
-    const sizeBytes = new CLU32BytesParser().toBytes(new CLU32(this.names.length)).unwrap()
+    const nameInfosLengthBytes = new CLU32BytesParser().toBytes(new CLU32(this.names.length)).unwrap()
 
-    const bytes = Array.from(sizeBytes);
-    this.names.forEach(name => bytes.concat(Array.from(name.toBytes())))
+    // Add name infos length bytes
+    let bytes = Array.from(nameInfosLengthBytes);
 
+    // Add name infos bytes
+    bytes = this.names.reduce((b, name) => b.concat(Array.from(name.toBytes())), bytes)
+
+    // Add expiration bytes
     const voucherExpirationBytes = new CLU64BytesParser().toBytes(new CLU64(this.voucherExpiration.getMilliseconds())).unwrap()
-    bytes.concat(Array.from(voucherExpirationBytes))
+    bytes = bytes.concat(Array.from(voucherExpirationBytes))
 
+    // Memoize and return
     this.bytes = Uint8Array.from(bytes)
 
     return this.bytes
@@ -110,7 +116,7 @@ export class TokenRenewalInfo {
     const tokenExpirationBytes = new CLU64BytesParser().toBytes(new CLU64(this.tokenExpiration.getMilliseconds())).unwrap()
 
     const bytes = Array.from(labelBytes)
-    bytes.concat(Array.from(tokenExpirationBytes))
+      .concat(Array.from(tokenExpirationBytes))
 
     return Uint8Array.from(bytes);
   }
@@ -130,15 +136,22 @@ export class RenewalPaymentVoucher {
       return this.bytes;
     }
 
-    const bytes = Array.from(this.payment.toBytes())
+    const paymentInfoBytes = Array.from(this.payment.toBytes())
+    const tokensLengthBytes = Array.from(new CLU32BytesParser().toBytes(new CLU32(this.tokens.length)).unwrap())
 
-    const sizeBytes = new CLU32BytesParser().toBytes(new CLU32(this.tokens.length)).unwrap()
-    bytes.concat(Array.from(sizeBytes))
+    // Add payment info bytes
+    let bytes = paymentInfoBytes
+    // Add tokens length bytes
+      .concat(tokensLengthBytes)
 
-    this.tokens.forEach(token => bytes.concat(Array.from(token.toBytes())))
+    // add token infos bytes
+    bytes = this.tokens.reduce((b, token) => b.concat(Array.from(token.toBytes())), bytes)
+
+    // add expiration bytes
     const voucherExpirationBytes = new CLU64BytesParser().toBytes(new CLU64(this.voucherExpiration.getMilliseconds())).unwrap()
-    bytes.concat(Array.from(voucherExpirationBytes))
+    bytes = bytes.concat(Array.from(voucherExpirationBytes))
 
+    // Memoize and return
     this.bytes = Uint8Array.from(bytes)
 
     return this.bytes
@@ -158,14 +171,19 @@ export class RenewalVoucher {
       return this.bytes;
     }
 
-    const sizeBytes = new CLU32BytesParser().toBytes(new CLU32(this.tokens.length)).unwrap()
+    const tokenInfosLengthBytes = new CLU32BytesParser().toBytes(new CLU32(this.tokens.length)).unwrap()
 
-    const bytes = Array.from(sizeBytes)
-    this.tokens.forEach(token => bytes.concat(Array.from(token.toBytes())))
+    // Add token infos length bytes
+    let bytes = Array.from(tokenInfosLengthBytes)
 
+    // Add token infos bytes
+    bytes = this.tokens.reduce((b, token) => b.concat(Array.from(token.toBytes())), bytes)
+
+    // Add expiration bytes
     const voucherExpirationBytes = new CLU64BytesParser().toBytes(new CLU64(this.voucherExpiration.getMilliseconds())).unwrap()
-    bytes.concat(Array.from(voucherExpirationBytes))
+    bytes = bytes.concat(Array.from(voucherExpirationBytes))
 
+    // Memoize and return
     this.bytes = Uint8Array.from(bytes)
 
     return this.bytes

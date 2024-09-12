@@ -18,7 +18,7 @@ const run = async () => {
   expiration.setFullYear(new Date().getFullYear() + 1, 1, 1);
 
   const nameMintInfos = [
-    new NameMintInfo("sld", buyerKeypair.accountHex(), expiration),
+    new NameMintInfo("sld1", encodeBase16(buyerKeypair.accountHash()), expiration),
   ]
 
   const registrarContract = new Registrar(
@@ -28,26 +28,18 @@ const run = async () => {
 
   const deploy = registrarContract.adminRegister(
     nameMintInfos,
-    // 10 CSPR
-    10000000000,
+    // 20 CSPR
+    20000000000,
     adminKeypair.publicKey,
   );
 
   const client = new CasperClient(config.nodeAddress);
 
-  console.log({ config })
-
   const signedDeploy = client.signDeploy(deploy, adminKeypair);
 
   console.log(`DEPLOY_HASH: ${encodeBase16(deploy.hash)}`);
-  
-
-  console.log({ config })
-
 
   const deployHash = await signedDeploy.send(config.nodeAddress)
-
-  console.log({ config })
 
   // eslint-disable-next-line no-console
   console.log(`Offnchain Register CSPR.name deploy_hash: ${deployHash}`)

@@ -1,7 +1,7 @@
 /* eslint-disable eslint-comments/disable-enable-pair */
 /* eslint-disable max-classes-per-file */
 
-import { CLAccountHash, CLByteArray, CLKey, CLKeyBytesParser, CLString, CLStringBytesParser, CLU32,CLU32BytesParser, CLU64, CLU64BytesParser, CLU512, CLU512BytesParser, decodeBase16 } from 'casper-js-sdk';
+import { CLAccountHash, CLByteArray, CLKey, CLKeyBytesParser, CLString, CLStringBytesParser, CLType,CLTypeTag,CLU32,CLU32BytesParser, CLU64, CLU64BytesParser, CLU512, CLU512BytesParser, CLValue, decodeBase16 } from 'casper-js-sdk';
 
 export class PaymentInfo {
   constructor(
@@ -33,7 +33,7 @@ export class NameMintInfo {
   toBytes(): Uint8Array {
     const labelBytes = new CLStringBytesParser().toBytes(new CLString(this.label)).unwrap()
     const ownerBytes = new CLKeyBytesParser().toBytes(new CLKey(new CLAccountHash(decodeBase16(this.owner)))).unwrap()
-    const tokenExpirationBytes = new CLU64BytesParser().toBytes(new CLU64(this.tokenExpiration.getMilliseconds())).unwrap()
+    const tokenExpirationBytes = new CLU64BytesParser().toBytes(new CLU64(6401000000000000)).unwrap()
 
     const bytes = Array.from(labelBytes)
       .concat(Array.from(ownerBytes))
@@ -187,5 +187,45 @@ export class RenewalVoucher {
     this.bytes = Uint8Array.from(bytes)
 
     return this.bytes
+  }
+}
+
+export class CLAnyType extends CLType {
+  linksTo = "ByteArray";
+
+  tag = CLTypeTag.Any;
+
+  // eslint-disable-next-line class-methods-use-this
+  toBytes(): Uint8Array {
+    return Uint8Array.from([this.tag]);
+  }
+
+  // eslint-disable-next-line class-methods-use-this
+  toJSON() {
+    return "Any";
+  }
+}
+
+
+export class CLAny extends CLValue {
+  data: Uint8Array;
+
+  /**
+   * Constructs a new `CLAny`.
+   *
+   * @param v The bytes array.
+   */
+  constructor(v: Uint8Array) {
+    super();
+    this.data = v;
+  }
+
+  // eslint-disable-next-line class-methods-use-this
+  clType(): CLType {
+    return new CLAnyType();
+  }
+
+  value(): Uint8Array {
+    return this.data;
   }
 }

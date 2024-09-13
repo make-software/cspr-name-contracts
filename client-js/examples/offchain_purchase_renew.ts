@@ -1,7 +1,7 @@
 import { Keys } from "casper-js-sdk";
 
 import { Registrar } from "../src/registrar";
-import { RenewalVoucher, TokenRenewalInfo } from "../src/types";
+import { TokenRenewalInfo } from "../src/types";
 import { waitForDeploy } from "./common";
 import { config } from "./config";
 
@@ -11,21 +11,16 @@ const run = async () => {
     `${config.adminPrivateKeyPath}/secret_key.pem`,
   );
 
-  const expiration = new Date();
-  expiration.setFullYear(new Date().getFullYear() + 1, 1, 1);
-
-  const voucher = new RenewalVoucher(
-    [new TokenRenewalInfo("some-hash", expiration)],
-    expiration,
-  )
-
   const registrarContract = new Registrar(
     config.networkName,
     config.registrarContractHash,
   );
 
-  const deploy = registrarContract.prolong(
-    voucher,
+  const expiration = new Date();
+  expiration.setFullYear(new Date().getFullYear() + 1, 1, 1);
+
+  const deploy = registrarContract.adminProlong(
+    [new TokenRenewalInfo("some-hash", expiration)],
     10000,
     adminKeypair.publicKey,
   );

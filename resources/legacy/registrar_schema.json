@@ -116,6 +116,42 @@
       "attributes": []
     },
     {
+      "name": "resolve",
+      "args": [
+        {
+          "name": "full_domain",
+          "ty": "String",
+          "is_ref": false,
+          "is_slice": false,
+          "is_required": true
+        }
+      ],
+      "is_mutable": false,
+      "return_ty": {
+        "Option": "Key"
+      },
+      "ty": "Public",
+      "attributes": []
+    },
+    {
+      "name": "expire",
+      "args": [
+        {
+          "name": "token_hashes",
+          "ty": {
+            "List": "String"
+          },
+          "is_ref": false,
+          "is_slice": false,
+          "is_required": true
+        }
+      ],
+      "is_mutable": true,
+      "return_ty": "Unit",
+      "ty": "Public",
+      "attributes": []
+    },
+    {
       "name": "set_grace_period",
       "args": [
         {
@@ -175,12 +211,12 @@
       "attributes": []
     },
     {
-      "name": "expire",
+      "name": "admin_prolong",
       "args": [
         {
-          "name": "token_hashes",
+          "name": "tokens",
           "ty": {
-            "List": "String"
+            "List": "Any"
           },
           "is_ref": false,
           "is_slice": false,
@@ -193,7 +229,52 @@
       "attributes": []
     },
     {
-      "name": "register",
+      "name": "admin_register",
+      "args": [
+        {
+          "name": "names",
+          "ty": {
+            "List": "Any"
+          },
+          "is_ref": false,
+          "is_slice": false,
+          "is_required": true
+        }
+      ],
+      "is_mutable": true,
+      "return_ty": "Unit",
+      "ty": "Public",
+      "attributes": []
+    },
+    {
+      "name": "admin_prolong_and_register",
+      "args": [
+        {
+          "name": "renewal_tokens",
+          "ty": {
+            "List": "Any"
+          },
+          "is_ref": false,
+          "is_slice": false,
+          "is_required": true
+        },
+        {
+          "name": "new_tokens",
+          "ty": {
+            "List": "Any"
+          },
+          "is_ref": false,
+          "is_slice": false,
+          "is_required": true
+        }
+      ],
+      "is_mutable": true,
+      "return_ty": "Unit",
+      "ty": "Public",
+      "attributes": []
+    },
+    {
+      "name": "controller_prolong",
       "args": [
         {
           "name": "voucher",
@@ -209,7 +290,7 @@
       "attributes": []
     },
     {
-      "name": "prolong",
+      "name": "controller_register",
       "args": [
         {
           "name": "voucher",
@@ -225,20 +306,25 @@
       "attributes": []
     },
     {
-      "name": "resolve",
+      "name": "controller_prolong_and_register",
       "args": [
         {
-          "name": "full_domain",
-          "ty": "String",
+          "name": "renewal_voucher",
+          "ty": "Any",
+          "is_ref": false,
+          "is_slice": false,
+          "is_required": true
+        },
+        {
+          "name": "tokenization_voucher",
+          "ty": "Any",
           "is_ref": false,
           "is_slice": false,
           "is_required": true
         }
       ],
-      "is_mutable": false,
-      "return_ty": {
-        "Option": "Key"
-      },
+      "is_mutable": true,
+      "return_ty": "Unit",
       "ty": "Public",
       "attributes": []
     },

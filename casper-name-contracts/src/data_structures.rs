@@ -1,5 +1,5 @@
 use odra::{casper_types::U512, prelude::*, Address, OdraResult};
-use serde_json::{json, Value};
+use serde::{Deserialize, Serialize};
 
 #[odra::odra_error]
 #[derive(Debug)]
@@ -13,62 +13,52 @@ pub enum NameTokenError {
     DeserializationError = 1007,
 }
 
-#[derive(PartialEq, Debug, Clone)]
+#[derive(PartialEq, Debug, Clone, Serialize, Deserialize)]
 pub struct NameTokenMetadata {
-    value: Value,
+    name: String,
+    expiration: u64,
+    resolver: Option<Address>,
 }
 
 impl NameTokenMetadata {
     pub fn with_resolver(name: &str, expiration: u64, resolver: Address) -> Self {
         Self {
-            value: json!({
-                "name": name,
-                "expiration": expiration,
-                "resolver": resolver
-            }),
+            name: String::from(name),
+            expiration,
+            resolver: Some(resolver),
         }
     }
 
     pub fn with_no_resolver(name: &str, expiration: u64) -> Self {
         Self {
-            value: json!({
-                "name": name,
-                "expiration": expiration,
-                "resolver": null
-            }),
+            name: String::from(name),
+            expiration,
+            resolver: None,
         }
     }
 
     pub fn set_resolver(&mut self, resolver: Address) {
-        self.value["resolver"] = json!(resolver);
+        self.resolver = Some(resolver);
     }
 
     pub fn resolver(&self) -> OdraResult<Option<Address>> {
-        let resolver = self.value["resolver"].as_str();
-        if let Some(resolver) = resolver {
-            return Address::from_str(resolver)
-                .map_err(|_| NameTokenError::DeserializationError.into())
-                .map(Some);
-        }
-        Ok(None)
+        Ok(self.resolver.clone())
     }
 
     pub fn clear_resolver(&mut self) {
-        self.value["resolver"] = json!(null);
+        self.resolver = None;
     }
 
     pub fn json(&self) -> String {
-        self.value.to_string()
+        serde_json_wasm::to_string(&self).unwrap()
     }
 
     pub fn expiration(&self) -> OdraResult<u64> {
-        self.value["expiration"]
-            .as_u64()
-            .ok_or(NameTokenError::DeserializationError.into())
+        Ok(self.expiration)
     }
 
     pub fn set_expiration(&mut self, expiration: u64) {
-        self.value["expiration"] = json!(expiration);
+        self.expiration = expiration;
     }
 }
 
@@ -76,9 +66,7 @@ impl TryFrom<String> for NameTokenMetadata {
     type Error = NameTokenError;
 
     fn try_from(value: String) -> Result<Self, Self::Error> {
-        let result = Value::from_str(&value).map(|value| Self { value });
-
-        result.map_err(|_| NameTokenError::DeserializationError)
+        serde_json_wasm::from_str(&value).map_err(|_| NameTokenError::DeserializationError)
     }
 }
 

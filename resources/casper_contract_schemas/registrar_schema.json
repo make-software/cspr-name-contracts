@@ -1,6 +1,6 @@
 {
   "casper_contract_schema_version": 1,
-  "toolchain": "rustc 1.78.0-nightly (98aa3624b 2024-02-08)",
+  "toolchain": "rustc 1.79.0-nightly (3a36386dc 2024-04-25)",
   "authors": [],
   "repository": null,
   "homepage": null,
@@ -206,6 +206,42 @@
       "access": "public"
     },
     {
+      "name": "resolve",
+      "description": "",
+      "is_mutable": false,
+      "arguments": [
+        {
+          "name": "full_domain",
+          "description": null,
+          "ty": "String",
+          "optional": false
+        }
+      ],
+      "return_ty": {
+        "Option": "Key"
+      },
+      "is_contract_context": true,
+      "access": "public"
+    },
+    {
+      "name": "expire",
+      "description": "",
+      "is_mutable": true,
+      "arguments": [
+        {
+          "name": "token_hashes",
+          "description": null,
+          "ty": {
+            "List": "String"
+          },
+          "optional": false
+        }
+      ],
+      "return_ty": "Unit",
+      "is_contract_context": true,
+      "access": "public"
+    },
+    {
       "name": "set_grace_period",
       "description": "",
       "is_mutable": true,
@@ -264,15 +300,15 @@
       "access": "public"
     },
     {
-      "name": "expire",
+      "name": "admin_prolong",
       "description": "",
       "is_mutable": true,
       "arguments": [
         {
-          "name": "token_hashes",
+          "name": "tokens",
           "description": null,
           "ty": {
-            "List": "String"
+            "List": "TokenRenewalInfo"
           },
           "optional": false
         }
@@ -282,14 +318,16 @@
       "access": "public"
     },
     {
-      "name": "register",
+      "name": "admin_register",
       "description": "",
       "is_mutable": true,
       "arguments": [
         {
-          "name": "voucher",
+          "name": "names",
           "description": null,
-          "ty": "TokenizationVoucher",
+          "ty": {
+            "List": "NameMintInfo"
+          },
           "optional": false
         }
       ],
@@ -298,7 +336,33 @@
       "access": "public"
     },
     {
-      "name": "prolong",
+      "name": "admin_prolong_and_register",
+      "description": "",
+      "is_mutable": true,
+      "arguments": [
+        {
+          "name": "renewal_tokens",
+          "description": null,
+          "ty": {
+            "List": "TokenRenewalInfo"
+          },
+          "optional": false
+        },
+        {
+          "name": "new_tokens",
+          "description": null,
+          "ty": {
+            "List": "NameMintInfo"
+          },
+          "optional": false
+        }
+      ],
+      "return_ty": "Unit",
+      "is_contract_context": true,
+      "access": "public"
+    },
+    {
+      "name": "controller_prolong",
       "description": "",
       "is_mutable": true,
       "arguments": [
@@ -314,20 +378,40 @@
       "access": "public"
     },
     {
-      "name": "resolve",
+      "name": "controller_register",
       "description": "",
-      "is_mutable": false,
+      "is_mutable": true,
       "arguments": [
         {
-          "name": "full_domain",
+          "name": "voucher",
           "description": null,
-          "ty": "String",
+          "ty": "TokenizationVoucher",
           "optional": false
         }
       ],
-      "return_ty": {
-        "Option": "Key"
-      },
+      "return_ty": "Unit",
+      "is_contract_context": true,
+      "access": "public"
+    },
+    {
+      "name": "controller_prolong_and_register",
+      "description": "",
+      "is_mutable": true,
+      "arguments": [
+        {
+          "name": "renewal_voucher",
+          "description": null,
+          "ty": "RenewalVoucher",
+          "optional": false
+        },
+        {
+          "name": "tokenization_voucher",
+          "description": null,
+          "ty": "TokenizationVoucher",
+          "optional": false
+        }
+      ],
+      "return_ty": "Unit",
       "is_contract_context": true,
       "access": "public"
     },

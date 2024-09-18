@@ -2,6 +2,7 @@ use blake2::{digest::VariableOutput, Blake2bVar};
 use casper_name_contracts::{
     contracts::{
         controller::Controller,
+        marketplace::SecondaryMarket,
         name_token::NameToken,
         registrar::{Registrar, CONTROLLER_ROLE},
         resolver::DefaultResolver,
@@ -40,12 +41,13 @@ impl odra_cli::scenario::Scenario for SetConfigScript {
     ) -> Result<(), odra_cli::scenario::Error> {
         let resolver_address = *container.get_ref::<DefaultResolver>(env)?.address();
         let controller_address = *container.get_ref::<Controller>(env)?.address();
+        let marketplace_address = *container.get_ref::<SecondaryMarket>(env)?.address();
 
         let mut registrar = container.get_ref::<Registrar>(env)?;
         let mut name_token = container.get_ref::<NameToken>(env)?;
 
         // Set default resolver.
-        env.set_gas(1_000_000_000);
+        env.set_gas(20_000_000_000);
         name_token.set_variables(
             Maybe::Some(true),
             Maybe::Some(vec![env.get_account(0)]),
@@ -54,19 +56,21 @@ impl odra_cli::scenario::Scenario for SetConfigScript {
         name_token.set_default_resolver(resolver_address);
 
         // Whitelist the registrar in the name token.
-        env.set_gas(1_000_000_000);
+        env.set_gas(20_000_000_000);
         name_token.set_variables(
             Maybe::Some(true),
             Maybe::Some(vec![*registrar.address()]),
             Maybe::None,
         );
 
-        // Whitelist the controller in the registrar.
-        env.set_gas(1_000_000_000);
+        // Whitelist controllers in the registrar.
+        env.set_gas(2_000_000_000);
         registrar.grant_role(&CONTROLLER_ROLE, &controller_address);
+        env.set_gas(2_000_000_000);
+        registrar.grant_role(&CONTROLLER_ROLE, &marketplace_address);
 
         // Set the grace period.
-        env.set_gas(1_000_000_000);
+        env.set_gas(2_000_000_000);
         registrar.set_grace_period(GRACE_PERIOD);
 
         Ok(())
@@ -103,7 +107,7 @@ impl odra_cli::scenario::Scenario for RegisterTokenScenario {
         container
             .get_ref::<Registrar>(env)
             .unwrap()
-            .register(voucher);
+            .controller_register(voucher);
         Ok(())
     }
 

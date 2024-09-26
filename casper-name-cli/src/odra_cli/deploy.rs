@@ -5,14 +5,14 @@ use casper_name_contracts::contracts::{
     registrar::{Registrar, RegistrarInitArgs},
     resolver::{DefaultResolver, DefaultResolverInitArgs},
 };
-use odra::{host::Deployer, Addressable};
+use odra::{host::{Deployer, HostEnv}, Addressable};
 
 pub struct DeployScript;
 
 impl odra_cli::deploy::DeployScript for DeployScript {
     fn deploy(
         &self,
-        env: &odra::host::HostEnv,
+        env: &HostEnv,
         container: &mut odra_cli::DeployedContractsContainer,
     ) -> Result<(), odra_cli::deploy::Error> {
         let admin = env.get_account(0);
@@ -20,8 +20,8 @@ impl odra_cli::deploy::DeployScript for DeployScript {
         let token = NameToken::try_deploy(
             &env,
             NameTokenInitArgs {
-                name: "007_CN".to_string(),
-                symbol: "007_CN".to_string(),
+                name: "008_CN".to_string(),
+                symbol: "008_CN".to_string(),
             },
         )?;
         container.add_contract(&token)?;

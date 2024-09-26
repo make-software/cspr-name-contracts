@@ -36,10 +36,10 @@ name = "structs-as-bytes"
 path = "bin/structs_as_bytes.rs"
 test = false
 
-# [[bin]]
-# name = "test-schema"
-# path = "bin/test_schema.rs"
-# test = false
+[[bin]]
+name = "serialize-structs"
+path = "bin/serialize_structs.rs"
+test = false
 
 # [[test]]
 # name = "test_register"

@@ -16,9 +16,8 @@ d3 -> d3: process fiat payment
 d3 -> Owner
 deactivate d3
 
-d3 -> Registrar: prolong(RenewalVoucher)
+d3 -> Registrar: admin_prolong(Vec<TokenRenewalInfo>)
 activate Registrar
-Registrar -> Registrar: verify voucher\nexpiration
     loop N times
     Registrar -> NameToken: metadata(name_hash)
     NameToken -> Registrar

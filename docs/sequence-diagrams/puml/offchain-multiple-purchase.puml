@@ -16,9 +16,8 @@ d3 -> d3: process fiat payment
 d3 -> User
 deactivate d3
 
-d3 -> Registrar: register(TokenizationVoucher)
+d3 -> Registrar: admin_register(Vec<NameMintInfo>)
 activate Registrar
-Registrar -> Registrar: verify voucher\nexpiration
     loop N times
     Registrar -> NameToken: metadata(name_hash)
     NameToken -> Registrar

@@ -22,7 +22,7 @@ Controller -> Controller: verify voucher\nexpiration
 Controller -> Controller: verify voucher\nsignature
 Controller -> Controller: process CSPR payment
 Controller -> "Events": PaymentFulfilled event
-Controller -> Registrar: prolong(RenewalVoucher, sig)
+Controller -> Registrar: controller_prolong(RenewalVoucher, sig)
 activate Registrar
 Registrar -> Registrar: verify voucher\nexpiration
     loop N times

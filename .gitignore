@@ -6,6 +6,7 @@ Cargo.lock
 .builder*
 /wasm
 .env
+.env15
 .DS_Store
 /.idea
 casper-name-contracts/wasm

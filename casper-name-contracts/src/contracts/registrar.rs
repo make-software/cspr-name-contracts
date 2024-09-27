@@ -322,7 +322,7 @@ mod tests {
             blake2b, TestContext, GRACE_PERIOD, INIT_TIME, TOKEN_EXPIRATION, TOKEN_NAME,
         },
     };
-    use odra::{casper_types::ContractPackageHash, host::HostRef};
+    use odra::host::HostRef;
     use odra_modules::{access::errors::Error as AccessControlError, cep78::events::Burn};
 
     #[test]
@@ -624,7 +624,7 @@ mod tests {
         ctx.with_name_registered(admin, alice, TOKEN_NAME);
 
         // And change the resolver
-        let resolver = Address::Contract(ContractPackageHash::new([1u8; 32]));
+        let resolver = Address::new("account-hash-0a12fef621d43e5dfa0845065371adc816a92ad40e35b0c311de9680445eabbd").unwrap();
         ctx.set_caller(alice);
         ctx.token.set_resolver(blake2b(TOKEN_NAME), resolver);
 

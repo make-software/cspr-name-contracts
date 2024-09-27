@@ -305,7 +305,7 @@ pub enum NameTokenError {
 
 #[cfg(test)]
 mod tests {
-    use odra::{casper_types::ContractPackageHash, OdraResult};
+    use odra::OdraResult;
 
     use super::*;
     use crate::test_context::{TestContext, INIT_TIME, TOKEN_EXPIRATION};
@@ -563,7 +563,7 @@ mod tests {
     fn only_whitelisted_user_can_set_default_resolver() {
         let mut ctx = TestContext::install_raw();
 
-        let resolver = Address::Contract(ContractPackageHash::new([0u8; 32]));
+        let resolver = Address::new("hash-1000000000000000000000000000000000000000000000000000000000000000").unwrap();
         assert!(ctx.token.try_set_default_resolver(resolver).is_err());
 
         ctx.whitelist_admin_in_name_token();

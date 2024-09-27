@@ -1,3 +1,4 @@
+use name_token_metadata_extract::parse_name_token_metadata;
 use odra::{casper_types::U512, prelude::*, Address, OdraResult};
 use serde::{Deserialize, Serialize};
 
@@ -66,7 +67,9 @@ impl TryFrom<String> for NameTokenMetadata {
     type Error = NameTokenError;
 
     fn try_from(value: String) -> Result<Self, Self::Error> {
-        serde_json_wasm::from_str(&value).map_err(|_| NameTokenError::DeserializationError)
+        // serde_json_wasm::from_str(&value).map_err(|_| NameTokenError::DeserializationError)
+        parse_name_token_metadata(&value)
+            .map_err(|_| NameTokenError::DeserializationError)
     }
 }
 
@@ -261,6 +264,8 @@ impl ExpirableVoucher for RenewalVoucher {
         self.voucher_expiration
     }
 }
+
+mod name_token_metadata_extract;
 
 #[cfg(test)]
 mod tests {

@@ -1,0 +1,40 @@
+{
+  "name": "ReverseResolver",
+  "events": [],
+  "entrypoints": [
+    {
+      "name": "set_primary_name",
+      "args": [
+        {
+          "name": "primary_name",
+          "ty": "String",
+          "is_ref": false,
+          "is_slice": false,
+          "is_required": true
+        }
+      ],
+      "is_mutable": true,
+      "return_ty": "Unit",
+      "ty": "Public",
+      "attributes": []
+    },
+    {
+      "name": "get_primary_name",
+      "args": [
+        {
+          "name": "address",
+          "ty": "Key",
+          "is_ref": false,
+          "is_slice": false,
+          "is_required": true
+        }
+      ],
+      "is_mutable": false,
+      "return_ty": {
+        "Option": "String"
+      },
+      "ty": "Public",
+      "attributes": []
+    }
+  ]
+}

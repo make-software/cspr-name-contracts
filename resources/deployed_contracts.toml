@@ -19,3 +19,7 @@ package_hash = "hash-d80737a6f26242b8906efcd731b84dd2d9a45d5b9d1d2287fe8564148f9
 [[contracts]]
 name = "SecondaryMarket"
 package_hash = "hash-4ce2503859757e9aa982d9f76ae0a6a1e0c775fd0fce24d93bae80c216781518"
+
+[[contracts]]
+name = "ReverseResolver"
+package_hash = "hash-615ec144945de7911fb3b5ce6743b029b18a281486caa3db80d11bd9edf36d47"

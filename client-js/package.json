@@ -66,6 +66,6 @@
   },
   "peerDependencies": {
     "casper-js-sdk": "^2.15.6",
-    "ts-results": "npm:@casperlabs/ts-results@^3.3.4"
+    "ts-results": "npm:@casperlabs/ts-results@^3.3.5"
   }
 }

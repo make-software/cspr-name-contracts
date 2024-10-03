@@ -1,6 +1,6 @@
 import { CasperClient, encodeBase16, Keys } from "casper-js-sdk";
 
-import { DefaultResolver } from "../src/default-resolver";
+import { ReverseResolver } from "../src/reverse-resolver";
 import { config } from "./config";
 
 // eslint-disable-next-line @typescript-eslint/require-await
@@ -9,16 +9,15 @@ const run = async () => {
     config.adminPrivateKeyPath,
   );
 
-  const defaultResolver = new DefaultResolver(
+  const reverseResolver = new ReverseResolver(
     config.networkName,
     config.reverseResolutionContractHash,
   );
 
-  const deploy = defaultResolver.setResolution(
+  const deploy = reverseResolver.setPrimaryName(
     'name.sld1.cspr',
-    encodeBase16(ownerKeypair.accountHash()),
     // 20 CSPR
-    20000000000,
+    800000000,
     ownerKeypair.publicKey,
   );
 
@@ -31,7 +30,7 @@ const run = async () => {
   const deployHash = await signedDeploy.send(config.nodeAddress)
 
   // eslint-disable-next-line no-console
-  console.log(`Set Resolution for CSPR.name deploy_hash: ${deployHash}`)
+  console.log(`Set Primary CSPR.name deploy_hash: ${deployHash}`)
 };
 
 // eslint-disable-next-line @typescript-eslint/no-floating-promises

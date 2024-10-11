@@ -22,4 +22,4 @@ package_hash = "hash-4ce2503859757e9aa982d9f76ae0a6a1e0c775fd0fce24d93bae80c2167
 
 [[contracts]]
 name = "ReverseResolver"
-package_hash = "hash-8f1f84099449fe89861eaa7c388e483a6d4376710c482de732a4408cd5939f9c"
+package_hash = "hash-bce38c9390ae555d9bd253c695c6c98d727bfd2997ca048d5bd52b0e36d291b6"

@@ -1,11 +1,11 @@
 use odra::{prelude::*, Address, Mapping};
 
-#[odra::module]
+#[odra::module(events = [PrimaryNameChanged])]
 pub struct ReverseResolver {
     primary_names: Mapping<Address, String>,
 }
 
-#[odra::module(events = [PrimaryNameChanged])]
+#[odra::module]
 impl ReverseResolver {
     pub fn set_primary_name(&mut self, primary_name: String) {
         // Load currently set primary name.

@@ -5,7 +5,7 @@ pub struct ReverseResolver {
     primary_names: Mapping<Address, String>,
 }
 
-#[odra::module]
+#[odra::module(events = [PrimaryNameChanged])]
 impl ReverseResolver {
     pub fn set_primary_name(&mut self, primary_name: String) {
         // Load currently set primary name.
@@ -16,7 +16,7 @@ impl ReverseResolver {
         self.primary_names.set(&caller, primary_name.clone());
 
         // Emit event.
-        self.env().emit_event(PrimartNameChanged {
+        self.env().emit_event(PrimaryNameChanged {
             address: caller,
             old_primary_name: current_primary_name,
             new_primary_name: primary_name,
@@ -29,7 +29,7 @@ impl ReverseResolver {
 }
 
 #[odra::event]
-pub struct PrimartNameChanged {
+pub struct PrimaryNameChanged {
     pub address: Address,
     pub old_primary_name: Option<String>,
     pub new_primary_name: String,

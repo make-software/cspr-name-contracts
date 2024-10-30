@@ -1,0 +1,29 @@
+@startuml
+'https://plantuml.com/sequence-diagram
+
+'autonumber
+actor Owner
+participant "d3.app" as d3 #lightblue
+participant "NameToken"
+boundary "Events"
+
+== List a *cspr name on D3 Marketplace ==
+
+Owner -> d3: list *cspr name
+activate d3
+d3 -> NameToken: is_approved_for_all(owner, d3operator_package_hash)
+NameToken -> d3
+alt Not approved
+    Owner -> NameToken: set_approval_for_all(owner, d3operator_package_hash)
+    activate "NameToken"
+    NameToken -> NameToken: set token operator
+    NameToken -> "Events": ApprovalForAll event
+    NameToken -> Owner
+    deactivate "NameToken"
+end
+d3 -> d3: list *cspr name
+d3 -> Owner
+deactivate d3
+== ==
+
+@enduml

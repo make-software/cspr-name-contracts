@@ -1,0 +1,29 @@
+@startuml
+'https://plantuml.com/sequence-diagram
+
+'autonumber
+actor Owner
+participant "NameToken"
+boundary "Events"
+
+== Approve operator for all tokens owned by caller ==
+
+Owner -> NameToken: set_approval_for_all(true, operator)
+activate NameToken
+NameToken -> NameToken: set owner operator
+NameToken -> "Events": ApprovalForAll event
+NameToken -> Owner
+deactivate NameToken
+
+== Revoke approval for all ==
+
+Owner -> NameToken: set_approval_for_all(false, operator)
+activate NameToken
+NameToken -> NameToken: clear owner operator
+NameToken -> "Events": RevokedForAll event
+NameToken -> Owner
+deactivate NameToken
+
+== ==
+
+@enduml

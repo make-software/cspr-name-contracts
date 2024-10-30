@@ -1,0 +1,20 @@
+@startuml
+'https://plantuml.com/sequence-diagram
+
+'autonumber
+actor "Domain owner"
+participant "NameToken"
+boundary "Events"
+
+== Set resolver ==
+
+"Domain owner" -> NameToken: set_resolver(token_hash,resolver_address)
+activate NameToken
+NameToken -> NameToken: update metadata
+NameToken -> "Events": MetadataUpdated event
+NameToken -> "Domain owner"
+deactivate NameToken
+
+== ==
+
+@enduml

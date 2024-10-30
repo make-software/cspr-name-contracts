@@ -1,0 +1,18 @@
+@startuml
+'https://plantuml.com/sequence-diagram
+
+'autonumber
+actor "NameToken Admin"
+participant "NameToken"
+boundary "Events"
+
+== Set transfer filter contract ==
+
+"NameToken Admin" -> "NameToken": set_transfer_filter(contract_package_hash)
+activate "NameToken"
+NameToken -> NameToken: set filter contract
+NameToken -> "Events": VariablesSet event
+"NameToken" -> "NameToken Admin"
+deactivate "NameToken"
+
+@enduml

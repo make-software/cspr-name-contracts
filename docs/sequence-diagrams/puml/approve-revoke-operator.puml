@@ -1,0 +1,29 @@
+@startuml
+'https://plantuml.com/sequence-diagram
+
+'autonumber
+actor Owner
+participant "NameToken"
+boundary "Events"
+
+== Approve operator (marketplace) ==
+
+Owner -> NameToken: approve(name_hash, operator)
+activate NameToken
+NameToken -> NameToken: set token operator
+NameToken -> "Events": Approval event
+NameToken -> Owner
+deactivate NameToken
+
+== Revoke approval ==
+
+Owner -> NameToken: revoke(name_hash, operator)
+activate NameToken
+NameToken -> NameToken: clear token operator
+NameToken -> "Events": ApprovalRevoked event
+NameToken -> Owner
+deactivate NameToken
+
+== ==
+
+@enduml

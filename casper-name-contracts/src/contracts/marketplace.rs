@@ -10,7 +10,7 @@ use crate::data_structures::SecondarySaleVoucher;
 
 use super::{controller::BaseController, name_token::NameTokenContractRef, utils};
 
-// TODO: on the diagrams is called D3Operator, shouldn't we change it?
+/// Secondary market smart contract. It handles the secondary market operations.
 #[odra::module]
 pub struct SecondaryMarket {
     controller: SubModule<BaseController>,
@@ -30,11 +30,14 @@ impl SecondaryMarket {
         }
     }
 
+    /// Initializes the secondary market with the signer public key, the treasury
+    /// address and the name token contract address.
     pub fn init(&mut self, signer: PublicKey, treasury: Address, name_token: Address) {
         self.controller.init(signer, treasury);
         self.name_token.set(name_token);
     }
 
+    /// Payable. Buys name tokens from the secondary market.
     #[odra(payable)]
     pub fn buy(&mut self, voucher: SecondarySaleVoucher, signature: Bytes) {
         self.controller.process_payment_voucher(&voucher, signature);

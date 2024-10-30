@@ -1,6 +1,7 @@
 use odra::{casper_types::U512, prelude::*, Address, OdraResult};
 use serde::{Deserialize, Serialize};
 
+/// Errors that can occur while working with name tokens.
 #[odra::odra_error]
 #[derive(Debug)]
 pub enum NameTokenError {
@@ -13,6 +14,7 @@ pub enum NameTokenError {
     DeserializationError = 1007,
 }
 
+/// Metadata associated with a name token.
 #[derive(PartialEq, Debug, Clone, Serialize, Deserialize)]
 pub struct NameTokenMetadata {
     name: String,
@@ -70,6 +72,7 @@ impl TryFrom<String> for NameTokenMetadata {
     }
 }
 
+/// Information about a payment.
 #[odra::odra_type]
 pub struct PaymentInfo {
     pub buyer: Address,
@@ -77,6 +80,7 @@ pub struct PaymentInfo {
     pub amount: U512,
 }
 
+/// List of [NameMintInfo] structs and the expiration time of the voucher.
 #[odra::odra_type]
 pub struct TokenizationVoucher {
     pub names: Vec<NameMintInfo>,
@@ -92,6 +96,7 @@ impl TokenizationVoucher {
     }
 }
 
+/// Information about a payment and a list of [NameMintInfo] structs.
 #[odra::odra_type]
 pub struct PaymentVoucher {
     pub payment: PaymentInfo,
@@ -128,6 +133,7 @@ impl From<PaymentVoucher> for TokenizationVoucher {
     }
 }
 
+/// Information about a payment and a list of [NameTransferInfo] structs.
 #[odra::odra_type]
 pub struct SecondarySaleVoucher {
     pub payment: PaymentInfo,
@@ -135,12 +141,14 @@ pub struct SecondarySaleVoucher {
     pub voucher_expiration: u64,
 }
 
+/// Pair of a label and owner address.
 #[odra::odra_type]
 pub struct NameTransferInfo {
     pub label: String,
     pub owner: Address,
 }
 
+/// Basic minting information for a name token.
 #[odra::odra_type]
 pub struct NameMintInfo {
     pub label: String,
@@ -158,6 +166,7 @@ impl NameMintInfo {
     }
 }
 
+/// Renewal information with new expiration time.
 #[odra::odra_type]
 pub struct TokenRenewalInfo {
     pub token_id: String,
@@ -173,6 +182,7 @@ impl TokenRenewalInfo {
     }
 }
 
+/// Voucher for renewing multiple name tokens, plus payment information.
 #[odra::odra_type]
 pub struct RenewalPaymentVoucher {
     pub payment: PaymentInfo,
@@ -200,6 +210,7 @@ impl RenewalPaymentVoucher {
     }
 }
 
+/// Voucher for renewing multiple name tokens.
 #[odra::odra_type]
 pub struct RenewalVoucher {
     pub tokens: Vec<TokenRenewalInfo>,

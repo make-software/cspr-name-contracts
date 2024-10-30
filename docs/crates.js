@@ -1,0 +1,1 @@
+window.ALL_CRATES = ["casper_name_contracts"];

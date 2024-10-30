@@ -12,6 +12,7 @@ use odra_modules::cep78::token::Cep78;
 
 use super::resolver::ResolverContractRef;
 
+/// NameToken contract. It is a CEP78 token with additional functionalities.
 #[odra::module]
 pub struct NameToken {
     token: SubModule<Cep78>,
@@ -66,6 +67,7 @@ impl NameToken {
         }
     }
 
+    /// Initializes CEP78 with the given name and symbol.
     pub fn init(&mut self, name: String, symbol: String) {
         // Setup CEP78 token.
         let max_total_supply = 1_000_000u64;
@@ -114,10 +116,12 @@ impl NameToken {
         );
     }
 
+    /// Checks if a token with the given hash exists.
     pub fn token_exists(&self, token_hash: &String) -> bool {
         self.token.token_exists_by_hash(token_hash)
     }
 
+    /// Only admin. Burns the token with the given hash.
     pub fn burn(&mut self, token_id: Maybe<u64>, token_hash: Maybe<String>) {
         if let Maybe::Some(token_hash) = token_hash {
             let caller = self.env().caller();
@@ -142,6 +146,7 @@ impl NameToken {
         }
     }
 
+    /// Only admin. Transfer tokens to the given recipient.
     pub fn admin_transfer(&mut self, recipient: Address, token_hashes: Vec<String>) {
         let caller = self.env().caller();
         self.assert_is_whitelisted(&caller);
@@ -165,6 +170,7 @@ impl NameToken {
         }
     }
 
+    /// Transfer token.
     pub fn transfer(
         &mut self,
         token_id: Maybe<u64>,
@@ -179,7 +185,7 @@ impl NameToken {
                 }
                 let caller = self.env().caller();
                 let owner = self.token.owner_of_by_id(&token_hash_value);
-                // if called by an operator
+                // if called by an operator cleanup the resolver if it is the default resolver.
                 if caller != owner {
                     self.cleanup(token_hash_value.clone());
                     self.token
@@ -194,6 +200,7 @@ impl NameToken {
         }
     }
 
+    /// Only admin. Set token's metadata.
     pub fn set_token_metadata(
         &mut self,
         token_id: Maybe<u64>,
@@ -210,15 +217,18 @@ impl NameToken {
             .set_token_metadata_unchecked(&token_id, token_meta_data);
     }
 
+    /// Return the metadata of the token with the given hash.
     pub fn metadata_by_hash(&self, token_hash: String) -> String {
         self.metadata(Maybe::None, Maybe::Some(token_hash))
     }
 
+    /// Return the resolver of the token with the given hash.
     pub fn resolver(&self, token_hash: String) -> Option<Address> {
         let metadata: NameTokenMetadata = self.wrapped_metadata(&token_hash);
         metadata.resolver().unwrap_or_revert(self)
     }
 
+    /// Token owner only. Set the resolver of the token with the given hash.
     pub fn set_resolver(&mut self, token_hash: String, resolver: Address) {
         if self.token.owner_of_by_id(&token_hash) != self.env().caller() {
             self.revert(NameTokenError::InvalidTokenOwner);
@@ -229,6 +239,7 @@ impl NameToken {
             .set_token_metadata_unchecked(&token_hash, metadata.json());
     }
 
+    /// Check if the address is the owner of the token with the given hash.
     pub fn assert_is_owner(&self, token_hash: &String, address: Address) {
         let owner = self.token.owner_of_by_id(token_hash);
         if owner != address {
@@ -236,6 +247,7 @@ impl NameToken {
         }
     }
 
+    /// Check if the token with the given hash is expired.
     pub fn is_token_valid(&self, token_hash: &String) -> bool {
         if !self.token.token_exists_by_hash(token_hash) {
             return false;
@@ -248,6 +260,7 @@ impl NameToken {
         true
     }
 
+    /// Only admin. Set the default resolver.
     pub fn set_default_resolver(&mut self, resolver: Address) {
         let caller = self.env().caller();
         self.assert_is_whitelisted(&caller);
@@ -257,6 +270,7 @@ impl NameToken {
         self.default_resolver.set(resolver);
     }
 
+    /// Get the default resolver.
     pub fn get_default_resolver(&self) -> Address {
         *self.default_resolver.address()
     }

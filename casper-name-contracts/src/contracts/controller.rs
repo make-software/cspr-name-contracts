@@ -11,6 +11,7 @@ use odra::{
 };
 use odra_modules::access::{AccessControl, Role, DEFAULT_ADMIN_ROLE};
 
+/// Event with the payment information.
 #[odra::event]
 pub struct PaymentFulfilled {
     payment_id: String,
@@ -18,6 +19,8 @@ pub struct PaymentFulfilled {
     amount: U512,
 }
 
+/// Controller smart contract. It handles payments and talks to the [Registrar
+/// Contract](super::registrar::Registrar).
 #[odra::module]
 pub struct Controller {
     controller: SubModule<BaseController>,
@@ -37,23 +40,28 @@ impl Controller {
         }
     }
 
+    /// Initializes the controller with the registrar contract address, the
+    /// signer public key and the treasury address.
     pub fn init(&mut self, registrar: Address, signer: PublicKey, treasury: Address) {
         self.registrar.set(registrar);
         self.controller.init(signer, treasury);
     }
 
+    /// Payable. Buys new name tokens.
     #[odra(payable)]
     pub fn buy(&mut self, voucher: PaymentVoucher, signature: Bytes) {
         self.controller.process_payment_voucher(&voucher, signature);
         self.registrar.controller_register(voucher.into());
     }
 
+    /// Payable. Renews name tokens.
     #[odra(payable)]
     pub fn renew(&mut self, voucher: RenewalPaymentVoucher, signature: Bytes) {
         self.controller.process_payment_voucher(&voucher, signature);
         self.registrar.controller_prolong(voucher.into());
     }
 
+    /// Payable. Buys new name tokens and renews existing ones.
     #[odra(payable)]
     pub fn buy_and_renew(
         &mut self,
@@ -70,11 +78,14 @@ impl Controller {
             .controller_prolong_and_register(renewal_voucher.into(), payment_voucher.into());
     }
 
+    /// Try to resolve a full domain name to an address.
     pub fn resolve(&self, full_domain: String) -> Option<Address> {
         self.registrar.resolve(full_domain)
     }
 }
 
+/// Base for all controllers. It handles access controy, treasury and signer
+/// public key.
 #[odra::module(events = [PaymentFulfilled])]
 pub struct BaseController {
     signer_public_key: Var<PublicKey>,
@@ -94,6 +105,8 @@ impl BaseController {
 }
 
 impl BaseController {
+    /// Initializes the controller.
+    /// It assigns the deployer as the admin.
     pub fn init(&mut self, signer: PublicKey, treasury: Address) {
         self.signer_public_key.set(signer);
         self.treasury.set(treasury);
@@ -104,16 +117,19 @@ impl BaseController {
             .unchecked_grant_role(&DEFAULT_ADMIN_ROLE, &admin);
     }
 
+    /// Admin only. Sets the public key of the signer.
     pub fn set_signer_public_key(&mut self, signer: PublicKey) {
         self.assert_caller_is_admin();
         self.signer_public_key.set(signer);
     }
 
+    /// Admin only. Sets the treasury address.
     pub fn set_treasury(&mut self, treasury: Address) {
         self.assert_caller_is_admin();
         self.treasury.set(treasury);
     }
 
+    /// Returns the public key of the signer.
     pub fn signer_public_key(&self) -> PublicKey {
         self.signer_public_key.get().unwrap_or_revert(self)
     }
@@ -130,6 +146,7 @@ impl BaseController {
         }
     }
 
+    /// Validate the payment voucher and process the payment.
     pub fn process_payment_voucher<P: Payment + ToBytes>(&self, voucher: &P, signature: Bytes) {
         self.assert_caller_is_buyer(voucher);
         self.verify_signature(voucher, &signature);
@@ -163,6 +180,7 @@ impl BaseController {
     }
 }
 
+/// Controller errors.
 #[odra::odra_error]
 pub enum ControllerError {
     InvalidSignature = 1101,

@@ -1,5 +1,6 @@
 use odra::{prelude::*, Address, Mapping};
 
+/// Reverse Resolver contract. It resolves primary names to addresses.
 #[odra::module(events = [PrimaryNameChanged])]
 pub struct ReverseResolver {
     primary_names: Mapping<Address, String>,
@@ -7,6 +8,7 @@ pub struct ReverseResolver {
 
 #[odra::module]
 impl ReverseResolver {
+    /// Sets the primary preffered reverse resolution address for the caller.
     pub fn set_primary_name(&mut self, primary_name: String) {
         // Load currently set primary name.
         let caller = self.env().caller();
@@ -23,11 +25,13 @@ impl ReverseResolver {
         });
     }
 
+    /// Returns the primary name for the address.
     pub fn get_primary_name(&self, address: &Address) -> Option<String> {
         self.primary_names.get(address)
     }
 }
 
+/// Event emitted when the primary name of an address changes.
 #[odra::event]
 pub struct PrimaryNameChanged {
     pub address: Address,

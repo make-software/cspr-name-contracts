@@ -18,17 +18,20 @@ type Nonce = u32;
 type Domain = String;
 type TokenHash = String;
 
+/// Event emitted when a resolution is changed.
 #[odra::event]
 pub struct ResolutionChanged {
     full_domain: String,
     address: Option<Address>,
 }
 
+/// Event emitted when a resolution is cleared.
 #[odra::event]
 pub struct ResolutionCleared {
     token_hash: String,
 }
 
+/// Default Resolver smart contract. It handles the resolution of domain names to addresses.
 #[odra::module(events = [ResolutionChanged, ResolutionCleared])]
 pub struct DefaultResolver {
     access_control: SubModule<AccessControl>,
@@ -47,6 +50,8 @@ impl DefaultResolver {
         }
     }
 
+    /// Initializes the default resolver with the name token contract address.
+    /// The caller is granted the admin role.
     pub fn init(&mut self, name_token: Address) {
         self.name_token.set(name_token);
 
@@ -55,6 +60,7 @@ impl DefaultResolver {
             .unchecked_grant_role(&DEFAULT_ADMIN_ROLE, &admin);
     }
 
+    /// Admin only. Sets the name token contract address.
     pub fn set_name_token(&mut self, name_token: Address) {
         if !self.has_role(&DEFAULT_ADMIN_ROLE, &self.env().caller()) {
             self.env()
@@ -63,6 +69,7 @@ impl DefaultResolver {
         self.name_token.set(name_token);
     }
 
+    /// Token owner only. Sets the resolution for a domain to an address.
     pub fn set_resolution(&mut self, full_domain: Domain, address: Option<Address>) {
         let env = self.env();
         let token_hash = self
@@ -88,6 +95,7 @@ impl DefaultResolver {
         });
     }
 
+    /// Resolves a domain to an address.
     pub fn resolve(&self, full_domain: Domain) -> Option<Address> {
         let token_hash = self.calculate_token_hash(&full_domain)?;
         let nonce = self.nonce(&token_hash);
@@ -97,6 +105,7 @@ impl DefaultResolver {
             .flatten()
     }
 
+    /// Cleanup the resolutions for a token. Only the token owner or the admin can do this.
     pub fn cleanup(&mut self, token_hash: TokenHash) {
         let env = self.env();
         let caller = env.caller();

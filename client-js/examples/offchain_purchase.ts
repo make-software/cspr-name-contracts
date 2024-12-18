@@ -10,15 +10,15 @@ const run = async () => {
     config.adminPrivateKeyPath,
   );
 
-  const buyerKeypair = Keys.Ed25519.loadKeyPairFromPrivateFile(
-    config.adminPrivateKeyPath,
-  );
+  // const buyerKeypair = Keys.Ed25519.loadKeyPairFromPrivateFile(
+  //   config.adminPrivateKeyPath,
+  // );
 
   const expiration = new Date();
   expiration.setFullYear(new Date().getFullYear() + 1, 1, 1);
 
   const nameMintInfos = [
-    new NameMintInfo("sld1", encodeBase16(buyerKeypair.accountHash()), expiration),
+    new NameMintInfo("victoria", "52b663201038261e42dab4e5d10c525b64c1662c7fdfc6df03576f0fe16630c8", expiration),
   ]
 
   const registrarContract = new Registrar(
@@ -28,8 +28,8 @@ const run = async () => {
 
   const deploy = registrarContract.adminRegister(
     nameMintInfos,
-    // 20 CSPR
-    20000000000,
+    // 5 CSPR
+    5000000000,
     adminKeypair.publicKey,
   );
 

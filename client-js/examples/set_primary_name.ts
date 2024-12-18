@@ -5,7 +5,7 @@ import { config } from "./config";
 
 // eslint-disable-next-line @typescript-eslint/require-await
 const run = async () => {
-  const ownerKeypair = Keys.Ed25519.loadKeyPairFromPrivateFile(
+  const ownerKeypair = Keys.Secp256K1.loadKeyPairFromPrivateFile(
     config.adminPrivateKeyPath,
   );
 
@@ -15,8 +15,8 @@ const run = async () => {
   );
 
   const deploy = reverseResolver.setPrimaryName(
-    'name.sld1.cspr',
-    // 20 CSPR
+    'maketeam.cspr',
+    // 0.8 CSPR
     800000000,
     ownerKeypair.publicKey,
   );

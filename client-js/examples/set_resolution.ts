@@ -11,14 +11,16 @@ const run = async () => {
 
   const defaultResolver = new DefaultResolver(
     config.networkName,
-    config.reverseResolutionContractHash,
+    config.defaultResolverContractHash,
   );
 
+  // address - encodeBase16(ownerKeypair.publicKey.toAccountHash())
+
   const deploy = defaultResolver.setResolution(
-    'name.sld1.cspr',
-    encodeBase16(ownerKeypair.accountHash()),
-    // 20 CSPR
-    20000000000,
+    'wallet-extension-ledger-test-name.cspr',
+    'd4497e8d5f6e1565f5be6964be7da3f48523e307adc829858071cdd5e981d425',
+    // 2 CSPR
+    2000000000,
     ownerKeypair.publicKey,
   );
 
@@ -36,3 +38,23 @@ const run = async () => {
 
 // eslint-disable-next-line @typescript-eslint/no-floating-promises
 run();
+
+// My account names
+
+// vova.cspr     -> alex account
+// maketeam.cspr -> my account
+// dev.cspr      -> ihor account
+
+// vova.cspr name resolutions
+// vova.cspr     -> alex account
+// dev.vova.cspr -> my account
+// team.dev.vova.cspr -> other account
+
+// Alex's account names
+
+// alex.cspr     -> alex account
+
+// Assigned to alex names
+
+// alex.cspr -> alex account
+// vova.cspr -> alex account

@@ -1,4 +1,4 @@
-import {Keys } from "casper-js-sdk";
+import {encodeBase16, Keys } from "casper-js-sdk";
 
 import { Controller } from "../src/controller";
 import { NameMintInfo, PaymentInfo, PaymentVoucher } from "../src/types";
@@ -8,11 +8,11 @@ import { config } from "./config";
 // eslint-disable-next-line @typescript-eslint/require-await
 const run = async () => {
   const adminKeypair = Keys.Ed25519.loadKeyPairFromPrivateFile(
-    `${config.adminPrivateKeyPath}/secret_key.pem`,
+    `${config.adminPrivateKeyPath}`,
   );
 
   const buyerKeypair = Keys.Ed25519.loadKeyPairFromPrivateFile(
-    `${config.adminPrivateKeyPath}/secret_key.pem`,
+    `${config.adminPrivateKeyPath}`,
   );
 
   const expiration = new Date();
@@ -20,7 +20,7 @@ const run = async () => {
   
   const voucher = new PaymentVoucher(
     new PaymentInfo(buyerKeypair.accountHex(), "payment:1", 10000),
-    [new NameMintInfo("sld", buyerKeypair.accountHex(), expiration)],
+    [new NameMintInfo("alex", encodeBase16(buyerKeypair.accountHash()), expiration)],
     expiration,
   );
 

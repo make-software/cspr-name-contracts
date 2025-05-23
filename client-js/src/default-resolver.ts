@@ -1,35 +1,31 @@
-import { BigNumber, BigNumberish } from "@ethersproject/bignumber"
-import { CLAccountHash, CLKey, CLOption, CLPublicKey, CLString, Contracts, decodeBase16, DeployUtil, RuntimeArgs } from "casper-js-sdk"
-import { Some } from 'ts-results'
-
+import { BigNumberish } from "@ethersproject/bignumber"
+import {
+  Args,
+  CLValue,
+  ContractCallBuilder, Key, PublicKey, Transaction,
+} from "casper-js-sdk"
 
 // eslint-disable-next-line import/prefer-default-export
 export class DefaultResolver {
-  private readonly contractClient: Contracts.Contract;
-
   constructor(
     private readonly networkName: string,
-    contractHash: string,
-  ) {
-    this.contractClient = new Contracts.Contract();
-
-    this.contractClient.setContractHash(`hash-${contractHash}`);
-  }
+    private readonly contractHash: string,
+  ) {}
 
   /**
    * Sets resolution for a given CSPR.name
    * @param fullDomain full domain in a format of (cname.sld.cspr, sld.cspr)
-   * @param address address of the account/contract of cspr.name resolution
-   * @param paymentAmount the amount of gas price that should be payed in motes
-   * @param sender the CLPublicKey of deploy submitter account (admin)
-   * @returns Deploy object which can be send to the node.
+   * @param address address of the account/contract of cspr.name resolution (starts with either account-hash-... or hash-...)
+   * @param paymentAmount the amount of gas price that should be paid in motes
+   * @param sender the PublicKey of transaction submitter account (admin)
+   * @returns Transaction object which can be sent to the node.
    */
   public setResolution(
     fullDomain: string,
     address: string,
     paymentAmount: BigNumberish,
-    sender: CLPublicKey,
-  ): DeployUtil.Deploy {
+    sender: PublicKey,
+  ): Transaction {
     const domains = fullDomain.split('.')
     if (domains.length < 2) {
       throw new Error('invalid fullDomain format, should be (cname.sld.cspr, sld.cspr)')
@@ -40,19 +36,18 @@ export class DefaultResolver {
       throw new Error('top level domain should be equal to .cspr')
     }
 
-    const addressKey = new CLKey(new CLAccountHash(decodeBase16(address)))
+    const addressKey = CLValue.newCLKey(Key.newKey(address));
 
-    const runtimeArgs = RuntimeArgs.fromMap({
-      full_domain: new CLString(fullDomain),
-      address: new CLOption(Some(addressKey), addressKey.clType())
-    })
-
-    return this.contractClient.callEntrypoint(
-      'set_resolution',
-      runtimeArgs,
-      sender,
-      this.networkName,
-      BigNumber.from(paymentAmount).toString(),
-    )
+    return new ContractCallBuilder()
+      .chainName(this.networkName)
+      .from(sender)
+      .payment(Number(paymentAmount))
+      .byHash(this.contractHash)
+      .entryPoint('set_resolution')
+      .runtimeArgs(Args.fromMap({
+        full_domain: CLValue.newCLString(fullDomain),
+        address: CLValue.newCLOption(addressKey, addressKey.type),
+      }))
+      .build()
   }
 }

@@ -1,221 +1,240 @@
-import { BigNumber, BigNumberish } from "@ethersproject/bignumber"
-import { CLAccountHash,CLKey, CLList, CLPublicKey, CLString, CLU32,CLU32BytesParser, CLU64, Contracts, decodeBase16,DeployUtil,RuntimeArgs } from "casper-js-sdk"
+import { BigNumberish } from "@ethersproject/bignumber"
+import {
+  ContractCallBuilder,
+  PublicKey,
+  Transaction, CLValue, CLTypeUInt8, CLTypeString, Key, Args, toBytesU32
+} from "casper-js-sdk"
 
-import { CLAny, NameMintInfo, TokenRenewalInfo  } from "./types";
+import { NameMintInfo, TokenRenewalInfo } from "./types";
 
 // eslint-disable-next-line import/prefer-default-export
 export class Registrar {
-  private readonly contractClient: Contracts.Contract;
-
   constructor(
     private readonly networkName: string,
-    contractHash: string,
-  ) {
-    this.contractClient = new Contracts.Contract();
-
-    this.contractClient.setContractHash(`hash-${contractHash}`);
-  }
+    private readonly contractHash: string,
+  ) {}
 
   /**
    * Buys CSPR.name for an account
-   * @param nameMintInfos @see {@link NameMintInfo[]} NameMintInfo[] that was created by CSPR.name provider
-   * @param paymentAmount the amount of gas price that should be payed in motes
-   * @param sender the CLPublicKey of deploy submitter account (admin)
-   * @returns Deploy object which can be send to the node.
+   * @param nameMintInfos @see {@link NameMintInfo} NameMintInfo[] that was created by CSPR.name provider
+   * @param paymentAmount the amount of gas price that should be paid in motes
+   * @param sender the PublicKey of transaction submitter account (admin)
+   * @returns Transaction object which can be sent to the node.
    */
   public adminRegister(
     nameMintInfos: NameMintInfo[],
     paymentAmount: BigNumberish,
-    sender: CLPublicKey,
-  ): DeployUtil.Deploy {
-    const nameMintInfosLength = new CLU32BytesParser().toBytes(new CLU32(nameMintInfos.length)).unwrap()
+    sender: PublicKey,
+  ): Transaction {
+    const length = toBytesU32(nameMintInfos.length)
 
-    let bytes = Array.from(nameMintInfosLength)
+    let bytes = Array.from(length)
     bytes = nameMintInfos.reduce((b, name) => b.concat(Array.from(name.toBytes())), bytes)
 
-    const runtimeArgs = RuntimeArgs.fromMap({
-      names: new CLAny(Uint8Array.from(bytes))
+    const runtimeArgs = Args.fromMap({
+        names: CLValue.newCLAny(Uint8Array.from(bytes)),
     })
 
-    return this.contractClient.callEntrypoint(
-      'admin_register',
-      runtimeArgs,
-      sender,
-      this.networkName,
-      BigNumber.from(paymentAmount).toString(),
-    )
+    return new ContractCallBuilder()
+      .chainName(this.networkName)
+      .from(sender)
+      .payment(Number(paymentAmount))
+      .byHash(this.contractHash)
+      .entryPoint('admin_register')
+      .runtimeArgs(runtimeArgs)
+      .build();
   }
 
   /**
    * Buys CSPR.name for an account
-   * @param voucher @see {@link RenewalVoucher} PaymentVoucher that was created by CSPR.name provider
-   * @param paymentAmount the amount of gas price that should be payed in motes
-   * @param sender the CLPublicKey of deploy submitter account
-   * @returns Deploy object which can be send to the node.
+   * @param tokenRenewalInfos @see {@link TokenRenewalInfo} TokenRenewalInfo[] that was created by CSPR.name provider
+   * @param paymentAmount the amount of gas price that should be paid in motes
+   * @param sender the PublicKey of transaction submitter account
+   * @returns Transaction object which can be sent to the node.
    */
   public adminProlong(
     tokenRenewalInfos: TokenRenewalInfo[],
     paymentAmount: BigNumberish,
-    sender: CLPublicKey,
-  ): DeployUtil.Deploy {
-    const tokenRenewalInfosLength = new CLU32BytesParser().toBytes(new CLU32(tokenRenewalInfos.length)).unwrap()
+    sender: PublicKey,
+  ): Transaction {
+    const length = toBytesU32(tokenRenewalInfos.length)
 
-    let bytes = Array.from(tokenRenewalInfosLength)
+    let bytes = Array.from(length)
     bytes = tokenRenewalInfos.reduce((b, name) => b.concat(Array.from(name.toBytes())), bytes)
 
-    const runtimeArgs = RuntimeArgs.fromMap({
-      tokens: new CLAny(Uint8Array.from(bytes)),
-    });
+    const infosBytes: CLValue[] = []
+    for (let i = 0; i < bytes.length; i += 1) {
+      infosBytes.push(CLValue.newCLUint8(bytes[ i]));
+    }
 
-    return this.contractClient.callEntrypoint(
-      'admin_prolong',
-      runtimeArgs,
-      sender,
-      this.networkName,
-      BigNumber.from(paymentAmount).toString(),
-    );
+    const runtimeArgs = Args.fromMap({
+      tokens: CLValue.newCLList(CLTypeUInt8, infosBytes),
+    })
+
+    return new ContractCallBuilder()
+      .chainName(this.networkName)
+      .from(sender)
+      .payment(Number(paymentAmount))
+      .byHash(this.contractHash)
+      .entryPoint('admin_prolong')
+      .runtimeArgs(runtimeArgs)
+      .build();
   }
 
   /**
    * Buys CSPR.name for an account
-   * @param voucher @see {@link RenewalVoucher} PaymentVoucher that was created by CSPR.name provider
-   * @param paymentAmount the amount of gas price that should be payed in motes
-   * @param sender the CLPublicKey of deploy submitter account
-   * @returns Deploy object which can be send to the node.
+   * @param tokenRenewalInfos @see {@link TokenRenewalInfo} TokenRenewalInfo[] that was created by CSPR.name provider
+   * @param nameMintInfos @see {@link NameMintInfo} NameMintInfo[] that was created by CSPR.name provider
+   * @param paymentAmount the amount of gas price that should be paid in motes
+   * @param sender the PublicKey of transaction submitter account
+   * @returns Transaction object which can be sent to the node.
    */
   public adminProlongAndRegister(
     tokenRenewalInfos: TokenRenewalInfo[],
     nameMintInfos: NameMintInfo[],
     paymentAmount: BigNumberish,
-    sender: CLPublicKey,
-  ): DeployUtil.Deploy {
-    const tokenRenewalInfosLength = new CLU32BytesParser().toBytes(new CLU32(tokenRenewalInfos.length)).unwrap()
+    sender: PublicKey,
+  ): Transaction {
+    const tokenRenewalInfosLength = toBytesU32(tokenRenewalInfos.length)
 
     let tokenRenewalBytes = Array.from(tokenRenewalInfosLength)
     tokenRenewalBytes = tokenRenewalInfos.reduce((b, name) => b.concat(Array.from(name.toBytes())), tokenRenewalBytes)
+    const tokenRenewalCLBytes: CLValue[] = []
+    for (let i = 0; i < tokenRenewalBytes.length; i += 1) {
+      tokenRenewalCLBytes.push(CLValue.newCLUint8(tokenRenewalBytes[ i]));
+    }
 
-    const nameMintInfosLength = new CLU32BytesParser().toBytes(new CLU32(nameMintInfos.length)).unwrap()
+    const nameMintInfosLength = toBytesU32(nameMintInfos.length)
 
     let nameMintInfosBytes = Array.from(nameMintInfosLength)
     nameMintInfosBytes = nameMintInfos.reduce((b, name) => b.concat(Array.from(name.toBytes())), nameMintInfosBytes)
+    const nameMintInfosCLBytes: CLValue[] = []
+    for (let i = 0; i < tokenRenewalBytes.length; i += 1) {
+      nameMintInfosCLBytes.push(CLValue.newCLUint8(nameMintInfosBytes[ i]));
+    }
 
-    const runtimeArgs = RuntimeArgs.fromMap({
-      renewal_tokens: new CLAny(Uint8Array.from(tokenRenewalBytes)),
-      new_tokens: new CLAny(Uint8Array.from(nameMintInfosBytes)),
-    });
+    const runtimeArgs = Args.fromMap({
+      renewal_tokens: CLValue.newCLList(CLTypeUInt8, tokenRenewalCLBytes),
+      new_tokens: CLValue.newCLList(CLTypeUInt8, nameMintInfosCLBytes),
+    })
 
-    return this.contractClient.callEntrypoint(
-      'admin_prolong_and_register',
-      runtimeArgs,
-      sender,
-      this.networkName,
-      BigNumber.from(paymentAmount).toString(),
-    );
+    return new ContractCallBuilder()
+      .chainName(this.networkName)
+      .from(sender)
+      .payment(Number(paymentAmount))
+      .byHash(this.contractHash)
+      .entryPoint('admin_prolong_and_register')
+      .runtimeArgs(runtimeArgs)
+      .build();
   }
 
   /**
    * Sets grace period of name token for registrar contract as an admin
    * @param periodMilliseconds grace period in milliseconds
-   * @param paymentAmount the amount of gas price that should be payed in motes
-   * @param sender the CLPublicKey of deploy submitter account (admin)
-   * @returns Deploy object which can be send to the node.
+   * @param paymentAmount the amount of gas price that should be paid in motes
+   * @param sender the PublicKey of transaction submitter account (admin)
+   * @returns Transaction object which can be sent to the node.
    */
   public setGracePeriod(
     periodMilliseconds: number,
     paymentAmount: BigNumberish,
-    sender: CLPublicKey,
-  ): DeployUtil.Deploy {
-    const runtimeArgs = RuntimeArgs.fromMap({
-      period: new CLU64(periodMilliseconds),
+    sender: PublicKey,
+  ): Transaction {
+    const runtimeArgs = Args.fromMap({
+      period: CLValue.newCLUint64(periodMilliseconds),
     });
 
-    return this.contractClient.callEntrypoint(
-      'set_grace_period',
-      runtimeArgs,
-      sender,
-      this.networkName,
-      BigNumber.from(paymentAmount).toString(),
-    );
+    return new ContractCallBuilder()
+      .chainName(this.networkName)
+      .from(sender)
+      .payment(Number(paymentAmount))
+      .byHash(this.contractHash)
+      .entryPoint('set_grace_period')
+      .runtimeArgs(runtimeArgs)
+      .build();
   }
 
   /**
    * Transfer CSPR.name to an account as an admin
-   * @param newOwnerAccountHash account hash of the new name token owner
+   * @param newOwnerHash hash of the new name token owner
    * @param tokenHashes list of token hashes for transfer
-   * @param paymentAmount the amount of gas price that should be payed in motes
-   * @param sender the CLPublicKey of deploy submitter account (admin)
-   * @returns Deploy object which can be send to the node.
+   * @param paymentAmount the amount of gas price that should be paid in motes
+   * @param sender the PublicKey of transaction submitter account (admin)
+   * @returns Transaction object which can be sent to the node.
    */
   public adminTransfer(
-    newOwnerAccountHash: string,
+    newOwnerHash: string,
     tokenHashes: string[],
     paymentAmount: BigNumberish,
-    sender: CLPublicKey,
-  ): DeployUtil.Deploy {
-    const tokenHashesList = tokenHashes.map(th => new CLString(th));
-    const runtimeArgs = RuntimeArgs.fromMap({
-      new_owner: new CLKey(new CLAccountHash(decodeBase16(newOwnerAccountHash))),
-      token_hashes: new CLList(tokenHashesList),
+    sender: PublicKey,
+  ): Transaction {
+    const tokenHashesList = tokenHashes.map(th => CLValue.newCLString(th));
+    const runtimeArgs = Args.fromMap({
+      new_owner: CLValue.newCLKey(Key.newKey(newOwnerHash)),
+      token_hashes: CLValue.newCLList(CLTypeString, tokenHashesList),
     });
 
-    return this.contractClient.callEntrypoint(
-      'admin_transfer',
-      runtimeArgs,
-      sender,
-      this.networkName,
-      BigNumber.from(paymentAmount).toString(),
-    );
+    return new ContractCallBuilder()
+      .chainName(this.networkName)
+      .from(sender)
+      .payment(Number(paymentAmount))
+      .byHash(this.contractHash)
+      .entryPoint('admin_transfer')
+      .runtimeArgs(runtimeArgs)
+      .build();
   }
 
   /**
    * Burn CSPR.name tokens as an admin
    * @param tokenHashes list of token hashes for transfer
-   * @param paymentAmount the amount of gas price that should be payed in motes
-   * @param sender the CLPublicKey of deploy submitter account (admin)
-   * @returns Deploy object which can be send to the node.
+   * @param paymentAmount the amount of gas price that should be paid in motes
+   * @param sender the PublicKey of transaction submitter account (admin)
+   * @returns Transaction object which can be sent to the node.
    */
   public adminBurn(
     tokenHashes: string[],
     paymentAmount: BigNumberish,
-    sender: CLPublicKey,
-  ): DeployUtil.Deploy {
-    const tokenHashesList = tokenHashes.map(th => new CLString(th));
-    const runtimeArgs = RuntimeArgs.fromMap({
-      token_hashes: new CLList(tokenHashesList),
+    sender: PublicKey,
+  ): Transaction {
+    const tokenHashesList = tokenHashes.map(th => CLValue.newCLString(th));
+    const runtimeArgs = Args.fromMap({
+      token_hashes: CLValue.newCLList(CLTypeString, tokenHashesList),
     });
 
-    return this.contractClient.callEntrypoint(
-      'admin_burn',
-      runtimeArgs,
-      sender,
-      this.networkName,
-      BigNumber.from(paymentAmount).toString(),
-    );
+    return new ContractCallBuilder()
+      .chainName(this.networkName)
+      .from(sender)
+      .payment(Number(paymentAmount))
+      .byHash(this.contractHash)
+      .entryPoint('admin_burn')
+      .runtimeArgs(runtimeArgs)
+      .build();
   }
 
   /**
    * Expire CSPR.name tokens as an admin
    * @param tokenHashes list of token hashes for transfer
-   * @param paymentAmount the amount of gas price that should be payed in motes
-   * @param sender the CLPublicKey of deploy submitter account (admin)
-   * @returns Deploy object which can be send to the node.
+   * @param paymentAmount the amount of gas price that should be paid in motes
+   * @param sender the PublicKey of transaction submitter account (admin)
+   * @returns Transaction object which can be sent to the node.
    */
   public expire(
     tokenHashes: string[],
     paymentAmount: BigNumberish,
-    sender: CLPublicKey,
-  ): DeployUtil.Deploy {
-    const tokenHashesList = tokenHashes.map(th => new CLString(th));
-    const runtimeArgs = RuntimeArgs.fromMap({
-      token_hashes: new CLList(tokenHashesList),
+    sender: PublicKey,
+  ): Transaction {
+    const tokenHashesList = tokenHashes.map(th => CLValue.newCLString(th));
+    const runtimeArgs = Args.fromMap({
+      token_hashes: CLValue.newCLList(CLTypeString, tokenHashesList),
     });
 
-    return this.contractClient.callEntrypoint(
-      'expire',
-      runtimeArgs,
-      sender,
-      this.networkName,
-      BigNumber.from(paymentAmount).toString(),
-    );
+    return new ContractCallBuilder()
+      .chainName(this.networkName)
+      .from(sender)
+      .payment(Number(paymentAmount))
+      .byHash(this.contractHash)
+      .entryPoint('expire')
+      .runtimeArgs(runtimeArgs)
+      .build();
   }
 }

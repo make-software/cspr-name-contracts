@@ -1,10 +1,8 @@
-import fs from "fs";
+import * as fs from "fs";
 
 import { HttpHandler, KeyAlgorithm, PrivateKey, RpcClient } from "casper-js-sdk";
 
-import { Registrar } from "../src/registrar";
-import { TokenRenewalInfo } from "../src/types";
-
+import { Controller } from "../src/controller";
 import { config } from "./config";
 
 // eslint-disable-next-line @typescript-eslint/require-await
@@ -15,21 +13,20 @@ const run = async () => {
     KeyAlgorithm.ED25519,
   );
 
-  const registrarContract = new Registrar(
+  const controllerContract = new Controller(
     config.networkName,
-    config.registrarContractHash,
+    config.controllerContractHash,
   );
 
-  const expiration = new Date();
-  expiration.setFullYear(expiration.getFullYear() + 1, expiration.getMonth(), expiration.getDate());
-
-  const transaction = registrarContract.adminProlong(
-    [new TokenRenewalInfo(config.mintingName, expiration)],
-    10000,
+  const transaction = controllerContract.setSignerPublicKey(
     adminKeypair.publicKey,
+    adminKeypair.publicKey,
+    5000000000,
   );
 
   transaction.sign(adminKeypair);
+
+  console.log({trx: JSON.stringify(transaction, null, 2)});
 
   const rpcHandler = new HttpHandler(config.nodeAddress);
   const rpcClient = new RpcClient(rpcHandler);

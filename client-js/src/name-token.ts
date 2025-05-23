@@ -1,70 +1,64 @@
-import { BigNumber, BigNumberish } from "@ethersproject/bignumber"
-import { CLAccountHash, CLBool, CLByteArray, CLKey, CLPublicKey, Contracts, decodeBase16, DeployUtil, RuntimeArgs } from "casper-js-sdk"
-
+import { BigNumberish } from "@ethersproject/bignumber"
+import {
+  Args, CLValue, ContractCallBuilder, Key,
+  PublicKey, Transaction,
+} from "casper-js-sdk"
 
 // eslint-disable-next-line import/prefer-default-export
 export class NameToken {
-  private readonly contractClient: Contracts.Contract;
-
   constructor(
     private readonly networkName: string,
-    contractHash: string,
-  ) {
-    this.contractClient = new Contracts.Contract();
-
-    this.contractClient.setContractHash(`hash-${contractHash}`);
-  }
+    private readonly contractHash: string,
+  ) {}
 
   /**
    * Sets default CSPR.name resolver contract
    * @param resolverContractHash address of the resolver contract
-   * @param paymentAmount the amount of gas price that should be payed in motes
-   * @param sender the CLPublicKey of deploy submitter account
-   * @returns Deploy object which can be send to the node.
+   * @param paymentAmount the amount of gas price that should be paid in motes
+   * @param sender the PublicKey of transaction submitter account
+   * @returns Transaction object which can be sent to the node.
    */
   public setDefaultResolver(
     resolverContractHash: string,
     paymentAmount: BigNumberish,
-    sender: CLPublicKey,
-  ): DeployUtil.Deploy {
-    const runtimeArgs = RuntimeArgs.fromMap({
-      resolver: new CLKey(new CLByteArray(decodeBase16(resolverContractHash))),
-    });
-
-    return this.contractClient.callEntrypoint(
-      'set_default_resolver',
-      runtimeArgs,
-      sender,
-      this.networkName,
-      BigNumber.from(paymentAmount).toString(),
-    );
+    sender: PublicKey,
+  ): Transaction {
+    return new ContractCallBuilder()
+      .chainName(this.networkName)
+      .from(sender)
+      .payment(Number(paymentAmount))
+      .byHash(this.contractHash)
+      .entryPoint('set_default_resolver')
+      .runtimeArgs(Args.fromMap({
+        resolver: CLValue.newCLKey(Key.newKey(resolverContractHash)),
+      }))
+      .build();
   }
 
   /**
    * Sets approval for all CSPR.name tokens
    * @param approveAll approval flag
-   * @param operator approved operator address
-   * @param paymentAmount the amount of gas price that should be payed in motes
-   * @param sender the CLPublicKey of deploy submitter account
-   * @returns Deploy object which can be send to the node.
+   * @param operator approved operator address (starts with either account-hash-... or hash-...)
+   * @param paymentAmount the amount of gas price that should be paid in motes
+   * @param sender the PublicKey of transaction submitter account
+   * @returns Transaction object which can be sent to the node.
    */
   public setApprovalForAll(
     approveAll: boolean,
     operator: string,
     paymentAmount: BigNumberish,
-    sender: CLPublicKey,
-  ): DeployUtil.Deploy {
-    const runtimeArgs = RuntimeArgs.fromMap({
-      approve_all: new CLBool(approveAll),
-      operator: new CLKey(new CLAccountHash(decodeBase16(operator))),
-    });
-
-    return this.contractClient.callEntrypoint(
-      'set_approval_for_all',
-      runtimeArgs,
-      sender,
-      this.networkName,
-      BigNumber.from(paymentAmount).toString(),
-    );
+    sender: PublicKey,
+  ): Transaction {
+    return new ContractCallBuilder()
+      .chainName(this.networkName)
+      .from(sender)
+      .payment(Number(paymentAmount))
+      .byHash(this.contractHash)
+      .entryPoint('set_approval_for_all')
+      .runtimeArgs(Args.fromMap({
+        approve_all: CLValue.newCLValueBool(approveAll),
+        operator: CLValue.newCLKey(Key.newKey(operator))
+      }))
+      .build();
   }
 }

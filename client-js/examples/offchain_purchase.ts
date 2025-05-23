@@ -1,4 +1,6 @@
-import { CasperClient, encodeBase16, Keys } from "casper-js-sdk";
+import fs from "fs";
+
+import { HttpHandler, KeyAlgorithm, PrivateKey, RpcClient } from "casper-js-sdk";
 
 import { Registrar } from "../src/registrar";
 import { NameMintInfo } from "../src/types";
@@ -6,44 +8,55 @@ import { config } from "./config";
 
 // eslint-disable-next-line @typescript-eslint/require-await
 const run = async () => {
-  const adminKeypair = Keys.Ed25519.loadKeyPairFromPrivateFile(
-    config.adminPrivateKeyPath,
+  const adminPrivateKeyPem = fs.readFileSync(config.adminPrivateKeyPath, "utf8");
+
+  const adminKeypair = PrivateKey.fromPem(
+    adminPrivateKeyPem,
+    KeyAlgorithm.ED25519,
   );
 
-  const buyerKeypair = Keys.Ed25519.loadKeyPairFromPrivateFile(
-    config.adminPrivateKeyPath,
+  const buyerPrivateKeyPath = `${config.buyerPrivateKeyPath}`;
+  const buyerPrivateKeyPem = fs.readFileSync(buyerPrivateKeyPath, "utf8");
+
+  const buyerKeypair = PrivateKey.fromPem(
+    buyerPrivateKeyPem,
+    KeyAlgorithm.ED25519,
   );
 
   const expiration = new Date();
-  expiration.setFullYear(new Date().getFullYear() + 1, 1, 1);
+  expiration.setFullYear(expiration.getFullYear() + 1, expiration.getMonth(), expiration.getDate());
+  console.log(expiration.toISOString())
 
   const nameMintInfos = [
-    new NameMintInfo("sld1", encodeBase16(buyerKeypair.accountHash()), expiration),
-  ]
+    new NameMintInfo(config.mintingName, buyerKeypair.publicKey.accountHash().toHex(), expiration),
+  ];
 
   const registrarContract = new Registrar(
     config.networkName,
     config.registrarContractHash,
   );
 
-  const deploy = registrarContract.adminRegister(
+  const transaction = registrarContract.adminRegister(
     nameMintInfos,
     // 20 CSPR
     20000000000,
     adminKeypair.publicKey,
   );
 
-  const client = new CasperClient(config.nodeAddress);
+  transaction.sign(adminKeypair);
 
-  const signedDeploy = client.signDeploy(deploy, adminKeypair);
+  const rpcHandler = new HttpHandler(config.nodeAddress);
+  const rpcClient = new RpcClient(rpcHandler);
 
-  console.log(`DEPLOY_HASH: ${encodeBase16(deploy.hash)}`);
+  try {
+    const putTransactionResult = await rpcClient.putTransaction(transaction);
 
-  const deployHash = await signedDeploy.send(config.nodeAddress)
-
-  // eslint-disable-next-line no-console
-  console.log(`Offnchain Register CSPR.name deploy_hash: ${deployHash}`)
+    // eslint-disable-next-line @typescript-eslint/no-unsafe-assignment
+    console.log({transactionHash: putTransactionResult.transactionHash.toHex(), result: putTransactionResult.rawJSON});
+  } catch(err) {
+    console.log({err: err.sourceErr.data});
+  }
 };
 
-// eslint-disable-next-line @typescript-eslint/no-floating-promises
-run();
+// eslint-disable-next-line @typescript-eslint/no-unsafe-member-access,@typescript-eslint/restrict-template-expressions
+run().then(_ => console.log('Finished')).catch(e => console.error(`Error: ${e.stack}`));

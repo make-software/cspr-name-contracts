@@ -1,7 +1,7 @@
 /* eslint-disable eslint-comments/disable-enable-pair */
 /* eslint-disable max-classes-per-file */
 
-import { CLAccountHash, CLByteArray, CLKey, CLKeyBytesParser, CLString, CLStringBytesParser, CLType,CLTypeTag,CLU32,CLU32BytesParser, CLU64, CLU64BytesParser, CLU512, CLU512BytesParser, CLValue, decodeBase16 } from 'casper-js-sdk';
+import { CLValue, Key, toBytesU32, toBytesU512, toBytesU64 } from 'casper-js-sdk';
 
 export class PaymentInfo {
   constructor(
@@ -11,9 +11,9 @@ export class PaymentInfo {
   ) {}
 
   toBytes(): Uint8Array {
-    const buyer = new CLKeyBytesParser().toBytes(new CLKey(new CLByteArray(decodeBase16(this.buyer)))).unwrap()
-    const paymentId = new CLStringBytesParser().toBytes(new CLString(this.paymentId)).unwrap()
-    const amount = new CLU512BytesParser().toBytes(new CLU512(this.amount)).unwrap()
+    const buyer = CLValue.newCLKey(Key.newKey(this.buyer)).bytes()
+    const paymentId = CLValue.newCLString(this.paymentId).bytes()
+    const amount = toBytesU512(this.amount)
 
     const bytes = Array.from(buyer)
       .concat(Array.from(paymentId))
@@ -31,9 +31,9 @@ export class NameMintInfo {
   ) {}
 
   toBytes(): Uint8Array {
-    const labelBytes = new CLStringBytesParser().toBytes(new CLString(this.label)).unwrap()
-    const ownerBytes = new CLKeyBytesParser().toBytes(new CLKey(new CLAccountHash(decodeBase16(this.owner)))).unwrap()
-    const tokenExpirationBytes = new CLU64BytesParser().toBytes(new CLU64(6401000000000000)).unwrap()
+    const labelBytes = CLValue.newCLString(this.label).bytes()
+    const ownerBytes = CLValue.newCLKey(Key.newKey(this.owner)).bytes()
+    const tokenExpirationBytes = toBytesU64(this.tokenExpiration.getTime()*1000)
 
     const bytes = Array.from(labelBytes)
       .concat(Array.from(ownerBytes))
@@ -56,15 +56,15 @@ export class PaymentVoucher {
     if (this.bytes) {
       return this.bytes;
     }
-
     let bytes = Array.from(this.payment.toBytes())
 
-    const sizeBytes = new CLU32BytesParser().toBytes(new CLU32(this.names.length)).unwrap()
+    const sizeBytes = toBytesU32(this.names.length)
     bytes = bytes.concat(Array.from(sizeBytes))
 
     bytes = this.names.reduce((b, name) => b.concat(Array.from(name.toBytes())), bytes)
 
-    const voucherExpirationBytes = new CLU64BytesParser().toBytes(new CLU64(this.voucherExpiration.getMilliseconds())).unwrap()
+    // Expiration bytes in microseconds
+    const voucherExpirationBytes = toBytesU64(this.voucherExpiration.getTime()*1000)
     bytes = bytes.concat(Array.from(voucherExpirationBytes))
 
     this.bytes = Uint8Array.from(bytes)
@@ -86,7 +86,7 @@ export class TokenizationVoucher {
       return this.bytes;
     }
 
-    const nameInfosLengthBytes = new CLU32BytesParser().toBytes(new CLU32(this.names.length)).unwrap()
+    const nameInfosLengthBytes = toBytesU32(this.names.length)
 
     // Add name infos length bytes
     let bytes = Array.from(nameInfosLengthBytes);
@@ -94,8 +94,8 @@ export class TokenizationVoucher {
     // Add name infos bytes
     bytes = this.names.reduce((b, name) => b.concat(Array.from(name.toBytes())), bytes)
 
-    // Add expiration bytes
-    const voucherExpirationBytes = new CLU64BytesParser().toBytes(new CLU64(this.voucherExpiration.getMilliseconds())).unwrap()
+    // Add expiration bytes in microseconds
+    const voucherExpirationBytes = toBytesU64(this.voucherExpiration.getTime()*1000)
     bytes = bytes.concat(Array.from(voucherExpirationBytes))
 
     // Memoize and return
@@ -112,8 +112,8 @@ export class TokenRenewalInfo {
   ) {}
 
   toBytes(): Uint8Array {
-    const labelBytes = new CLStringBytesParser().toBytes(new CLString(this.tokenId)).unwrap()
-    const tokenExpirationBytes = new CLU64BytesParser().toBytes(new CLU64(this.tokenExpiration.getMilliseconds())).unwrap()
+    const labelBytes = CLValue.newCLString(this.tokenId).bytes()
+    const tokenExpirationBytes = toBytesU64(this.tokenExpiration.getTime()*1000)
 
     const bytes = Array.from(labelBytes)
       .concat(Array.from(tokenExpirationBytes))
@@ -137,7 +137,8 @@ export class RenewalPaymentVoucher {
     }
 
     const paymentInfoBytes = Array.from(this.payment.toBytes())
-    const tokensLengthBytes = Array.from(new CLU32BytesParser().toBytes(new CLU32(this.tokens.length)).unwrap())
+
+    const tokensLengthBytes = Array.from(toBytesU32(this.tokens.length))
 
     // Add payment info bytes
     let bytes = paymentInfoBytes
@@ -148,7 +149,7 @@ export class RenewalPaymentVoucher {
     bytes = this.tokens.reduce((b, token) => b.concat(Array.from(token.toBytes())), bytes)
 
     // add expiration bytes
-    const voucherExpirationBytes = new CLU64BytesParser().toBytes(new CLU64(this.voucherExpiration.getMilliseconds())).unwrap()
+    const voucherExpirationBytes = toBytesU64(this.voucherExpiration.getTime()*1000)
     bytes = bytes.concat(Array.from(voucherExpirationBytes))
 
     // Memoize and return
@@ -171,7 +172,7 @@ export class RenewalVoucher {
       return this.bytes;
     }
 
-    const tokenInfosLengthBytes = new CLU32BytesParser().toBytes(new CLU32(this.tokens.length)).unwrap()
+    const tokenInfosLengthBytes = Array.from(toBytesU32(this.tokens.length))
 
     // Add token infos length bytes
     let bytes = Array.from(tokenInfosLengthBytes)
@@ -180,52 +181,12 @@ export class RenewalVoucher {
     bytes = this.tokens.reduce((b, token) => b.concat(Array.from(token.toBytes())), bytes)
 
     // Add expiration bytes
-    const voucherExpirationBytes = new CLU64BytesParser().toBytes(new CLU64(this.voucherExpiration.getMilliseconds())).unwrap()
+    const voucherExpirationBytes = toBytesU64(this.voucherExpiration.getTime()*1000)
     bytes = bytes.concat(Array.from(voucherExpirationBytes))
 
     // Memoize and return
     this.bytes = Uint8Array.from(bytes)
 
     return this.bytes
-  }
-}
-
-export class CLAnyType extends CLType {
-  linksTo = "ByteArray";
-
-  tag = CLTypeTag.Any;
-
-  // eslint-disable-next-line class-methods-use-this
-  toBytes(): Uint8Array {
-    return Uint8Array.from([this.tag]);
-  }
-
-  // eslint-disable-next-line class-methods-use-this
-  toJSON() {
-    return "Any";
-  }
-}
-
-
-export class CLAny extends CLValue {
-  data: Uint8Array;
-
-  /**
-   * Constructs a new `CLAny`.
-   *
-   * @param v The bytes array.
-   */
-  constructor(v: Uint8Array) {
-    super();
-    this.data = v;
-  }
-
-  // eslint-disable-next-line class-methods-use-this
-  clType(): CLType {
-    return new CLAnyType();
-  }
-
-  value(): Uint8Array {
-    return this.data;
   }
 }

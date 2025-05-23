@@ -17,7 +17,7 @@ const run = async () => {
 
   const registrarContract = new Registrar(
     config.networkName,
-    config.registrarContractHash,
+    config.registrarContractPackageHash,
   );
 
   const expiration = new Date();

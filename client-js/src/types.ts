@@ -47,9 +47,9 @@ export class PaymentVoucher {
   private bytes: Uint8Array = null
 
   constructor(
-    private readonly payment: PaymentInfo,
-    private readonly names: NameMintInfo[],
-    private readonly voucherExpiration: Date,
+    public readonly payment: PaymentInfo,
+    public readonly names: NameMintInfo[],
+    public readonly voucherExpiration: Date,
   ) {}
 
   toBytes(): Uint8Array {
@@ -126,9 +126,9 @@ export class RenewalPaymentVoucher {
   private bytes: Uint8Array = null
 
   constructor(
-    private readonly payment: PaymentInfo,
-    private readonly tokens: TokenRenewalInfo[],
-    private readonly voucherExpiration: Date,
+    public readonly payment: PaymentInfo,
+    public readonly tokens: TokenRenewalInfo[],
+    public readonly voucherExpiration: Date,
   ) {}
 
   toBytes(): Uint8Array {

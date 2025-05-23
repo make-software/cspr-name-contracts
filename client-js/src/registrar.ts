@@ -11,7 +11,7 @@ import { NameMintInfo, TokenRenewalInfo } from "./types";
 export class Registrar {
   constructor(
     private readonly networkName: string,
-    private readonly contractHash: string,
+    private readonly contractPackageHash: string,
   ) {}
 
   /**
@@ -39,7 +39,7 @@ export class Registrar {
       .chainName(this.networkName)
       .from(sender)
       .payment(Number(paymentAmount))
-      .byHash(this.contractHash)
+      .byPackageHash(this.contractPackageHash)
       .entryPoint('admin_register')
       .runtimeArgs(runtimeArgs)
       .build();
@@ -62,20 +62,15 @@ export class Registrar {
     let bytes = Array.from(length)
     bytes = tokenRenewalInfos.reduce((b, name) => b.concat(Array.from(name.toBytes())), bytes)
 
-    const infosBytes: CLValue[] = []
-    for (let i = 0; i < bytes.length; i += 1) {
-      infosBytes.push(CLValue.newCLUint8(bytes[ i]));
-    }
-
     const runtimeArgs = Args.fromMap({
-      tokens: CLValue.newCLList(CLTypeUInt8, infosBytes),
+      tokens: CLValue.newCLAny(Uint8Array.from(bytes)),
     })
 
     return new ContractCallBuilder()
       .chainName(this.networkName)
       .from(sender)
       .payment(Number(paymentAmount))
-      .byHash(this.contractHash)
+      .byPackageHash(this.contractPackageHash)
       .entryPoint('admin_prolong')
       .runtimeArgs(runtimeArgs)
       .build();
@@ -99,30 +94,22 @@ export class Registrar {
 
     let tokenRenewalBytes = Array.from(tokenRenewalInfosLength)
     tokenRenewalBytes = tokenRenewalInfos.reduce((b, name) => b.concat(Array.from(name.toBytes())), tokenRenewalBytes)
-    const tokenRenewalCLBytes: CLValue[] = []
-    for (let i = 0; i < tokenRenewalBytes.length; i += 1) {
-      tokenRenewalCLBytes.push(CLValue.newCLUint8(tokenRenewalBytes[ i]));
-    }
 
     const nameMintInfosLength = toBytesU32(nameMintInfos.length)
 
     let nameMintInfosBytes = Array.from(nameMintInfosLength)
     nameMintInfosBytes = nameMintInfos.reduce((b, name) => b.concat(Array.from(name.toBytes())), nameMintInfosBytes)
-    const nameMintInfosCLBytes: CLValue[] = []
-    for (let i = 0; i < tokenRenewalBytes.length; i += 1) {
-      nameMintInfosCLBytes.push(CLValue.newCLUint8(nameMintInfosBytes[ i]));
-    }
 
     const runtimeArgs = Args.fromMap({
-      renewal_tokens: CLValue.newCLList(CLTypeUInt8, tokenRenewalCLBytes),
-      new_tokens: CLValue.newCLList(CLTypeUInt8, nameMintInfosCLBytes),
+      renewal_tokens: CLValue.newCLAny(Uint8Array.from(tokenRenewalBytes)),
+      new_tokens: CLValue.newCLAny(Uint8Array.from(nameMintInfosBytes)),
     })
 
     return new ContractCallBuilder()
       .chainName(this.networkName)
       .from(sender)
       .payment(Number(paymentAmount))
-      .byHash(this.contractHash)
+      .byPackageHash(this.contractPackageHash)
       .entryPoint('admin_prolong_and_register')
       .runtimeArgs(runtimeArgs)
       .build();
@@ -148,7 +135,7 @@ export class Registrar {
       .chainName(this.networkName)
       .from(sender)
       .payment(Number(paymentAmount))
-      .byHash(this.contractHash)
+      .byPackageHash(this.contractPackageHash)
       .entryPoint('set_grace_period')
       .runtimeArgs(runtimeArgs)
       .build();
@@ -169,18 +156,17 @@ export class Registrar {
     sender: PublicKey,
   ): Transaction {
     const tokenHashesList = tokenHashes.map(th => CLValue.newCLString(th));
-    const runtimeArgs = Args.fromMap({
-      new_owner: CLValue.newCLKey(Key.newKey(newOwnerHash)),
-      token_hashes: CLValue.newCLList(CLTypeString, tokenHashesList),
-    });
 
     return new ContractCallBuilder()
       .chainName(this.networkName)
       .from(sender)
       .payment(Number(paymentAmount))
-      .byHash(this.contractHash)
+      .byPackageHash(this.contractPackageHash)
       .entryPoint('admin_transfer')
-      .runtimeArgs(runtimeArgs)
+      .runtimeArgs(Args.fromMap({
+        new_owner: CLValue.newCLKey(Key.newKey(newOwnerHash)),
+        token_hashes: CLValue.newCLList(CLTypeString, tokenHashesList),
+      }))
       .build();
   }
 
@@ -197,17 +183,16 @@ export class Registrar {
     sender: PublicKey,
   ): Transaction {
     const tokenHashesList = tokenHashes.map(th => CLValue.newCLString(th));
-    const runtimeArgs = Args.fromMap({
-      token_hashes: CLValue.newCLList(CLTypeString, tokenHashesList),
-    });
 
     return new ContractCallBuilder()
       .chainName(this.networkName)
       .from(sender)
       .payment(Number(paymentAmount))
-      .byHash(this.contractHash)
+      .byPackageHash(this.contractPackageHash)
       .entryPoint('admin_burn')
-      .runtimeArgs(runtimeArgs)
+      .runtimeArgs(Args.fromMap({
+        token_hashes: CLValue.newCLList(CLTypeString, tokenHashesList),
+      }))
       .build();
   }
 
@@ -224,17 +209,16 @@ export class Registrar {
     sender: PublicKey,
   ): Transaction {
     const tokenHashesList = tokenHashes.map(th => CLValue.newCLString(th));
-    const runtimeArgs = Args.fromMap({
-      token_hashes: CLValue.newCLList(CLTypeString, tokenHashesList),
-    });
 
     return new ContractCallBuilder()
       .chainName(this.networkName)
       .from(sender)
       .payment(Number(paymentAmount))
-      .byHash(this.contractHash)
+      .byPackageHash(this.contractPackageHash)
       .entryPoint('expire')
-      .runtimeArgs(runtimeArgs)
+      .runtimeArgs(Args.fromMap({
+        token_hashes: CLValue.newCLList(CLTypeString, tokenHashesList),
+      }))
       .build();
   }
 }

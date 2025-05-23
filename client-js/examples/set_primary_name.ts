@@ -15,7 +15,7 @@ const run = async () => {
 
   const reverseResolver = new ReverseResolver(
     config.networkName,
-    config.reverseResolutionContractHash,
+    config.reverseResolutionContractPackageHash,
   );
 
   const transaction = reverseResolver.setPrimaryName(

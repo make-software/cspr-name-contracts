@@ -10,7 +10,7 @@ import {
 export class ReverseResolver {
   constructor(
     private readonly networkName: string,
-    private readonly contractHash: string,
+    private readonly contractPackageHash: string,
   ) {}
 
   /**
@@ -39,7 +39,7 @@ export class ReverseResolver {
       .chainName(this.networkName)
       .from(sender)
       .payment(Number(paymentAmount))
-      .byHash(this.contractHash)
+      .byPackageHash(this.contractPackageHash)
       .entryPoint('set_primary_name')
       .runtimeArgs(Args.fromMap({
         primary_name: CLValue.newCLString(primaryName),

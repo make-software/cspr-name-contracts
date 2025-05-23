@@ -8,7 +8,7 @@ import {
 export class NameToken {
   constructor(
     private readonly networkName: string,
-    private readonly contractHash: string,
+    private readonly contractPackageHash: string,
   ) {}
 
   /**
@@ -27,7 +27,7 @@ export class NameToken {
       .chainName(this.networkName)
       .from(sender)
       .payment(Number(paymentAmount))
-      .byHash(this.contractHash)
+      .byPackageHash(this.contractPackageHash)
       .entryPoint('set_default_resolver')
       .runtimeArgs(Args.fromMap({
         resolver: CLValue.newCLKey(Key.newKey(resolverContractHash)),
@@ -53,7 +53,7 @@ export class NameToken {
       .chainName(this.networkName)
       .from(sender)
       .payment(Number(paymentAmount))
-      .byHash(this.contractHash)
+      .byPackageHash(this.contractPackageHash)
       .entryPoint('set_approval_for_all')
       .runtimeArgs(Args.fromMap({
         approve_all: CLValue.newCLValueBool(approveAll),

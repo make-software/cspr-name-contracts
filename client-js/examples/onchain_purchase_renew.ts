@@ -1,4 +1,5 @@
 import fs from "fs";
+import { join } from "path";
 
 import { HttpHandler, KeyAlgorithm, PrivateKey, RpcClient } from "casper-js-sdk";
 
@@ -14,13 +15,13 @@ const run = async () => {
     KeyAlgorithm.ED25519,
   );
 
-  const buyerPrivateKeyPath = `${config.buyerPrivateKeyPath}`;
-  const buyerPrivateKeyPem = fs.readFileSync(buyerPrivateKeyPath, "utf8");
-
+  const buyerPrivateKeyPem = fs.readFileSync(config.buyerPrivateKeyPath, "utf8");
   const buyerKeypair = PrivateKey.fromPem(
     buyerPrivateKeyPem,
     KeyAlgorithm.ED25519,
   );
+
+  const proxyCallerWasmBytes = fs.readFileSync(join(__dirname, 'proxy_caller.wasm'));
 
   const expiration = new Date();
   expiration.setFullYear(expiration.getFullYear() + 1, expiration.getMonth(), expiration.getDate());
@@ -35,7 +36,8 @@ const run = async () => {
 
   const controllerContract = new Controller(
     config.networkName,
-    config.controllerContractHash,
+    config.controllerContractPackageHash,
+    proxyCallerWasmBytes,
   );
 
   const transaction = controllerContract.renew(

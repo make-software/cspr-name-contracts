@@ -6,33 +6,64 @@ import { HttpHandler, KeyAlgorithm, PrivateKey, RpcClient } from "casper-js-sdk"
 import { Controller } from "../src/controller";
 import { NameMintInfo, PaymentInfo, PaymentVoucher } from "../src/types";
 import { config } from "./config";
+import axios, {AxiosResponse} from "axios";
+import {hexToBytes} from "@noble/hashes/utils";
 
 // eslint-disable-next-line @typescript-eslint/require-await
 const run = async () => {
-  const adminPrivateKeyPem = fs.readFileSync(config.adminPrivateKeyPath, "utf8");
-  const adminKeypair = PrivateKey.fromPem(
-    adminPrivateKeyPem,
-    KeyAlgorithm.ED25519,
-  );
-
   const buyerPrivateKeyPem = fs.readFileSync(config.buyerPrivateKeyPath, "utf8");
   const buyerKeypair = PrivateKey.fromPem(
     buyerPrivateKeyPem,
     KeyAlgorithm.ED25519,
   );
 
-  const proxyCallerWasmBytes = fs.readFileSync(join(__dirname, 'proxy_caller.wasm'));
+  const csprCloudClient = axios.create({
+    baseURL: "https://cspr-name-api.dev.make.services",
+  });
 
-  const expiration = new Date();
-  expiration.setFullYear(expiration.getFullYear() + 1, expiration.getMonth(), expiration.getDate());
-  
+  const domain = "sld321";
+
+  const createVoucherResponse = await csprCloudClient.post<any, AxiosResponse<{
+    data: {
+      voucher: {
+        payment_info: {
+          buyer: string,
+          payment_id: string,
+          amount: number
+        },
+        names: [
+          {
+            label: string,
+            owner: string,
+            token_expiration: string,
+          }
+        ],
+        voucher_expiration: string,
+      },
+      signature: string,
+    }
+  }>>(`/domains/${domain}/payment-vouchers`, {
+    buyer_key: buyerKeypair.publicKey.accountHash().toPrefixedString(),
+    annual_periods: 1,
+  });
+
+  const createVoucherResponseData = createVoucherResponse.data.data;
+
   const voucher = new PaymentVoucher(
-    new PaymentInfo(buyerKeypair.publicKey.accountHash().toPrefixedString(), "payment:1", 50000000000),
-    [new NameMintInfo(config.mintingName, buyerKeypair.publicKey.accountHash().toPrefixedString(), expiration)],
-    expiration,
+    new PaymentInfo(
+      createVoucherResponseData.voucher.payment_info.buyer,
+      createVoucherResponseData.voucher.payment_info.payment_id,
+      createVoucherResponseData.voucher.payment_info.amount,
+    ),
+    createVoucherResponseData.voucher.names.map<NameMintInfo>(n => new NameMintInfo(
+      n.label,
+      n.owner,
+      new Date(n.token_expiration),
+    )),
+    new Date(createVoucherResponseData.voucher.voucher_expiration),
   );
 
-  const signature = adminKeypair.signAndAddAlgorithmBytes(voucher.toBytes());
+  const proxyCallerWasmBytes = fs.readFileSync(join(__dirname, 'proxy_caller.wasm'));
 
   const controllerContract = new Controller(
     config.networkName,
@@ -42,7 +73,7 @@ const run = async () => {
 
   const transaction = controllerContract.buy(
     voucher,
-    signature,
+    hexToBytes(createVoucherResponse.data.data.signature),
     20000000000,
     buyerKeypair.publicKey,
   );

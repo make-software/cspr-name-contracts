@@ -1,14 +1,16 @@
 import { BigNumberish } from "@ethersproject/bignumber"
 
-import { Args, CLTypeUInt8, CLValue, ContractCallBuilder, PublicKey, Transaction } from "casper-js-sdk"
+import { Args, CLTypeUInt8, CLValue, ContractCallBuilder, PublicKey, SessionBuilder, Transaction } from "casper-js-sdk"
 
 import { PaymentVoucher, RenewalPaymentVoucher } from "./types";
+import {hexToBytes} from "@noble/hashes/utils";
 
 // eslint-disable-next-line import/prefer-default-export
 export class Controller {
   constructor(
     private readonly networkName: string,
-    private readonly contractHash: string,
+    private readonly contractPackageHash: string,
+    private readonly proxyCallWasm: Uint8Array,
   ) {}
 
   /**
@@ -25,13 +27,24 @@ export class Controller {
     paymentAmount: BigNumberish,
     sender: PublicKey,
   ): Transaction {
-    return new ContractCallBuilder()
+    const rawArgsBytes = this.voucherToArgs(voucher, signature).toBytes();
+    const argsBytes: CLValue[] = [];
+    for (let i = 0; i < rawArgsBytes.length; i += 1) {
+      argsBytes.push(CLValue.newCLUint8(rawArgsBytes[i]));
+    }
+
+    return new SessionBuilder()
       .chainName(this.networkName)
       .from(sender)
       .payment(Number(paymentAmount))
-      .byHash(this.contractHash)
-      .entryPoint('buy')
-      .runtimeArgs(this.voucherToArgs(voucher, signature))
+      .wasm(this.proxyCallWasm)
+      .runtimeArgs(Args.fromMap({
+        package_hash: CLValue.newCLByteArray(hexToBytes(this.contractPackageHash)),
+        entry_point: CLValue.newCLString("buy"),
+        args: CLValue.newCLList(CLTypeUInt8, argsBytes),
+        amount: CLValue.newCLUInt512(voucher.payment.amount),
+        attached_value: CLValue.newCLUInt512(voucher.payment.amount),
+      }))
       .build();
   }
 
@@ -49,13 +62,24 @@ export class Controller {
     paymentAmount: BigNumberish,
     sender: PublicKey,
   ): Transaction {
-    return new ContractCallBuilder()
+    const rawArgsBytes = this.voucherToArgs(voucher, signature).toBytes();
+    const argsBytes: CLValue[] = [];
+    for (let i = 0; i < rawArgsBytes.length; i += 1) {
+      argsBytes.push(CLValue.newCLUint8(rawArgsBytes[i]));
+    }
+
+    return new SessionBuilder()
       .chainName(this.networkName)
       .from(sender)
       .payment(Number(paymentAmount))
-      .byHash(this.contractHash)
-      .entryPoint('renew')
-      .runtimeArgs(this.voucherToArgs(voucher, signature))
+      .wasm(this.proxyCallWasm)
+      .runtimeArgs(Args.fromMap({
+        package_hash: CLValue.newCLByteArray(hexToBytes(this.contractPackageHash)),
+        entry_point: CLValue.newCLString("renew"),
+        args: CLValue.newCLList(CLTypeUInt8, argsBytes),
+        amount: CLValue.newCLUInt512(voucher.payment.amount),
+        attached_value: CLValue.newCLUInt512(voucher.payment.amount),
+      }))
       .build();
   }
 
@@ -76,7 +100,7 @@ export class Controller {
       .chainName(this.networkName)
       .from(sender)
       .payment(Number(paymentAmount))
-      .byHash(this.contractHash)
+      .byHash(this.contractPackageHash)
       .entryPoint('set_signer_public_key')
       .runtimeArgs(Args.fromMap({
         signer: CLValue.newCLPublicKey(signer),

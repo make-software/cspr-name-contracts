@@ -15,9 +15,7 @@ const run = async () => {
     KeyAlgorithm.ED25519,
   );
 
-  const buyerPrivateKeyPath = `${config.buyerPrivateKeyPath}`;
-  const buyerPrivateKeyPem = fs.readFileSync(buyerPrivateKeyPath, "utf8");
-
+  const buyerPrivateKeyPem = fs.readFileSync(config.buyerPrivateKeyPath, "utf8");
   const buyerKeypair = PrivateKey.fromPem(
     buyerPrivateKeyPem,
     KeyAlgorithm.ED25519,
@@ -33,7 +31,7 @@ const run = async () => {
 
   const registrarContract = new Registrar(
     config.networkName,
-    config.registrarContractHash,
+    config.registrarContractPackageHash,
   );
 
   const transaction = registrarContract.adminRegister(

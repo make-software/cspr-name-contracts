@@ -9,7 +9,7 @@ import {
 export class DefaultResolver {
   constructor(
     private readonly networkName: string,
-    private readonly contractHash: string,
+    private readonly contractPackageHash: string,
   ) {}
 
   /**
@@ -42,7 +42,7 @@ export class DefaultResolver {
       .chainName(this.networkName)
       .from(sender)
       .payment(Number(paymentAmount))
-      .byHash(this.contractHash)
+      .byPackageHash(this.contractPackageHash)
       .entryPoint('set_resolution')
       .runtimeArgs(Args.fromMap({
         full_domain: CLValue.newCLString(fullDomain),

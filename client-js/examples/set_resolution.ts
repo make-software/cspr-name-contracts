@@ -15,7 +15,7 @@ const run = async () => {
 
   const defaultResolver = new DefaultResolver(
     config.networkName,
-    config.reverseResolutionContractHash,
+    config.reverseResolutionContractPackageHash,
   );
 
   const transaction = defaultResolver.setResolution(

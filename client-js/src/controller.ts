@@ -2,7 +2,6 @@ import { BigNumberish } from "@ethersproject/bignumber"
 
 import { Args, CLTypeUInt8, CLValue, ContractCallBuilder, PublicKey, SessionBuilder, Transaction } from "casper-js-sdk"
 
-import { PaymentVoucher, RenewalPaymentVoucher } from "./types";
 import {hexToBytes} from "@noble/hashes/utils";
 
 // eslint-disable-next-line import/prefer-default-export
@@ -15,19 +14,30 @@ export class Controller {
 
   /**
    * Buys CSPR.name for an account
-   * @param voucher @see {@link PaymentVoucher} PaymentVoucher that was created by CSPR.name provider
+   * @param voucherBytes Uint8Array of voucher bytes provided by contract admin
+   * @param domainFee amount to be payed for the domain
    * @param signature signature of the signer of PaymentVoucher (CSPR.name provider) with algorithm bytes included
    * @param paymentAmount the amount of gas price that should be paid in motes
    * @param sender the PublicKey of transaction submitter account
    * @returns Transaction object which can be sent to the node.
    */
   public buy(
-    voucher: PaymentVoucher,
+    voucherBytes: Uint8Array,
+    domainFee: number,
     signature: Uint8Array,
     paymentAmount: BigNumberish,
     sender: PublicKey,
   ): Transaction {
-    const rawArgsBytes = this.voucherToArgs(voucher, signature).toBytes();
+    const signatureBytes: CLValue[] = [];
+    for (let i = 0; i < signature.length; i += 1) {
+      signatureBytes.push(CLValue.newCLUint8(signature[i]));
+    }
+
+    const rawArgsBytes = Args.fromMap({
+      voucher: CLValue.newCLAny(voucherBytes),
+      signature: CLValue.newCLList(CLTypeUInt8, signatureBytes),
+    }).toBytes();
+
     const argsBytes: CLValue[] = [];
     for (let i = 0; i < rawArgsBytes.length; i += 1) {
       argsBytes.push(CLValue.newCLUint8(rawArgsBytes[i]));
@@ -42,27 +52,38 @@ export class Controller {
         package_hash: CLValue.newCLByteArray(hexToBytes(this.contractPackageHash)),
         entry_point: CLValue.newCLString("buy"),
         args: CLValue.newCLList(CLTypeUInt8, argsBytes),
-        amount: CLValue.newCLUInt512(voucher.payment.amount),
-        attached_value: CLValue.newCLUInt512(voucher.payment.amount),
+        amount: CLValue.newCLUInt512(domainFee),
+        attached_value: CLValue.newCLUInt512(domainFee),
       }))
       .build();
   }
 
   /**
    * Buys CSPR.name for an account
-   * @param voucher @see {@link RenewalPaymentVoucher} PaymentVoucher that was created by CSPR.name provider
+   * @param voucherBytes Uint8Array of voucher bytes provided by contract admin
+   * @param domainFee amount to be payed for the domain
    * @param signature signature of the signer of PaymentVoucher (CSPR.name provider)
    * @param paymentAmount the amount of gas price that should be paid in motes
    * @param sender the PublicKey of transaction submitter account
    * @returns Transaction object which can be sent to the node.
    */
   public renew(
-    voucher: RenewalPaymentVoucher,
+    voucherBytes: Uint8Array,
+    domainFee: number,
     signature: Uint8Array,
     paymentAmount: BigNumberish,
     sender: PublicKey,
   ): Transaction {
-    const rawArgsBytes = this.voucherToArgs(voucher, signature).toBytes();
+    const signatureBytes: CLValue[] = [];
+    for (let i = 0; i < signature.length; i += 1) {
+      signatureBytes.push(CLValue.newCLUint8(signature[i]));
+    }
+
+    const rawArgsBytes = Args.fromMap({
+      voucher: CLValue.newCLAny(voucherBytes),
+      signature: CLValue.newCLList(CLTypeUInt8, signatureBytes),
+    }).toBytes();
+
     const argsBytes: CLValue[] = [];
     for (let i = 0; i < rawArgsBytes.length; i += 1) {
       argsBytes.push(CLValue.newCLUint8(rawArgsBytes[i]));
@@ -77,8 +98,8 @@ export class Controller {
         package_hash: CLValue.newCLByteArray(hexToBytes(this.contractPackageHash)),
         entry_point: CLValue.newCLString("renew"),
         args: CLValue.newCLList(CLTypeUInt8, argsBytes),
-        amount: CLValue.newCLUInt512(voucher.payment.amount),
-        attached_value: CLValue.newCLUInt512(voucher.payment.amount),
+        amount: CLValue.newCLUInt512(domainFee),
+        attached_value: CLValue.newCLUInt512(domainFee),
       }))
       .build();
   }
@@ -106,20 +127,5 @@ export class Controller {
         signer: CLValue.newCLPublicKey(signer),
       }))
       .build();
-  }
-
-  // eslint-disable-next-line class-methods-use-this
-  private voucherToArgs(voucher: { toBytes(): Uint8Array }, signature: Uint8Array): Args {
-    const rawVoucherBytes = voucher.toBytes();
-
-    const signatureBytes: CLValue[] = [];
-    for (let i = 0; i < signature.length; i += 1) {
-      signatureBytes.push(CLValue.newCLUint8(signature[i]));
-    }
-
-    return Args.fromMap({
-      voucher: CLValue.newCLAny(rawVoucherBytes),
-      signature: CLValue.newCLList(CLTypeUInt8, signatureBytes),
-    });
   }
 }

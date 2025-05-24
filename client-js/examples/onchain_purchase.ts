@@ -41,7 +41,8 @@ const run = async () => {
   );
 
   const transaction = controllerContract.buy(
-    voucher,
+    voucher.toBytes(),
+    voucher.payment.amount,
     signature,
     20000000000,
     buyerKeypair.publicKey,

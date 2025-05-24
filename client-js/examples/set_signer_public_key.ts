@@ -1,10 +1,8 @@
-import fs from "fs";
-import { join } from "path";
+import * as fs from "fs";
 
 import { HttpHandler, KeyAlgorithm, PrivateKey, RpcClient } from "casper-js-sdk";
 
 import { Controller } from "../src/controller";
-import { NameMintInfo, PaymentInfo, PaymentVoucher } from "../src/types";
 import { config } from "./config";
 
 // eslint-disable-next-line @typescript-eslint/require-await
@@ -15,40 +13,20 @@ const run = async () => {
     KeyAlgorithm.ED25519,
   );
 
-  const buyerPrivateKeyPem = fs.readFileSync(config.buyerPrivateKeyPath, "utf8");
-  const buyerKeypair = PrivateKey.fromPem(
-    buyerPrivateKeyPem,
-    KeyAlgorithm.ED25519,
-  );
-
-  const proxyCallerWasmBytes = fs.readFileSync(join(__dirname, 'proxy_caller.wasm'));
-
-  const expiration = new Date();
-  expiration.setFullYear(expiration.getFullYear() + 1, expiration.getMonth(), expiration.getDate());
-  
-  const voucher = new PaymentVoucher(
-    new PaymentInfo(buyerKeypair.publicKey.accountHash().toPrefixedString(), "payment:1", 50000000000),
-    [new NameMintInfo(config.mintingName, buyerKeypair.publicKey.accountHash().toPrefixedString(), expiration)],
-    expiration,
-  );
-
-  const signature = adminKeypair.signAndAddAlgorithmBytes(voucher.toBytes());
-
   const controllerContract = new Controller(
     config.networkName,
-    config.controllerContractPackageHash,
-    proxyCallerWasmBytes,
+    config.controllerContractHash,
   );
 
-  const transaction = controllerContract.buy(
-    voucher.toBytes(),
-    voucher.payment.amount,
-    signature,
-    20000000000,
-    buyerKeypair.publicKey,
+  const transaction = controllerContract.setSignerPublicKey(
+    adminKeypair.publicKey,
+    adminKeypair.publicKey,
+    5000000000,
   );
 
-  transaction.sign(buyerKeypair);
+  transaction.sign(adminKeypair);
+
+  console.log({trx: JSON.stringify(transaction, null, 2)});
 
   const rpcHandler = new HttpHandler(config.nodeAddress);
   const rpcClient = new RpcClient(rpcHandler);

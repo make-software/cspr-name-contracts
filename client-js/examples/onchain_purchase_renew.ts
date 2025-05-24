@@ -1,52 +1,66 @@
-import {Keys } from "casper-js-sdk";
+import fs from "fs";
+import { join } from "path";
+
+import { HttpHandler, KeyAlgorithm, PrivateKey, RpcClient } from "casper-js-sdk";
 
 import { Controller } from "../src/controller";
 import { PaymentInfo, RenewalPaymentVoucher, TokenRenewalInfo } from "../src/types";
-import { waitForDeploy } from "./common";
 import { config } from "./config";
 
 // eslint-disable-next-line @typescript-eslint/require-await
 const run = async () => {
-  const adminKeypair = Keys.Ed25519.loadKeyPairFromPrivateFile(
-    `${config.adminPrivateKeyPath}/secret_key.pem`,
+  const adminPrivateKeyPem = fs.readFileSync(config.adminPrivateKeyPath, "utf8");
+  const adminKeypair = PrivateKey.fromPem(
+    adminPrivateKeyPem,
+    KeyAlgorithm.ED25519,
   );
 
-  const buyerKeypair = Keys.Ed25519.loadKeyPairFromPrivateFile(
-    `${config.adminPrivateKeyPath}/secret_key.pem`,
+  const buyerPrivateKeyPem = fs.readFileSync(config.buyerPrivateKeyPath, "utf8");
+  const buyerKeypair = PrivateKey.fromPem(
+    buyerPrivateKeyPem,
+    KeyAlgorithm.ED25519,
   );
+
+  const proxyCallerWasmBytes = fs.readFileSync(join(__dirname, 'proxy_caller.wasm'));
 
   const expiration = new Date();
-  expiration.setFullYear(new Date().getFullYear() + 1, 1, 1);
+  expiration.setFullYear(expiration.getFullYear() + 1, expiration.getMonth(), expiration.getDate());
 
   const voucher = new RenewalPaymentVoucher(
-    new PaymentInfo(buyerKeypair.accountHex(), "payment:1", 10000),
-    [new TokenRenewalInfo("some-hash", expiration)],
+    new PaymentInfo(buyerKeypair.publicKey.accountHash().toPrefixedString(), "payment:1", 1000),
+    [new TokenRenewalInfo(config.mintingName, expiration)],
     expiration,
   );
 
+  const signature = adminKeypair.signAndAddAlgorithmBytes(voucher.toBytes());
+
   const controllerContract = new Controller(
     config.networkName,
-    config.controllerContractHash,
+    config.controllerContractPackageHash,
+    proxyCallerWasmBytes,
   );
 
-  const signature = adminKeypair.sign(voucher.toBytes());
-
-  const deploy = controllerContract.renew(
+  const transaction = controllerContract.renew(
     voucher,
     signature,
-    10000,
+    80000000000,
     buyerKeypair.publicKey,
   );
 
-  const signedDeploy = deploy.sign([buyerKeypair]);
+  transaction.sign(buyerKeypair);
 
-  const deployHash = await signedDeploy.send(config.nodeAddress);
+  const rpcHandler = new HttpHandler(config.nodeAddress);
+  const rpcClient = new RpcClient(rpcHandler);
 
-  // eslint-disable-next-line no-console
-  console.log(`Onchain Buy CSPR.name deploy_hash: ${deployHash}`);
+  try {
+    const putTransactionResult = await rpcClient.putTransaction(transaction);
 
-  await waitForDeploy(config.nodeAddress, deployHash);
+    // eslint-disable-next-line @typescript-eslint/no-unsafe-assignment
+    console.log({transactionHash: putTransactionResult.transactionHash.toHex(), result: putTransactionResult.rawJSON});
+  } catch(err) {
+    console.log({err: err.sourceErr.data});
+  }
 };
 
-// eslint-disable-next-line @typescript-eslint/no-floating-promises
-run();
+// eslint-disable-next-line @typescript-eslint/no-unsafe-member-access,@typescript-eslint/restrict-template-expressions
+run().then(_ => console.log('Finished')).catch(e => console.error(`Error: ${e.stack}`));

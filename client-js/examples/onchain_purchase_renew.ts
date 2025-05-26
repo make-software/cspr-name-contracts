@@ -41,7 +41,8 @@ const run = async () => {
   );
 
   const transaction = controllerContract.renew(
-    voucher,
+    voucher.toBytes(),
+    voucher.payment.amount,
     signature,
     80000000000,
     buyerKeypair.publicKey,

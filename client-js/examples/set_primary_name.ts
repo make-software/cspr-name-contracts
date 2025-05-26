@@ -20,8 +20,8 @@ const run = async () => {
 
   const transaction = reverseResolver.setPrimaryName(
     config.mintingName,
-    // 0.8 CSPR
-    800000000,
+    // 8 CSPR
+    8000000000,
     ownerKeypair.publicKey,
   );
 

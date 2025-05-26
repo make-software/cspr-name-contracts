@@ -1,98 +1,131 @@
-import { BigNumber, BigNumberish } from "@ethersproject/bignumber"
-import { CLList, CLPublicKey, CLU8, Contracts, DeployUtil, RuntimeArgs } from "casper-js-sdk"
+import { BigNumberish } from "@ethersproject/bignumber"
 
-import { PaymentVoucher, RenewalPaymentVoucher } from "./types";
+import { Args, CLTypeUInt8, CLValue, ContractCallBuilder, PublicKey, SessionBuilder, Transaction } from "casper-js-sdk"
+
+import {hexToBytes} from "@noble/hashes/utils";
 
 // eslint-disable-next-line import/prefer-default-export
 export class Controller {
-  private readonly contractClient: Contracts.Contract;
-
   constructor(
     private readonly networkName: string,
-    contractHash: string,
-  ) {
-    this.contractClient = new Contracts.Contract();
-
-    this.contractClient.setContractHash(`hash-${contractHash}`);
-  }
+    private readonly contractPackageHash: string,
+    private readonly proxyCallWasm: Uint8Array,
+  ) {}
 
   /**
    * Buys CSPR.name for an account
-   * @param voucher @see {@link PaymentVoucher} PaymentVoucher that was created by CSPR.name provider
-   * @param signature signature of the signer of PaymentVoucher (CSPR.name provider)
-   * @param paymentAmount the amount of gas price that should be payed in motes
-   * @param sender the CLPublicKey of deploy submitter account
-   * @returns Deploy object which can be send to the node.
+   * @param voucherBytes Uint8Array of voucher bytes provided by contract admin
+   * @param domainFee amount to be payed for the domain
+   * @param signature signature of the signer of PaymentVoucher (CSPR.name provider) with algorithm bytes included
+   * @param paymentAmount the amount of gas price that should be paid in motes
+   * @param sender the PublicKey of transaction submitter account
+   * @returns Transaction object which can be sent to the node.
    */
   public buy(
-    voucher: PaymentVoucher,
+    voucherBytes: Uint8Array,
+    domainFee: number,
     signature: Uint8Array,
     paymentAmount: BigNumberish,
-    sender: CLPublicKey,
-  ): DeployUtil.Deploy {
-    const rawVoucherBytes = voucher.toBytes();
-
-    const voucherBytes: CLU8[] = [];
-    for (let i = 0; i < rawVoucherBytes.length; i+=1) {
-      voucherBytes.push(new CLU8(rawVoucherBytes[i]));
-    }
-
-    const signatureBytes: CLU8[] = [];
+    sender: PublicKey,
+  ): Transaction {
+    const signatureBytes: CLValue[] = [];
     for (let i = 0; i < signature.length; i += 1) {
-      signatureBytes.push(new CLU8(signature[i]));
+      signatureBytes.push(CLValue.newCLUint8(signature[i]));
     }
-    
-    const runtimeArgs = RuntimeArgs.fromMap({
-      voucher: new CLList(voucherBytes),
-      signature: new CLList(signatureBytes),
-    });
 
-    return this.contractClient.callEntrypoint(
-      'buy',
-      runtimeArgs,
-      sender,
-      this.networkName,
-      BigNumber.from(paymentAmount).toString(),
-    );
+    const rawArgsBytes = Args.fromMap({
+      voucher: CLValue.newCLAny(voucherBytes),
+      signature: CLValue.newCLList(CLTypeUInt8, signatureBytes),
+    }).toBytes();
+
+    const argsBytes: CLValue[] = [];
+    for (let i = 0; i < rawArgsBytes.length; i += 1) {
+      argsBytes.push(CLValue.newCLUint8(rawArgsBytes[i]));
+    }
+
+    return new SessionBuilder()
+      .chainName(this.networkName)
+      .from(sender)
+      .payment(Number(paymentAmount))
+      .wasm(this.proxyCallWasm)
+      .runtimeArgs(Args.fromMap({
+        package_hash: CLValue.newCLByteArray(hexToBytes(this.contractPackageHash)),
+        entry_point: CLValue.newCLString("buy"),
+        args: CLValue.newCLList(CLTypeUInt8, argsBytes),
+        amount: CLValue.newCLUInt512(domainFee),
+        attached_value: CLValue.newCLUInt512(domainFee),
+      }))
+      .build();
   }
 
   /**
    * Buys CSPR.name for an account
-   * @param voucher @see {@link RenewalPaymentVoucher} PaymentVoucher that was created by CSPR.name provider
+   * @param voucherBytes Uint8Array of voucher bytes provided by contract admin
+   * @param domainFee amount to be payed for the domain
    * @param signature signature of the signer of PaymentVoucher (CSPR.name provider)
-   * @param paymentAmount the amount of gas price that should be payed in motes
-   * @param sender the CLPublicKey of deploy submitter account
-   * @returns Deploy object which can be send to the node.
+   * @param paymentAmount the amount of gas price that should be paid in motes
+   * @param sender the PublicKey of transaction submitter account
+   * @returns Transaction object which can be sent to the node.
    */
   public renew(
-    voucher: RenewalPaymentVoucher,
+    voucherBytes: Uint8Array,
+    domainFee: number,
     signature: Uint8Array,
     paymentAmount: BigNumberish,
-    sender: CLPublicKey,
-  ): DeployUtil.Deploy {
-    const rawVoucherBytes = voucher.toBytes();
-
-    const voucherBytes: CLU8[] = [];
-    for (let i = 0; i < rawVoucherBytes.length; i += 1) {
-      voucherBytes.push(new CLU8(rawVoucherBytes[i]));
-    }
-
-    const signatureBytes: CLU8[] = [];
+    sender: PublicKey,
+  ): Transaction {
+    const signatureBytes: CLValue[] = [];
     for (let i = 0; i < signature.length; i += 1) {
-      signatureBytes.push(new CLU8(signature[i]));
+      signatureBytes.push(CLValue.newCLUint8(signature[i]));
     }
 
-    const runtimeArgs = RuntimeArgs.fromMap({
-      voucher: new CLList(voucherBytes),
-      signature: new CLList(signatureBytes),
-    });
+    const rawArgsBytes = Args.fromMap({
+      voucher: CLValue.newCLAny(voucherBytes),
+      signature: CLValue.newCLList(CLTypeUInt8, signatureBytes),
+    }).toBytes();
 
-    return this.contractClient.callEntrypoint(
-      'renew',
-      runtimeArgs,
-      sender,
-      this.networkName,
-      BigNumber.from(paymentAmount).toString(),
-    );
+    const argsBytes: CLValue[] = [];
+    for (let i = 0; i < rawArgsBytes.length; i += 1) {
+      argsBytes.push(CLValue.newCLUint8(rawArgsBytes[i]));
+    }
+
+    return new SessionBuilder()
+      .chainName(this.networkName)
+      .from(sender)
+      .payment(Number(paymentAmount))
+      .wasm(this.proxyCallWasm)
+      .runtimeArgs(Args.fromMap({
+        package_hash: CLValue.newCLByteArray(hexToBytes(this.contractPackageHash)),
+        entry_point: CLValue.newCLString("renew"),
+        args: CLValue.newCLList(CLTypeUInt8, argsBytes),
+        amount: CLValue.newCLUInt512(domainFee),
+        attached_value: CLValue.newCLUInt512(domainFee),
+      }))
+      .build();
+  }
+
+  /**
+   * Sets public key of a voucher signer account
+   * @param sender the PublicKey of transaction submitter account
+   * @param signer the PublicKey of a new voucher signer account
+   * @param paymentAmount the amount of gas price that should be paid in motes
+
+   * @returns Transaction object which can be sent to the node.
+   */
+  public setSignerPublicKey(
+    sender: PublicKey,
+    signer: PublicKey,
+    paymentAmount: BigNumberish,
+  ): Transaction {
+    return new ContractCallBuilder()
+      .chainName(this.networkName)
+      .from(sender)
+      .payment(Number(paymentAmount))
+      .byHash(this.contractPackageHash)
+      .entryPoint('set_signer_public_key')
+      .runtimeArgs(Args.fromMap({
+        signer: CLValue.newCLPublicKey(signer),
+      }))
+      .build();
   }
 }

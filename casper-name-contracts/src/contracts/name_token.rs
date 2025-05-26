@@ -9,6 +9,7 @@ use odra_modules::cep95::{CEP95Interface, Cep95};
 
 use super::resolver::ResolverContractRef;
 
+/// NameToken contract. It is a CEP78 token with additional functionalities.
 #[odra::module]
 pub struct NameToken {
     token: SubModule<Cep95>,
@@ -38,6 +39,7 @@ impl NameToken {
         }
     }
 
+    /// Initializes CEP78 with the given name and symbol.
     pub fn init(&mut self, name: String, symbol: String) {
         let caller = self.env().caller();
 
@@ -168,6 +170,7 @@ impl NameToken {
         true
     }
 
+    /// Only admin. Set the default resolver.
     pub fn set_default_resolver(&mut self, resolver: Address) {
         let caller = self.env().caller();
         self.assert_whitelisted(&caller);
@@ -177,6 +180,7 @@ impl NameToken {
         self.default_resolver.set(resolver);
     }
 
+    /// Get the default resolver.
     pub fn get_default_resolver(&self) -> Address {
         *self.default_resolver.address()
     }

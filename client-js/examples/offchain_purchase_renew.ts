@@ -1,39 +1,48 @@
-import { Keys } from "casper-js-sdk";
+import fs from "fs";
+
+import { HttpHandler, KeyAlgorithm, PrivateKey, RpcClient } from "casper-js-sdk";
 
 import { Registrar } from "../src/registrar";
 import { TokenRenewalInfo } from "../src/types";
-import { waitForDeploy } from "./common";
+
 import { config } from "./config";
 
 // eslint-disable-next-line @typescript-eslint/require-await
 const run = async () => {
-  const adminKeypair = Keys.Ed25519.loadKeyPairFromPrivateFile(
-    `${config.adminPrivateKeyPath}/secret_key.pem`,
+  const adminPrivateKeyPem = fs.readFileSync(config.adminPrivateKeyPath, "utf8");
+  const adminKeypair = PrivateKey.fromPem(
+    adminPrivateKeyPem,
+    KeyAlgorithm.ED25519,
   );
 
   const registrarContract = new Registrar(
     config.networkName,
-    config.registrarContractHash,
+    config.registrarContractPackageHash,
   );
 
   const expiration = new Date();
-  expiration.setFullYear(new Date().getFullYear() + 1, 1, 1);
+  expiration.setFullYear(expiration.getFullYear() + 1, expiration.getMonth(), expiration.getDate());
 
-  const deploy = registrarContract.adminProlong(
-    [new TokenRenewalInfo("some-hash", expiration)],
+  const transaction = registrarContract.adminProlong(
+    [new TokenRenewalInfo(config.mintingName, expiration)],
     10000,
     adminKeypair.publicKey,
   );
 
-  const signedDeploy = deploy.sign([adminKeypair]);
+  transaction.sign(adminKeypair);
 
-  const deployHash = await signedDeploy.send(config.nodeAddress);
+  const rpcHandler = new HttpHandler(config.nodeAddress);
+  const rpcClient = new RpcClient(rpcHandler);
 
-  // eslint-disable-next-line no-console
-  console.log(`Offchain Prolong CSPR.name deploy_hash: ${deployHash}`);
+  try {
+    const putTransactionResult = await rpcClient.putTransaction(transaction);
 
-  await waitForDeploy(config.nodeAddress, deployHash);
+    // eslint-disable-next-line @typescript-eslint/no-unsafe-assignment
+    console.log({transactionHash: putTransactionResult.transactionHash.toHex(), result: putTransactionResult.rawJSON});
+  } catch(err) {
+    console.log({err: err.sourceErr.data});
+  }
 };
 
-// eslint-disable-next-line @typescript-eslint/no-floating-promises
-run();
+// eslint-disable-next-line @typescript-eslint/no-unsafe-member-access,@typescript-eslint/restrict-template-expressions
+run().then(_ => console.log('Finished')).catch(e => console.error(`Error: ${e.stack}`));

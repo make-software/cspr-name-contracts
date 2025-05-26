@@ -18,6 +18,7 @@ pub const CONTROLLER_ROLE: Role = [2u8; 32];
 // Reminting should be possible after 5 days.
 const PENDING_DELETE_PERIOD: u64 = 5 * 24 * 60 * 60 * 1000;
 
+/// Registrar smart contract. It handles the registration and expiration of name tokens.
 #[odra::module]
 pub struct Registrar {
     name_token: External<NameTokenContractRef>,
@@ -35,6 +36,7 @@ impl Registrar {
         }
     }
 
+    /// Initializes the registrar with the name token contract address.
     pub fn init(&mut self, name_token: Address) {
         let caller = self.env().caller();
 
@@ -55,12 +57,12 @@ impl Registrar {
             .unchecked_grant_role(&CONTROLLER_ROLE, &caller);
     }
 
-    // Getter functions.
-
+    /// Returns the grace period.
     pub fn grace_period(&self) -> u64 {
         self.grace_period.get().unwrap_or_revert(self)
     }
 
+    /// Try to resolve a full domain name to an address.
     pub fn resolve(&self, full_domain: String) -> Option<Address> {
         let token_name = utils::extract_token_name(&full_domain)?;
         let token_hash = self.compute_namehash(&token_name);
@@ -76,6 +78,7 @@ impl Registrar {
 
     // Public functions.
 
+    /// Expire a list of tokens if they are expired.
     pub fn expire(&mut self, token_ids: Vec<U256>) {
         let block_time = self.env().get_block_time();
         let grace_period = self.grace_period();
@@ -84,18 +87,19 @@ impl Registrar {
         }
     }
 
-    // Admin functions.
-
+    /// Admin only. Sets the grace period.
     pub fn set_grace_period(&mut self, period: u64) {
         self.assert_caller_is_admin();
         self.grace_period.set(period);
     }
 
+    /// Admin only. Transfer ownership of a list of tokens.
     pub fn admin_transfer(&mut self, new_owner: Address, token_ids: Vec<U256>) {
         self.assert_caller_is_admin();
         self.name_token.admin_transfer(new_owner, token_ids);
     }
 
+    /// Admin only. Burn a list of tokens.
     pub fn admin_burn(&mut self, token_ids: Vec<U256>) {
         self.assert_caller_is_admin();
         let name_token = self.name_token.deref_mut();
@@ -104,16 +108,19 @@ impl Registrar {
         }
     }
 
+    /// Admin only. Prolong the expiration date of a list of tokens.
     pub fn admin_prolong(&mut self, tokens: Vec<TokenRenewalInfo>) {
         self.assert_caller_is_admin();
         self.prolong(tokens);
     }
 
+    /// Admin only. Register a list of tokens.
     pub fn admin_register(&mut self, names: Vec<NameMintInfo>) {
         self.assert_caller_is_admin();
         self.register(names);
     }
 
+    /// Admin only. Prolong the expiration date of a list of tokens and register a list of tokens.
     pub fn admin_prolong_and_register(
         &mut self,
         renewal_tokens: Vec<TokenRenewalInfo>,
@@ -124,20 +131,21 @@ impl Registrar {
         self.register(new_tokens);
     }
 
-    // Controller functions.
-
+    /// Controller only. Prolong the expiration date of a list of tokens.
     pub fn controller_prolong(&mut self, voucher: RenewalVoucher) {
         self.assert_caller_is_controller();
         self.assert_voucher_not_expired(&voucher);
         self.prolong(voucher.tokens);
     }
 
+    /// Controller only. Register a list of tokens.
     pub fn controller_register(&mut self, voucher: TokenizationVoucher) {
         self.assert_voucher_not_expired(&voucher);
         self.assert_caller_is_controller();
         self.register(voucher.names);
     }
 
+    /// Controller only. Prolong the expiration date of a list of tokens and register a list of tokens.
     pub fn controller_prolong_and_register(
         &mut self,
         renewal_voucher: RenewalVoucher,

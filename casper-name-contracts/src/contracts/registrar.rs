@@ -1,8 +1,8 @@
 use core::ops::DerefMut;
-
+use odra::casper_types::U256;
 use odra::module::Revertible;
-use odra::{args::Maybe, module::Module, Address, SubModule, UnwrapOrRevert, Var};
-use odra::{prelude::*, External};
+use odra::prelude::*;
+use odra::ContractRef;
 use odra_modules::access::{AccessControl, Role, DEFAULT_ADMIN_ROLE};
 
 use crate::data_structures::{ExpirableVoucher, NameMintInfo, RenewalVoucher, TokenRenewalInfo};
@@ -64,7 +64,7 @@ impl Registrar {
     pub fn resolve(&self, full_domain: String) -> Option<Address> {
         let token_name = utils::extract_token_name(&full_domain)?;
         let token_hash = self.compute_namehash(&token_name);
-        if !self.name_token.is_token_valid(&token_hash) {
+        if !self.name_token.is_token_valid(token_hash) {
             return None;
         }
 
@@ -76,11 +76,11 @@ impl Registrar {
 
     // Public functions.
 
-    pub fn expire(&mut self, token_hashes: Vec<String>) {
+    pub fn expire(&mut self, token_ids: Vec<U256>) {
         let block_time = self.env().get_block_time();
         let grace_period = self.grace_period();
-        for token_hash in token_hashes {
-            self.expire_single(&token_hash, block_time, grace_period);
+        for token_id in token_ids {
+            self.expire_single(token_id, block_time, grace_period);
         }
     }
 
@@ -91,16 +91,16 @@ impl Registrar {
         self.grace_period.set(period);
     }
 
-    pub fn admin_transfer(&mut self, new_owner: Address, token_hashes: Vec<String>) {
+    pub fn admin_transfer(&mut self, new_owner: Address, token_ids: Vec<U256>) {
         self.assert_caller_is_admin();
-        self.name_token.admin_transfer(new_owner, token_hashes);
+        self.name_token.admin_transfer(new_owner, token_ids);
     }
 
-    pub fn admin_burn(&mut self, token_hashes: Vec<String>) {
+    pub fn admin_burn(&mut self, token_ids: Vec<U256>) {
         self.assert_caller_is_admin();
         let name_token = self.name_token.deref_mut();
-        for token_hash in token_hashes {
-            burn(name_token, token_hash);
+        for id in token_ids {
+            name_token.burn(id);
         }
     }
 
@@ -176,17 +176,17 @@ impl Registrar {
         }
     }
 
-    fn expire_single(&mut self, token_hash: &str, block_time: u64, grace_period: u64) {
-        let metadata = self.wrapped_metadata(token_hash);
+    fn expire_single(&mut self, token_id: U256, block_time: u64, grace_period: u64) {
+        let metadata = self.wrapped_metadata(token_id);
         let token_expiration = metadata.expiration().unwrap_or_revert(self);
         if self.is_token_expired(token_expiration, grace_period, block_time) {
-            burn(self.name_token.deref_mut(), token_hash.to_owned());
+            self.name_token.burn(token_id);
         }
     }
 
-    fn compute_namehash(&self, label: &String) -> String {
+    fn compute_namehash(&self, label: &str) -> U256 {
         let hash = self.env().hash(label);
-        utils::to_utf8_string(&hash).unwrap_or_revert(self)
+        U256::from(hash)
     }
 
     #[inline]
@@ -211,9 +211,9 @@ impl Registrar {
     }
 
     #[inline]
-    fn wrapped_metadata(&self, token_hash: &str) -> NameTokenMetadata {
+    fn wrapped_metadata(&self, token_id: U256) -> NameTokenMetadata {
         self.name_token
-            .metadata_by_hash(token_hash.to_owned())
+            .token_metadata(token_id)
             .try_into()
             .unwrap_or_revert(self)
     }
@@ -229,19 +229,16 @@ impl Registrar {
             // verify the new expiration date is in the future
             self.assert_token_expires_in_future(token.token_expiration, block_time);
             // Compute token hash.
-            let token_hash = self.compute_namehash(&token.token_id);
+            let token_id = token.token_id;
             // get the token metadata
-            let mut metadata = self.wrapped_metadata(&token_hash);
+            let mut metadata = self.wrapped_metadata(token_id);
             // check if the time for the renewal does not elapsed
             let expiration = metadata.expiration().unwrap_or_revert(self);
             self.assert_in_renewal_period(expiration);
             metadata.set_expiration(token.token_expiration);
 
-            set_token_metadata(
-                self.name_token.deref_mut(),
-                token_hash,
-                metadata.json().to_string(),
-            );
+            self.name_token
+                .set_token_metadata(token_id, metadata.to_vec());
         }
     }
 
@@ -251,16 +248,16 @@ impl Registrar {
             self.assert_token_expires_in_future(info.token_expiration, block_time);
 
             // Compute token hash.
-            let token_hash = self.compute_namehash(&info.label);
+            let token_id = self.compute_namehash(&info.label);
 
             // Check if token already exists.
-            let token_exists = self.name_token.token_exists(&token_hash);
+            let token_exists = self.name_token.token_exists(token_id);
 
             // If token exists and is expired and grace period is over, burn it.
             if token_exists {
-                let metadata = self.wrapped_metadata(&token_hash);
+                let metadata = self.wrapped_metadata(token_id);
                 self.assert_token_expired(metadata.expiration().unwrap_or_revert(self), block_time);
-                burn(self.name_token.deref_mut(), token_hash.clone());
+                self.name_token.burn(token_id);
             }
 
             // Mint token.
@@ -269,39 +266,10 @@ impl Registrar {
                 info.token_expiration,
                 self.name_token.get_default_resolver(),
             );
-            let metadata = metadata.json();
-            mint(
-                self.name_token.deref_mut(),
-                info.owner,
-                metadata,
-                token_hash,
-            );
+            self.name_token
+                .mint(info.owner, token_id, metadata.to_vec());
         }
     }
-}
-
-#[inline]
-fn mint(
-    name_token: &mut NameTokenContractRef,
-    buyer: Address,
-    metadata: String,
-    token_hash: String,
-) {
-    name_token.mint(buyer, metadata, Maybe::Some(token_hash));
-}
-
-#[inline]
-fn set_token_metadata(
-    name_token: &mut NameTokenContractRef,
-    token_hash: String,
-    token_meta_data: String,
-) {
-    name_token.set_token_metadata(Maybe::None, Maybe::Some(token_hash), token_meta_data);
-}
-
-#[inline]
-fn burn(name_token: &mut NameTokenContractRef, token_hash: String) {
-    name_token.burn(Maybe::None, Maybe::Some(token_hash));
 }
 
 #[odra::odra_error]
@@ -319,11 +287,11 @@ mod tests {
     use crate::{
         data_structures::TokenRenewalInfo,
         test_context::{
-            blake2b, TestContext, GRACE_PERIOD, INIT_TIME, TOKEN_EXPIRATION, TOKEN_NAME,
+            generate_token_id, TestContext, GRACE_PERIOD, INIT_TIME, TOKEN_EXPIRATION, TOKEN_NAME,
         },
     };
-    use odra::{casper_types::ContractPackageHash, host::HostRef};
-    use odra_modules::{access::errors::Error as AccessControlError, cep78::events::Burn};
+    use odra::host::HostRef;
+    use odra_modules::{access::errors::Error as AccessControlError, cep95::Burn};
 
     #[test]
     fn test_admin_can_manage_controller_role() {
@@ -484,7 +452,6 @@ mod tests {
     fn register_the_same_name_after_grace_period() {
         let mut ctx = TestContext::install_and_setup();
         let (admin, alice, bob) = (ctx.admin, ctx.alice, ctx.bob);
-        let registrar_address = *ctx.registrar.address();
         // Given Alice has a token.
         ctx.with_name_registered(admin, alice, TOKEN_NAME);
 
@@ -495,8 +462,11 @@ mod tests {
         ctx.with_name_registered(admin, bob, TOKEN_NAME);
 
         // Then Alice's token is burned.
-        let event: Burn = ctx.token.get_event(-2).unwrap();
-        let expected = Burn::new(alice, blake2b(TOKEN_NAME), registrar_address);
+        let event: Burn = ctx.token.get_event(-3).unwrap();
+        let expected = Burn {
+            from: alice,
+            token_id: generate_token_id(TOKEN_NAME),
+        };
         assert_eq!(event, expected);
 
         // And Bob's token is minted.
@@ -518,7 +488,7 @@ mod tests {
         ctx.with_name_expired(TOKEN_NAME);
 
         // Then token is burned.
-        assert_eq!(ctx.token.balance_of(alice), 0);
+        assert_eq!(ctx.token.balance_of(alice), U256::zero());
     }
 
     #[test]
@@ -539,7 +509,7 @@ mod tests {
             Some(alice)
         );
         assert_eq!(
-            ctx.token.resolver(blake2b(TOKEN_NAME)),
+            ctx.token.resolver(generate_token_id(TOKEN_NAME)),
             Some(*ctx.default_resolver.address())
         );
 
@@ -561,7 +531,7 @@ mod tests {
 
         // Given Alice has 5 tokens.
         ctx.with_multi_names_registered(admin, alice, tokens.clone());
-        assert_eq!(ctx.token.balance_of(alice), 5);
+        assert_eq!(ctx.token.balance_of(alice), U256::from(5));
         // And is after grace period.
         ctx.advance_block_time(TOKEN_EXPIRATION + GRACE_PERIOD + PENDING_DELETE_PERIOD + 1);
 
@@ -569,7 +539,7 @@ mod tests {
         ctx.with_names_expired(tokens);
 
         // Then all the tokens are burned.
-        assert_eq!(ctx.token.balance_of(alice), 0);
+        assert_eq!(ctx.token.balance_of(alice), U256::from(0));
     }
 
     #[test]
@@ -583,8 +553,8 @@ mod tests {
         ctx.admin_transfer(bob, vec![TOKEN_NAME]);
 
         // Then Alice's token is transferred to Bob.
-        assert_eq!(ctx.token.balance_of(alice), 0);
-        assert_eq!(ctx.token.balance_of(bob), 1);
+        assert_eq!(ctx.token.balance_of(alice), U256::from(0));
+        assert_eq!(ctx.token.balance_of(bob), U256::from(1));
     }
 
     #[test]
@@ -605,7 +575,7 @@ mod tests {
             Some(alice)
         );
         assert_eq!(
-            ctx.token.resolver(blake2b(TOKEN_NAME)),
+            ctx.token.resolver(generate_token_id(TOKEN_NAME)),
             Some(*ctx.default_resolver.address())
         );
 
@@ -624,11 +594,14 @@ mod tests {
         ctx.with_name_registered(admin, alice, TOKEN_NAME);
 
         // And change the resolver
-        let resolver = Address::Contract(ContractPackageHash::new([1u8; 32]));
+        let resolver =
+            Address::new("hash-7ba9daac84bebee8111c186588f21ebca35550b6cf1244e71768bd871938be6a")
+                .unwrap();
         ctx.set_caller(alice);
-        ctx.token.set_resolver(blake2b(TOKEN_NAME), resolver);
+        ctx.token
+            .set_resolver(generate_token_id(TOKEN_NAME), resolver);
 
-        let json = ctx.token.metadata_by_hash(blake2b(TOKEN_NAME));
+        let json = ctx.token.token_metadata(generate_token_id(TOKEN_NAME));
         let actual_resolver = NameTokenMetadata::try_from(json)
             .unwrap()
             .resolver()
@@ -638,7 +611,7 @@ mod tests {
         ctx.admin_transfer(bob, vec![TOKEN_NAME]);
 
         // Then the resolution is cleared.
-        let json = ctx.token.metadata_by_hash(blake2b(TOKEN_NAME));
+        let json = ctx.token.token_metadata(generate_token_id(TOKEN_NAME));
         let actual_resolver = NameTokenMetadata::try_from(json)
             .unwrap()
             .resolver()
@@ -657,7 +630,7 @@ mod tests {
         ctx.admin_burn(vec![TOKEN_NAME]);
 
         // Then Alice's token is burned.
-        assert_eq!(ctx.token.balance_of(alice), 0);
+        assert_eq!(ctx.token.balance_of(alice), U256::from(0));
     }
 
     #[test]
@@ -678,7 +651,7 @@ mod tests {
             Some(alice)
         );
         assert_eq!(
-            ctx.token.resolver(blake2b(TOKEN_NAME)),
+            ctx.token.resolver(generate_token_id(TOKEN_NAME)),
             Some(*ctx.default_resolver.address())
         );
 
@@ -701,7 +674,10 @@ mod tests {
 
         let token_expiration = INIT_TIME + 2 * TOKEN_EXPIRATION;
         let voucher_expiration = INIT_TIME + TOKEN_EXPIRATION;
-        let tokens = vec![TokenRenewalInfo::new(blake2b(TOKEN_NAME), token_expiration)];
+        let tokens = vec![TokenRenewalInfo::new(
+            generate_token_id(TOKEN_NAME),
+            token_expiration,
+        )];
         let voucher = RenewalVoucher::new(tokens, voucher_expiration);
         ctx.advance_block_time(TOKEN_EXPIRATION + GRACE_PERIOD - 1);
         let result = ctx.registrar.try_controller_prolong(voucher);
@@ -724,7 +700,7 @@ mod tests {
         let token_expiration = INIT_TIME + 2 * TOKEN_EXPIRATION;
         let voucher_expiration = INIT_TIME + TOKEN_EXPIRATION + GRACE_PERIOD;
         let tokens = vec![TokenRenewalInfo::new(
-            test_token_name.to_owned(),
+            generate_token_id(test_token_name),
             token_expiration,
         )];
         let voucher = RenewalVoucher::new(tokens, voucher_expiration);
@@ -732,13 +708,13 @@ mod tests {
         ctx.registrar.controller_prolong(voucher);
 
         // Then token expiration is updated.
-        let metadata = ctx.token.metadata_by_hash(blake2b(test_token_name));
+        let metadata = ctx.token.token_metadata(generate_token_id(test_token_name));
         let expected = NameTokenMetadata::with_resolver(
             TOKEN_NAME,
             INIT_TIME + 2 * TOKEN_EXPIRATION,
             *ctx.default_resolver.address(),
         );
-        assert_eq!(metadata, expected.json());
+        assert_eq!(metadata, expected.to_vec());
     }
 
     #[test]
@@ -755,7 +731,7 @@ mod tests {
         let token_expiration = INIT_TIME + 2 * TOKEN_EXPIRATION;
         let voucher_expiration = INIT_TIME + TOKEN_EXPIRATION + GRACE_PERIOD + 1;
         let tokens = vec![TokenRenewalInfo::new(
-            test_token_name.to_string(),
+            generate_token_id(test_token_name),
             token_expiration,
         )];
         let voucher = RenewalVoucher::new(tokens, voucher_expiration);

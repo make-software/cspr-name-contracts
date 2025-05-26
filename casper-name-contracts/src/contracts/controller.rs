@@ -5,9 +5,7 @@ use odra::{
         bytesrepr::{Bytes, ToBytes},
         PublicKey, U512,
     },
-    module::{Module, Revertible},
     prelude::*,
-    Address, External, SubModule, UnwrapOrRevert, Var,
 };
 use odra_modules::access::{AccessControl, Role, DEFAULT_ADMIN_ROLE};
 
@@ -178,7 +176,7 @@ mod tests {
 
     use crate::{
         data_structures::{NameMintInfo, PaymentVoucher, RenewalPaymentVoucher, TokenRenewalInfo},
-        test_context::{TestContext, INIT_TIME, TOKEN_EXPIRATION, TOKEN_NAME},
+        test_context::{generate_token_id, TestContext, INIT_TIME, TOKEN_EXPIRATION, TOKEN_NAME},
     };
 
     #[test]
@@ -206,7 +204,7 @@ mod tests {
             .buy(voucher, signature.clone());
 
         // Token was minted.
-        assert_eq!(ctx.token.balance_of(alice), 1);
+        assert_eq!(ctx.token.balance_of(alice), 1.into());
 
         // CSPR balances after the purchase.
         assert_eq!(
@@ -228,7 +226,7 @@ mod tests {
         let amount = U512::from(2000);
 
         let names = vec![TokenRenewalInfo::new(
-            TOKEN_NAME.to_string(),
+            generate_token_id(TOKEN_NAME),
             token_expiration,
         )];
         let voucher = RenewalPaymentVoucher::new(amount, "id_1", alice, names, voucher_expiration);
@@ -246,7 +244,7 @@ mod tests {
             .renew(voucher, signature.clone());
 
         // Token was minted.
-        assert_eq!(ctx.token.balance_of(alice), 1);
+        assert_eq!(ctx.token.balance_of(alice), 1.into());
 
         // CSPR balances after the purchase.
         assert_eq!(

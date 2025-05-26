@@ -1,14 +1,12 @@
 use odra::{
-    args::Maybe,
-    casper_types::{bytesrepr::Bytes, PublicKey},
+    casper_types::{bytesrepr::Bytes, PublicKey, U256},
     prelude::*,
-    Address, External, SubModule, UnwrapOrRevert,
 };
 use odra_modules::access::Role;
 
 use crate::data_structures::SecondarySaleVoucher;
 
-use super::{controller::BaseController, name_token::NameTokenContractRef, utils};
+use super::{controller::BaseController, name_token::NameTokenContractRef};
 
 // TODO: on the diagrams is called D3Operator, shouldn't we change it?
 #[odra::module]
@@ -39,16 +37,15 @@ impl SecondaryMarket {
     pub fn buy(&mut self, voucher: SecondarySaleVoucher, signature: Bytes) {
         self.controller.process_payment_voucher(&voucher, signature);
         for name in voucher.names {
-            let token_hash = self.compute_namehash(&name.label);
-            let target_key = self.env().caller();
-            let source_key = name.owner;
-            self.name_token
-                .transfer(Maybe::None, Maybe::Some(token_hash), source_key, target_key);
+            let token_id = self.compute_token_id(&name.label);
+            let to = self.env().caller();
+            let from = name.owner;
+            self.name_token.transfer_from(from, to, token_id);
         }
     }
 
-    fn compute_namehash(&self, label: &String) -> String {
+    fn compute_token_id(&self, label: &String) -> U256 {
         let hash = self.env().hash(label);
-        utils::to_utf8_string(&hash).unwrap_or_revert(self)
+        U256::from(hash)
     }
 }

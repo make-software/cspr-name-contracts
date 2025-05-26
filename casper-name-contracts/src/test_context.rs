@@ -2,13 +2,12 @@ use std::io::Write;
 
 use blake2::digest::VariableOutput;
 use blake2::Blake2bVar;
-use odra::args::Maybe;
 use odra::casper_types::bytesrepr::{Bytes, ToBytes};
-use odra::casper_types::U512;
+use odra::casper_types::{U256, U512};
 use odra::host::{Deployer, HostEnv, HostRef};
-use odra::{prelude::*, Address};
+use odra::prelude::*;
 use odra_modules::access::DEFAULT_ADMIN_ROLE;
-use odra_modules::cep78::events::Mint;
+use odra_modules::cep95::Mint;
 
 use crate::contracts::controller::{self, Controller, ControllerHostRef};
 use crate::contracts::name_token::NameToken;
@@ -115,19 +114,11 @@ impl TestContext {
     }
 
     pub fn whitelist_registrar_in_name_token(&mut self) {
-        self.token.set_variables(
-            Maybe::Some(true),
-            Maybe::Some(vec![*self.registrar.address()]),
-            Maybe::None,
-        );
+        self.token.whitelist(*self.registrar.address());
     }
 
     pub fn whitelist_admin_in_name_token(&mut self) {
-        self.token.set_variables(
-            Maybe::Some(true),
-            Maybe::Some(vec![self.admin]),
-            Maybe::None,
-        );
+        self.token.whitelist(self.admin);
     }
 
     pub fn set_controller_in_registrar(&mut self) {
@@ -157,7 +148,7 @@ impl TestContext {
         token_name: &str,
         token_expiration: u64,
         voucher_expiration: u64,
-    ) -> odra::OdraResult<()> {
+    ) -> OdraResult<()> {
         let names = vec![NameMintInfo::new(token_name, recipient, token_expiration)];
         let voucher = TokenizationVoucher::new(names, voucher_expiration);
         self.set_caller(caller);
@@ -195,33 +186,34 @@ impl TestContext {
     }
 
     pub fn expect_name_is_registered(&self, owner: Address, token_name: &str) {
-        let token_hash = blake2b(token_name);
-        assert!(self.token.token_exists(&token_hash), "Token does not exist");
+        let token_id = generate_token_id(token_name);
+        assert!(self.token.token_exists(token_id), "Token does not exist");
 
-        let actual_owner = self
-            .token
-            .owner_of(Maybe::None, Maybe::Some(token_hash.clone()));
-        assert_eq!(actual_owner, owner, "Owner is not correct");
+        let actual_owner = self.token.owner_of(token_id);
+        assert_eq!(actual_owner, Some(owner), "Owner is not correct");
 
-        let metadata = self.token.metadata_by_hash(token_hash.clone());
+        let metadata = self.token.token_metadata(token_id.clone());
         let expected_metadata = NameTokenMetadata::with_resolver(
             token_name,
             self.token_expiration_time(),
             *self.default_resolver.address(),
         );
-        assert_eq!(metadata, expected_metadata.json());
+        assert_eq!(metadata, expected_metadata.to_vec());
 
         assert!(
             self.env.emitted_event(
                 &self.token,
-                &Mint::new(owner, token_hash, expected_metadata.json().to_string())
+                &Mint {
+                    to: owner,
+                    token_id
+                }
             ),
             "Mint event not emitted"
         );
     }
 
-    pub fn try_name_expire(&mut self, token_name: &str) -> odra::OdraResult<()> {
-        let token_id = blake2b(token_name);
+    pub fn try_name_expire(&mut self, token_name: &str) -> OdraResult<()> {
+        let token_id = generate_token_id(token_name);
         self.set_caller(self.anyone);
         self.registrar.try_expire(vec![token_id])
     }
@@ -231,7 +223,7 @@ impl TestContext {
     }
 
     pub fn with_names_expired(&mut self, token_names: Vec<&str>) {
-        let tokens_ids = token_names.iter().map(blake2b).collect();
+        let tokens_ids = token_names.iter().map(generate_token_id).collect();
         self.set_caller(self.anyone);
         self.registrar.try_expire(tokens_ids).unwrap();
     }
@@ -247,12 +239,13 @@ impl TestContext {
     pub fn admin_transfer(&mut self, recipient: Address, token_names: Vec<&str>) {
         self.env.set_caller(self.admin);
         self.registrar
-            .admin_transfer(recipient, blake2b_vec(token_names))
+            .admin_transfer(recipient, generate_token_id_vec(token_names))
     }
 
     pub fn admin_burn(&mut self, token_names: Vec<&str>) {
         self.env.set_caller(self.admin);
-        self.registrar.admin_burn(blake2b_vec(token_names));
+        self.registrar
+            .admin_burn(generate_token_id_vec(token_names));
     }
 
     pub fn set_caller(&mut self, caller: Address) {
@@ -268,16 +261,16 @@ impl TestContext {
     }
 }
 
-pub fn blake2b<T: AsRef<[u8]>>(data: T) -> String {
+pub fn generate_token_id<T: AsRef<[u8]>>(data: T) -> U256 {
     let mut result = [0u8; 32];
     let mut hasher = <Blake2bVar as VariableOutput>::new(32).expect("should create hasher");
     let _ = hasher.write(data.as_ref());
     hasher
         .finalize_variable(&mut result)
         .expect("should copy hash to the result array");
-    hex::encode(result)
+    U256::from(result)
 }
 
-pub fn blake2b_vec<T: AsRef<[u8]>>(data: Vec<T>) -> Vec<String> {
-    data.into_iter().map(blake2b).collect()
+pub fn generate_token_id_vec<T: AsRef<[u8]>>(data: Vec<T>) -> Vec<U256> {
+    data.into_iter().map(generate_token_id).collect()
 }

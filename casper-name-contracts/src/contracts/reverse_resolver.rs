@@ -1,4 +1,4 @@
-use odra::{prelude::*, Address, Mapping};
+use odra::prelude::*;
 
 #[odra::module]
 pub struct ReverseResolver {

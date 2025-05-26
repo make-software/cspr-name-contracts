@@ -24,7 +24,7 @@ const run = async () => {
   const proxyCallerWasmBytes = fs.readFileSync(join(__dirname, 'proxy_caller.wasm'));
 
   const expiration = new Date();
-  expiration.setFullYear(expiration.getFullYear() + 1, expiration.getMonth(), expiration.getDate());
+  expiration.setFullYear(expiration.getFullYear() + 1, expiration.getMonth(), expiration.getDate() + 1);
   
   const voucher = new PaymentVoucher(
     new PaymentInfo(buyerKeypair.publicKey.accountHash().toPrefixedString(), "payment:1", 50000000000),

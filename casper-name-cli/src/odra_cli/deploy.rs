@@ -39,7 +39,7 @@ impl odra_cli::deploy::DeployScript for DeployScript {
         )?;
         container.add_contract(&resolver)?;
 
-        env.set_gas(300_000_000_000);
+        env.set_gas(500_000_000_000);
         let registrar = Registrar::try_deploy(
             &env,
             RegistrarInitArgs {
@@ -48,7 +48,7 @@ impl odra_cli::deploy::DeployScript for DeployScript {
         )?;
         container.add_contract(&registrar)?;
 
-        env.set_gas(300_000_000_000);
+        env.set_gas(500_000_000_000);
         let controller = Controller::try_deploy(
             &env,
             ControllerInitArgs {
@@ -59,7 +59,7 @@ impl odra_cli::deploy::DeployScript for DeployScript {
         )?;
         container.add_contract(&controller)?;
 
-        env.set_gas(250_000_000_000);
+        env.set_gas(500_000_000_000);
         let market = SecondaryMarket::try_deploy(
             &env,
             SecondaryMarketInitArgs {
@@ -70,7 +70,7 @@ impl odra_cli::deploy::DeployScript for DeployScript {
         )?;
         container.add_contract(&market)?;
 
-        env.set_gas(150_000_000_000);
+        env.set_gas(300_000_000_000);
         let reverse_resolver = ReverseResolver::try_deploy(&env, NoArgs)?;
         container.add_contract(&reverse_resolver)?;
 

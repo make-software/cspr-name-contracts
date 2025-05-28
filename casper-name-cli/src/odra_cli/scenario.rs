@@ -50,18 +50,18 @@ impl odra_cli::scenario::Scenario for SetConfigScript {
         name_token.whitelist(env.get_account(0));
         name_token.set_default_resolver(resolver_address);
 
-        // Whitelist the registrar in the name token.
+        // // Whitelist the registrar in the name token.
         env.set_gas(20_000_000_000);
         name_token.whitelist(*registrar.address());
 
         // Whitelist controllers in the registrar.
-        env.set_gas(2_000_000_000);
+        env.set_gas(10_000_000_000);
         registrar.grant_role(&CONTROLLER_ROLE, &controller_address);
-        env.set_gas(2_000_000_000);
+        env.set_gas(10_000_000_000);
         registrar.grant_role(&CONTROLLER_ROLE, &marketplace_address);
 
         // Set the grace period.
-        env.set_gas(2_000_000_000);
+        env.set_gas(10_000_000_000);
         registrar.set_grace_period(GRACE_PERIOD);
 
         Ok(())

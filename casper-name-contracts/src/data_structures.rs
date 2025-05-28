@@ -1,4 +1,7 @@
-use odra::{casper_types::U512, prelude::*, Address, OdraResult};
+use odra::{
+    casper_types::{U256, U512},
+    prelude::*,
+};
 use serde::{Deserialize, Serialize};
 
 /// Errors that can occur while working with name tokens.
@@ -12,6 +15,7 @@ pub enum NameTokenError {
     SLDDoesNotExist = 1005,
     SerializationError = 1006,
     DeserializationError = 1007,
+    InvalidMetadata = 1008,
 }
 
 /// Metadata associated with a name token.
@@ -55,6 +59,16 @@ impl NameTokenMetadata {
         serde_json_wasm::to_string(&self).unwrap()
     }
 
+    pub fn to_vec(&self) -> Vec<(String, String)> {
+        let mut vec = Vec::new();
+        vec.push(("expiration".to_string(), self.expiration.to_string()));
+        vec.push(("name".to_string(), self.name.clone()));
+        if let Some(resolver) = &self.resolver {
+            vec.push(("resolver".to_string(), resolver.to_string()));
+        }
+        vec
+    }
+
     pub fn expiration(&self) -> OdraResult<u64> {
         Ok(self.expiration)
     }
@@ -69,6 +83,42 @@ impl TryFrom<String> for NameTokenMetadata {
 
     fn try_from(value: String) -> Result<Self, Self::Error> {
         serde_json_wasm::from_str(&value).map_err(|_| NameTokenError::DeserializationError)
+    }
+}
+
+impl TryFrom<Vec<(String, String)>> for NameTokenMetadata {
+    type Error = NameTokenError;
+
+    fn try_from(value: Vec<(String, String)>) -> Result<Self, Self::Error> {
+        let name = value
+            .iter()
+            .find(|(key, _)| key == "name")
+            .ok_or(NameTokenError::DeserializationError)?
+            .1
+            .clone();
+
+        let expiration = value
+            .iter()
+            .find(|(key, _)| key == "expiration")
+            .ok_or(NameTokenError::DeserializationError)?
+            .1
+            .parse()
+            .map_err(|_| NameTokenError::DeserializationError)?;
+
+        let resolver = value
+            .iter()
+            .find(|(key, _)| key == "resolver")
+            .cloned()
+            .map(|(_, value)| {
+                Address::from_str(&value).map_err(|_| NameTokenError::DeserializationError)
+            })
+            .transpose()?;
+
+        Ok(NameTokenMetadata {
+            name,
+            expiration,
+            resolver,
+        })
     }
 }
 
@@ -169,12 +219,12 @@ impl NameMintInfo {
 /// Renewal information with new expiration time.
 #[odra::odra_type]
 pub struct TokenRenewalInfo {
-    pub token_id: String,
+    pub token_id: U256,
     pub token_expiration: u64,
 }
 
 impl TokenRenewalInfo {
-    pub fn new(token_id: String, token_expiration: u64) -> Self {
+    pub fn new(token_id: U256, token_expiration: u64) -> Self {
         Self {
             token_id,
             token_expiration,

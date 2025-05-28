@@ -2,8 +2,7 @@ use std::fmt::Debug;
 
 use casper_name_contracts::data_structures::*;
 use odra::{
-    casper_types::{bytesrepr::ToBytes, U512},
-    Address,
+    casper_types::{bytesrepr::ToBytes, U256, U512}, prelude::Address,
 };
 
 pub fn main() {
@@ -60,7 +59,7 @@ fn example_tokenization_voucher() -> TokenizationVoucher {
 
 fn example_token_renewal_info() -> TokenRenewalInfo {
     TokenRenewalInfo {
-        token_id: String::from("test-token-id"),
+        token_id: U256::from(123),
         token_expiration: 999999,
     }
 }

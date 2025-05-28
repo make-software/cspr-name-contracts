@@ -1,4 +1,4 @@
-use odra::{prelude::*, Address, Mapping};
+use odra::prelude::*;
 
 /// Reverse Resolver contract. It resolves primary names to addresses.
 #[odra::module(events = [PrimaryNameChanged])]

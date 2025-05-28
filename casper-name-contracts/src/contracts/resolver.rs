@@ -1,6 +1,4 @@
-use core::ops::Deref;
-
-use odra::{args::Maybe, prelude::*, Address, External, Mapping, SubModule, UnwrapOrRevert};
+use odra::{casper_types::U256, prelude::*};
 use odra_modules::access::{AccessControl, Role, DEFAULT_ADMIN_ROLE};
 
 use super::{name_token::NameTokenContractRef, utils};
@@ -11,12 +9,12 @@ pub trait Resolver {
     fn set_name_token(&mut self, name_token: Address);
     fn set_resolution(&mut self, full_domain: Domain, address: Option<Address>);
     fn resolve(&self, full_domain: Domain) -> Option<Address>;
-    fn cleanup(&mut self, token_hash: TokenHash);
+    fn cleanup(&mut self, token_id: TokenId);
 }
 
 type Nonce = u32;
 type Domain = String;
-type TokenHash = String;
+type TokenId = U256;
 
 /// Event emitted when a resolution is changed.
 #[odra::event]
@@ -28,7 +26,7 @@ pub struct ResolutionChanged {
 /// Event emitted when a resolution is cleared.
 #[odra::event]
 pub struct ResolutionCleared {
-    token_hash: String,
+    token_id: U256,
 }
 
 /// Default Resolver smart contract. It handles the resolution of domain names to addresses.
@@ -36,8 +34,8 @@ pub struct ResolutionCleared {
 pub struct DefaultResolver {
     access_control: SubModule<AccessControl>,
     name_token: External<NameTokenContractRef>,
-    nonces: Mapping<String, Nonce>,
-    resolutions: Mapping<(String, String, Nonce), Option<Address>>,
+    nonces: Mapping<TokenId, Nonce>,
+    resolutions: Mapping<(TokenId, String, Nonce), Option<Address>>,
 }
 
 #[odra::module]
@@ -72,22 +70,22 @@ impl DefaultResolver {
     /// Token owner only. Sets the resolution for a domain to an address.
     pub fn set_resolution(&mut self, full_domain: Domain, address: Option<Address>) {
         let env = self.env();
-        let token_hash = self
-            .calculate_token_hash(&full_domain)
+        let token_id = self
+            .calculate_token_id(&full_domain)
             .unwrap_or_revert_with(self, ResolverError::InvalidDomain);
         let caller = env.caller();
 
-        if !self.name_token.is_token_valid(&token_hash) {
+        if !self.name_token.is_token_valid(token_id) {
             env.revert(ResolverError::ResolutionSetWithInvalidToken);
         }
 
-        if self.owner_of(&token_hash) != caller {
+        if self.owner_of(token_id) != Some(caller) {
             env.revert(ResolverError::ResolutionSetByInvalidOwner);
         }
 
-        let nonce = self.nonce(&token_hash);
+        let nonce = self.nonce(&token_id);
         self.resolutions
-            .set(&(token_hash, full_domain.clone(), nonce), address);
+            .set(&(token_id, full_domain.clone(), nonce), address);
 
         env.emit_event(ResolutionChanged {
             full_domain,
@@ -97,45 +95,42 @@ impl DefaultResolver {
 
     /// Resolves a domain to an address.
     pub fn resolve(&self, full_domain: Domain) -> Option<Address> {
-        let token_hash = self.calculate_token_hash(&full_domain)?;
-        let nonce = self.nonce(&token_hash);
+        let token_id = self.calculate_token_id(&full_domain)?;
+        let nonce = self.nonce(&token_id);
 
         self.resolutions
-            .get(&(token_hash, full_domain, nonce))
+            .get(&(token_id, full_domain, nonce))
             .flatten()
     }
 
     /// Cleanup the resolutions for a token. Only the token owner or the admin can do this.
-    pub fn cleanup(&mut self, token_hash: TokenHash) {
+    pub fn cleanup(&mut self, token_id: TokenId) {
         let env = self.env();
         let caller = env.caller();
 
-        if !self.has_role(&DEFAULT_ADMIN_ROLE, &caller) && self.owner_of(&token_hash) != caller {
+        if !self.has_role(&DEFAULT_ADMIN_ROLE, &caller) && self.owner_of(token_id) != Some(caller) {
             self.env().revert(ResolverError::UnauthorizedCleanup);
         }
-        self.nonces.add(&token_hash, 1);
+        self.nonces.add(&token_id, 1);
 
-        env.emit_event(ResolutionCleared {
-            token_hash: token_hash.deref().to_owned(),
-        });
+        env.emit_event(ResolutionCleared { token_id });
     }
 
     #[inline]
-    fn calculate_token_hash(&self, full_domain: &str) -> Option<TokenHash> {
+    fn calculate_token_id(&self, full_domain: &str) -> Option<TokenId> {
         let token_name = utils::extract_token_name(&full_domain)?;
         let hash = self.env().hash(token_name);
-        Some(utils::to_utf8_string(&hash).unwrap_or_revert(self))
+        Some(U256::from(hash))
     }
 
     #[inline]
-    fn nonce(&self, token_hash: &TokenHash) -> Nonce {
-        self.nonces.get_or_default(token_hash)
+    fn nonce(&self, token_id: &TokenId) -> Nonce {
+        self.nonces.get_or_default(token_id)
     }
 
     #[inline]
-    fn owner_of(&self, token_hash: &TokenHash) -> Address {
-        self.name_token
-            .owner_of(Maybe::None, Maybe::Some(token_hash.to_owned()))
+    fn owner_of(&self, token_id: TokenId) -> Option<Address> {
+        self.name_token.owner_of(token_id)
     }
 }
 
@@ -150,10 +145,8 @@ pub enum ResolverError {
 
 #[cfg(test)]
 mod tests {
-    use odra::OdraResult;
-
     use super::*;
-    use crate::test_context::{blake2b, TestContext, TOKEN_EXPIRATION};
+    use crate::test_context::{generate_token_id, TestContext, TOKEN_EXPIRATION};
 
     const TOKEN_NAME: &str = "odra";
     const NON_EXISTENT_TOKEN_DOMAIN: &str = "odra2.cspr";
@@ -269,10 +262,8 @@ mod tests {
         // Given the token has been burned
         let (mut ctx, admin, alice, _) = setup();
         ctx.set_caller(admin);
-        ctx.token
-            .set_variables(Maybe::Some(true), Maybe::Some(vec![admin]), Maybe::None);
-        ctx.token
-            .burn(Maybe::None, Maybe::Some(blake2b(TOKEN_NAME)));
+        ctx.token.whitelist(admin);
+        ctx.token.burn(generate_token_id(TOKEN_NAME));
         // When alice tries to set the resolution
         ctx.set_caller(alice);
         let result = try_set_resolution(&mut ctx, SUBDOMAIN, alice);
@@ -396,6 +387,7 @@ mod tests {
     }
 
     fn try_cleanup(ctx: &mut TestContext, token_name: &str) -> OdraResult<()> {
-        ctx.default_resolver.try_cleanup(blake2b(token_name))
+        ctx.default_resolver
+            .try_cleanup(generate_token_id(token_name))
     }
 }

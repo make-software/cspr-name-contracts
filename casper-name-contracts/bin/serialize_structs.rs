@@ -1,7 +1,6 @@
 use casper_name_contracts::data_structures::NameMintInfo;
 use odra::{
-    casper_types::{bytesrepr::ToBytes, CLTyped},
-    Address,
+    casper_types::{bytesrepr::ToBytes, CLTyped}, prelude::Address,
 };
 
 pub fn main() {

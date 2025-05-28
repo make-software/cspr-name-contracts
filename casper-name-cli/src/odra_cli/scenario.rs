@@ -10,16 +10,15 @@ use casper_name_contracts::{
     data_structures::{NameMintInfo, PaymentVoucher, TokenizationVoucher},
 };
 use odra::{
-    args::Maybe,
     casper_types::{
         bytesrepr::{Bytes, ToBytes},
         AsymmetricType, PublicKey, U512,
     },
+    prelude::*,
     schema::casper_contract_schema::NamedCLType,
-    Address, Addressable,
+    Addressable,
 };
 use std::io::Write;
-use std::str::FromStr;
 
 const ONE_DAY: u64 = 86400000;
 const GRACE_PERIOD: u64 = ONE_DAY * 2;
@@ -48,20 +47,12 @@ impl odra_cli::scenario::Scenario for SetConfigScript {
 
         // Set default resolver.
         env.set_gas(20_000_000_000);
-        name_token.set_variables(
-            Maybe::Some(true),
-            Maybe::Some(vec![env.get_account(0)]),
-            Maybe::None,
-        );
+        name_token.whitelist(env.get_account(0));
         name_token.set_default_resolver(resolver_address);
 
         // Whitelist the registrar in the name token.
         env.set_gas(20_000_000_000);
-        name_token.set_variables(
-            Maybe::Some(true),
-            Maybe::Some(vec![*registrar.address()]),
-            Maybe::None,
-        );
+        name_token.whitelist(*registrar.address());
 
         // Whitelist controllers in the registrar.
         env.set_gas(2_000_000_000);

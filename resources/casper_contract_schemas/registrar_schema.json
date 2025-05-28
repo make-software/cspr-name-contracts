@@ -1,6 +1,6 @@
 {
   "casper_contract_schema_version": 1,
-  "toolchain": "rustc 1.79.0-nightly (3a36386dc 2024-04-25)",
+  "toolchain": "rustc 1.82.0-nightly (f8060d282 2024-07-30)",
   "authors": [],
   "repository": null,
   "homepage": null,
@@ -137,7 +137,7 @@
           {
             "name": "token_id",
             "description": null,
-            "ty": "String"
+            "ty": "U256"
           },
           {
             "name": "token_expiration",
@@ -198,7 +198,7 @@
   "entry_points": [
     {
       "name": "grace_period",
-      "description": "",
+      "description": "Returns the grace period.",
       "is_mutable": false,
       "arguments": [],
       "return_ty": "U64",
@@ -207,7 +207,7 @@
     },
     {
       "name": "resolve",
-      "description": "",
+      "description": "Try to resolve a full domain name to an address.",
       "is_mutable": false,
       "arguments": [
         {
@@ -225,14 +225,14 @@
     },
     {
       "name": "expire",
-      "description": "",
+      "description": "Expire a list of tokens if they are expired.",
       "is_mutable": true,
       "arguments": [
         {
-          "name": "token_hashes",
+          "name": "token_ids",
           "description": null,
           "ty": {
-            "List": "String"
+            "List": "U256"
           },
           "optional": false
         }
@@ -243,7 +243,7 @@
     },
     {
       "name": "set_grace_period",
-      "description": "",
+      "description": "Admin only. Sets the grace period.",
       "is_mutable": true,
       "arguments": [
         {
@@ -259,7 +259,7 @@
     },
     {
       "name": "admin_transfer",
-      "description": "",
+      "description": "Admin only. Transfer ownership of a list of tokens.",
       "is_mutable": true,
       "arguments": [
         {
@@ -269,10 +269,10 @@
           "optional": false
         },
         {
-          "name": "token_hashes",
+          "name": "token_ids",
           "description": null,
           "ty": {
-            "List": "String"
+            "List": "U256"
           },
           "optional": false
         }
@@ -283,14 +283,14 @@
     },
     {
       "name": "admin_burn",
-      "description": "",
+      "description": "Admin only. Burn a list of tokens.",
       "is_mutable": true,
       "arguments": [
         {
-          "name": "token_hashes",
+          "name": "token_ids",
           "description": null,
           "ty": {
-            "List": "String"
+            "List": "U256"
           },
           "optional": false
         }
@@ -301,7 +301,7 @@
     },
     {
       "name": "admin_prolong",
-      "description": "",
+      "description": "Admin only. Prolong the expiration date of a list of tokens.",
       "is_mutable": true,
       "arguments": [
         {
@@ -319,7 +319,7 @@
     },
     {
       "name": "admin_register",
-      "description": "",
+      "description": "Admin only. Register a list of tokens.",
       "is_mutable": true,
       "arguments": [
         {
@@ -337,7 +337,7 @@
     },
     {
       "name": "admin_prolong_and_register",
-      "description": "",
+      "description": "Admin only. Prolong the expiration date of a list of tokens and register a list of tokens.",
       "is_mutable": true,
       "arguments": [
         {
@@ -363,7 +363,7 @@
     },
     {
       "name": "controller_prolong",
-      "description": "",
+      "description": "Controller only. Prolong the expiration date of a list of tokens.",
       "is_mutable": true,
       "arguments": [
         {
@@ -379,7 +379,7 @@
     },
     {
       "name": "controller_register",
-      "description": "",
+      "description": "Controller only. Register a list of tokens.",
       "is_mutable": true,
       "arguments": [
         {
@@ -395,7 +395,7 @@
     },
     {
       "name": "controller_prolong_and_register",
-      "description": "",
+      "description": "Controller only. Prolong the expiration date of a list of tokens and register a list of tokens.",
       "is_mutable": true,
       "arguments": [
         {
@@ -504,7 +504,7 @@
   ],
   "call": {
     "wasm_file_name": "Registrar.wasm",
-    "description": "",
+    "description": "Initializes the registrar with the name token contract address.",
     "arguments": [
       {
         "name": "odra_cfg_package_hash_key_name",
@@ -514,7 +514,7 @@
       },
       {
         "name": "odra_cfg_allow_key_override",
-        "description": "The arg name for the allow key override.",
+        "description": "If true and the key specified in odra_cfg_package_hash_key_name already exists, it will be overwritten.",
         "ty": "Bool",
         "optional": false
       },

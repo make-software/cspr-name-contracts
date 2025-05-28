@@ -1,6 +1,6 @@
 {
   "casper_contract_schema_version": 1,
-  "toolchain": "rustc 1.79.0-nightly (3a36386dc 2024-04-25)",
+  "toolchain": "rustc 1.82.0-nightly (f8060d282 2024-07-30)",
   "authors": [],
   "repository": null,
   "homepage": null,
@@ -25,7 +25,7 @@
           {
             "name": "token_id",
             "description": null,
-            "ty": "String"
+            "ty": "U256"
           }
         ]
       }
@@ -50,59 +50,31 @@
     },
     {
       "struct": {
-        "name": "ApprovalRevoked",
-        "description": null,
-        "members": [
-          {
-            "name": "owner",
-            "description": null,
-            "ty": "Key"
-          },
-          {
-            "name": "token_id",
-            "description": null,
-            "ty": "String"
-          }
-        ]
-      }
-    },
-    {
-      "struct": {
         "name": "Burn",
         "description": null,
         "members": [
           {
-            "name": "owner",
+            "name": "from",
             "description": null,
             "ty": "Key"
           },
           {
             "name": "token_id",
             "description": null,
-            "ty": "String"
-          },
-          {
-            "name": "burner",
-            "description": null,
-            "ty": "Key"
+            "ty": "U256"
           }
         ]
       }
     },
     {
       "struct": {
-        "name": "MetadataUpdated",
+        "name": "MetadataUpdate",
         "description": null,
         "members": [
           {
             "name": "token_id",
             "description": null,
-            "ty": "String"
-          },
-          {
-            "name": "data",
-            "description": null,
-            "ty": "String"
+            "ty": "U256"
           }
         ]
       }
@@ -113,26 +85,66 @@
         "description": null,
         "members": [
           {
-            "name": "recipient",
+            "name": "to",
             "description": null,
             "ty": "Key"
           },
           {
             "name": "token_id",
             "description": null,
-            "ty": "String"
-          },
-          {
-            "name": "data",
-            "description": null,
-            "ty": "String"
+            "ty": "U256"
           }
         ]
       }
     },
     {
       "struct": {
-        "name": "RevokedForAll",
+        "name": "OwnershipTransferred",
+        "description": null,
+        "members": [
+          {
+            "name": "previous_owner",
+            "description": null,
+            "ty": {
+              "Option": "Key"
+            }
+          },
+          {
+            "name": "new_owner",
+            "description": null,
+            "ty": {
+              "Option": "Key"
+            }
+          }
+        ]
+      }
+    },
+    {
+      "struct": {
+        "name": "RevokeApproval",
+        "description": null,
+        "members": [
+          {
+            "name": "owner",
+            "description": null,
+            "ty": "Key"
+          },
+          {
+            "name": "spender",
+            "description": null,
+            "ty": "Key"
+          },
+          {
+            "name": "token_id",
+            "description": null,
+            "ty": "U256"
+          }
+        ]
+      }
+    },
+    {
+      "struct": {
+        "name": "RevokeApprovalForAll",
         "description": null,
         "members": [
           {
@@ -154,903 +166,84 @@
         "description": null,
         "members": [
           {
-            "name": "owner",
+            "name": "from",
             "description": null,
             "ty": "Key"
           },
           {
-            "name": "spender",
-            "description": null,
-            "ty": {
-              "Option": "Key"
-            }
-          },
-          {
-            "name": "recipient",
+            "name": "to",
             "description": null,
             "ty": "Key"
           },
           {
             "name": "token_id",
             "description": null,
-            "ty": "String"
+            "ty": "U256"
           }
         ]
-      }
-    },
-    {
-      "struct": {
-        "name": "VariablesSet",
-        "description": null,
-        "members": []
       }
     }
   ],
   "errors": [
     {
-      "name": "CannotInstallWithZeroSupply",
-      "description": "",
-      "discriminant": 123
+      "name": "ApprovalToCurrentOwner",
+      "description": "The approval is set to the current owner.",
+      "discriminant": 40003
     },
     {
-      "name": "CannotUpgradeToMoreSupply",
-      "description": "",
-      "discriminant": 150
+      "name": "ApproveToCaller",
+      "description": "The caller is the same as the operator.",
+      "discriminant": 40004
     },
     {
-      "name": "CannotUpgradeWithZeroSupply",
-      "description": "",
-      "discriminant": 122
+      "name": "CallerNotTheNewOwner",
+      "description": "The caller is not the new owner.",
+      "discriminant": 20002
     },
     {
-      "name": "ContractAlreadyInitialized",
-      "description": "",
-      "discriminant": 58
+      "name": "CallerNotTheOwner",
+      "description": "The caller is not the owner.",
+      "discriminant": 20001
     },
     {
-      "name": "ContractAlreadyMigrated",
-      "description": "",
-      "discriminant": 126
+      "name": "InvalidTokenId",
+      "description": "The token ID is invalid.",
+      "discriminant": 40005
     },
     {
-      "name": "DuplicateIdentifier",
-      "description": "",
-      "discriminant": 170
+      "name": "MissingRole",
+      "description": "The role is missing.",
+      "discriminant": 20003
     },
     {
-      "name": "DuplicateMinted",
-      "description": "",
-      "discriminant": 15
+      "name": "NotAnOwnerOrApproved",
+      "description": "The token ID is invalid.",
+      "discriminant": 40002
     },
     {
-      "name": "EmptyACLWhitelist",
-      "description": "",
-      "discriminant": 162
+      "name": "OwnerNotSet",
+      "description": "The owner is not set.",
+      "discriminant": 20000
     },
     {
-      "name": "EmptyContractWhitelist",
-      "description": "",
-      "discriminant": 83
+      "name": "RoleRenounceForAnotherAddress",
+      "description": "The role cannot be renounced for another address.",
+      "discriminant": 20004
     },
     {
-      "name": "ExceededMaxTotalSupply",
-      "description": "",
-      "discriminant": 133
+      "name": "TokenAlreadyExists",
+      "description": "The token with the given ID already exists.",
+      "discriminant": 40006
     },
     {
-      "name": "FailedToAccessOwnershipDictionary",
-      "description": "",
-      "discriminant": 14
+      "name": "TransferFailed",
+      "description": "The transfer failed.",
+      "discriminant": 40001
     },
     {
-      "name": "FailedToAccessStorageDictionary",
-      "description": "",
-      "discriminant": 13
-    },
-    {
-      "name": "FailedToConvertToAccountHash",
-      "description": "",
-      "discriminant": 40
-    },
-    {
-      "name": "FailedToConvertToCLValue",
-      "description": "",
-      "discriminant": 16
-    },
-    {
-      "name": "FailedToCreateDictionary",
-      "description": "",
-      "discriminant": 8
-    },
-    {
-      "name": "FailedToGetArgBytes",
-      "description": "",
-      "discriminant": 7
-    },
-    {
-      "name": "FailedToJsonifyCEP78Metadata",
-      "description": "",
-      "discriminant": 92
-    },
-    {
-      "name": "FailedToJsonifyCustomMetadata",
-      "description": "",
-      "discriminant": 103
-    },
-    {
-      "name": "FailedToJsonifyNFT721Metadata",
-      "description": "",
-      "discriminant": 94
-    },
-    {
-      "name": "FailedToParse721Metadata",
-      "description": "",
-      "discriminant": 89
-    },
-    {
-      "name": "FailedToParseCep78Metadata",
-      "description": "",
-      "discriminant": 88
-    },
-    {
-      "name": "FailedToParseCustomMetadata",
-      "description": "",
-      "discriminant": 90
-    },
-    {
-      "name": "FailedToParseTokenId",
-      "description": "",
-      "discriminant": 100
-    },
-    {
-      "name": "FailedToSerializeMetaData",
-      "description": "",
-      "discriminant": 19
-    },
-    {
-      "name": "FailureToParseAccountHash",
-      "description": "",
-      "discriminant": 60
-    },
-    {
-      "name": "FatalTokenIdDuplication",
-      "description": "",
-      "discriminant": 35
-    },
-    {
-      "name": "ForbiddenMetadataUpdate",
-      "description": "",
-      "discriminant": 104
-    },
-    {
-      "name": "GoingBelowZeroSupply",
-      "description": "",
-      "discriminant": 171
-    },
-    {
-      "name": "InvalidACLPackageMode",
-      "description": "",
-      "discriminant": 163
-    },
-    {
-      "name": "InvalidACLWhitelist",
-      "description": "",
-      "discriminant": 161
-    },
-    {
-      "name": "InvalidAccessKeyName",
-      "description": "",
-      "discriminant": 137
-    },
-    {
-      "name": "InvalidAccount",
-      "description": "",
-      "discriminant": 1
-    },
-    {
-      "name": "InvalidAccountHash",
-      "description": "",
-      "discriminant": 31
-    },
-    {
-      "name": "InvalidAccountKeyInDictionary",
-      "description": "",
-      "discriminant": 66
-    },
-    {
-      "name": "InvalidAdditionalNFTMetadataKind",
-      "description": "",
-      "discriminant": 146
-    },
-    {
-      "name": "InvalidAdditionalRequiredMetadata",
-      "description": "",
-      "discriminant": 141
-    },
-    {
-      "name": "InvalidAllowMinting",
-      "description": "",
-      "discriminant": 44
-    },
-    {
-      "name": "InvalidApproveAll",
-      "description": "",
-      "discriminant": 54
-    },
-    {
-      "name": "InvalidApprovedAccountHash",
-      "description": "",
-      "discriminant": 50
-    },
-    {
-      "name": "InvalidBurnMode",
-      "description": "",
-      "discriminant": 106
-    },
-    {
-      "name": "InvalidBurner",
-      "description": "",
-      "discriminant": 41
-    },
-    {
-      "name": "InvalidCEP78Metadata",
-      "description": "",
-      "discriminant": 91
-    },
-    {
-      "name": "InvalidCep78InvalidHash",
-      "description": "",
-      "discriminant": 135
-    },
-    {
-      "name": "InvalidCheckForUpgrade",
-      "description": "",
-      "discriminant": 138
-    },
-    {
-      "name": "InvalidCollectionName",
-      "description": "",
-      "discriminant": 18
-    },
-    {
-      "name": "InvalidCollectionSymbol",
-      "description": "",
-      "discriminant": 24
-    },
-    {
-      "name": "InvalidContract",
-      "description": "",
-      "discriminant": 82
-    },
-    {
-      "name": "InvalidContractWhitelist",
-      "description": "",
-      "discriminant": 80
-    },
-    {
-      "name": "InvalidCustomMetadata",
-      "description": "",
-      "discriminant": 95
-    },
-    {
-      "name": "InvalidEventsMode",
-      "description": "",
-      "discriminant": 149
-    },
-    {
-      "name": "InvalidHashByIndex",
-      "description": "",
-      "discriminant": 108
-    },
-    {
-      "name": "InvalidHolderMode",
-      "description": "",
-      "discriminant": 76
-    },
-    {
-      "name": "InvalidIdentifier",
-      "description": "",
-      "discriminant": 169
-    },
-    {
-      "name": "InvalidIdentifierMode",
-      "description": "",
-      "discriminant": 99
-    },
-    {
-      "name": "InvalidIndexByHash",
-      "description": "",
-      "discriminant": 110
-    },
-    {
-      "name": "InvalidInstaller",
-      "description": "",
-      "discriminant": 3
-    },
-    {
-      "name": "InvalidJsonFormat",
-      "description": "",
-      "discriminant": 87
-    },
-    {
-      "name": "InvalidJsonMetadata",
-      "description": "",
-      "discriminant": 86
-    },
-    {
-      "name": "InvalidJsonSchema",
-      "description": "",
-      "discriminant": 68
-    },
-    {
-      "name": "InvalidKey",
-      "description": "",
-      "discriminant": 69
-    },
-    {
-      "name": "InvalidMetadataMutability",
-      "description": "",
-      "discriminant": 102
-    },
-    {
-      "name": "InvalidMigrationFlag",
-      "description": "",
-      "discriminant": 125
-    },
-    {
-      "name": "InvalidMinter",
-      "description": "",
-      "discriminant": 36
-    },
-    {
-      "name": "InvalidMintingMode",
-      "description": "",
-      "discriminant": 38
-    },
-    {
-      "name": "InvalidMintingStatus",
-      "description": "",
-      "discriminant": 22
-    },
-    {
-      "name": "InvalidNFT721Metadata",
-      "description": "",
-      "discriminant": 93
-    },
-    {
-      "name": "InvalidNFTMetadataKind",
-      "description": "",
-      "discriminant": 97
-    },
-    {
-      "name": "InvalidNamedKeyConvention",
-      "description": "",
-      "discriminant": 139
-    },
-    {
-      "name": "InvalidNftKind",
-      "description": "",
-      "discriminant": 74
-    },
-    {
-      "name": "InvalidNumberOfMintedTokens",
-      "description": "",
-      "discriminant": 46
-    },
-    {
-      "name": "InvalidOperator",
-      "description": "",
-      "discriminant": 56
-    },
-    {
-      "name": "InvalidOperatorBurnMode",
-      "description": "",
-      "discriminant": 167
-    },
-    {
-      "name": "InvalidOptionalMetadata",
-      "description": "",
-      "discriminant": 142
-    },
-    {
-      "name": "InvalidOptionalNFTMetadataKind",
-      "description": "",
-      "discriminant": 144
-    },
-    {
-      "name": "InvalidOwnedTokens",
-      "description": "",
-      "discriminant": 70
-    },
-    {
-      "name": "InvalidOwnersUref",
-      "description": "",
-      "discriminant": 12
-    },
-    {
-      "name": "InvalidOwnershipMode",
-      "description": "",
-      "discriminant": 63
-    },
-    {
-      "name": "InvalidPackageHashName",
-      "description": "",
-      "discriminant": 136
-    },
-    {
-      "name": "InvalidPackageOperatorMode",
-      "description": "",
-      "discriminant": 165
-    },
-    {
-      "name": "InvalidPageIndex",
-      "description": "",
-      "discriminant": 116
-    },
-    {
-      "name": "InvalidPageLimit",
-      "description": "",
-      "discriminant": 114
-    },
-    {
-      "name": "InvalidPageNumber",
-      "description": "",
-      "discriminant": 115
-    },
-    {
-      "name": "InvalidPageTableURef",
-      "description": "",
-      "discriminant": 112
-    },
-    {
-      "name": "InvalidPageUref",
-      "description": "",
-      "discriminant": 121
-    },
-    {
-      "name": "InvalidReceiptName",
-      "description": "",
-      "discriminant": 85
-    },
-    {
-      "name": "InvalidReportingMode",
-      "description": "",
-      "discriminant": 130
-    },
-    {
-      "name": "InvalidRequirement",
-      "description": "",
-      "discriminant": 147
-    },
-    {
-      "name": "InvalidSpenderAccountHash",
-      "description": "",
-      "discriminant": 154
-    },
-    {
-      "name": "InvalidStorageUref",
-      "description": "",
-      "discriminant": 10
-    },
-    {
-      "name": "InvalidTokenIdentifier",
-      "description": "",
-      "discriminant": 28
-    },
-    {
-      "name": "InvalidTokenMetaData",
-      "description": "",
-      "discriminant": 48
-    },
-    {
-      "name": "InvalidTokenMinter",
-      "description": "",
-      "discriminant": 64
-    },
-    {
-      "name": "InvalidTokenOwner",
-      "description": "",
-      "discriminant": 6
-    },
-    {
-      "name": "InvalidTokenURI",
-      "description": "",
-      "discriminant": 72
-    },
-    {
-      "name": "InvalidTotalTokenSupply",
-      "description": "",
-      "discriminant": 26
-    },
-    {
-      "name": "InvalidTransferFilterContract",
-      "description": "",
-      "discriminant": 156
-    },
-    {
-      "name": "InvalidUnmatchedHashCount",
-      "description": "",
-      "discriminant": 118
-    },
-    {
-      "name": "InvalidWhitelistMode",
-      "description": "",
-      "discriminant": 78
-    },
-    {
-      "name": "MintingIsPaused",
-      "description": "",
-      "discriminant": 59
-    },
-    {
-      "name": "MissingACLPackageMode",
-      "description": "",
-      "discriminant": 164
-    },
-    {
-      "name": "MissingACLWhiteList",
-      "description": "",
-      "discriminant": 160
-    },
-    {
-      "name": "MissingAccount",
-      "description": "",
-      "discriminant": 20
-    },
-    {
-      "name": "MissingAccountHash",
-      "description": "",
-      "discriminant": 30
-    },
-    {
-      "name": "MissingAdditionalNFTMetadataKind",
-      "description": "",
-      "discriminant": 145
-    },
-    {
-      "name": "MissingAllowMinting",
-      "description": "",
-      "discriminant": 43
-    },
-    {
-      "name": "MissingApproveAll",
-      "description": "",
-      "discriminant": 53
-    },
-    {
-      "name": "MissingApprovedAccountHash",
-      "description": "",
-      "discriminant": 49
-    },
-    {
-      "name": "MissingApprovedDict",
-      "description": "",
-      "discriminant": 152
-    },
-    {
-      "name": "MissingApprovedTokensDictionary",
-      "description": "",
-      "discriminant": 51
-    },
-    {
-      "name": "MissingBurnMode",
-      "description": "",
-      "discriminant": 105
-    },
-    {
-      "name": "MissingCep78PackageHash",
-      "description": "",
-      "discriminant": 134
-    },
-    {
-      "name": "MissingCollectionName",
-      "description": "",
-      "discriminant": 17
-    },
-    {
-      "name": "MissingCollectionSymbol",
-      "description": "",
-      "discriminant": 23
-    },
-    {
-      "name": "MissingContractWhiteList",
-      "description": "",
-      "discriminant": 79
-    },
-    {
-      "name": "MissingEventsMode",
-      "description": "",
-      "discriminant": 148
-    },
-    {
-      "name": "MissingHashByIndex",
-      "description": "",
-      "discriminant": 107
-    },
-    {
-      "name": "MissingHolderMode",
-      "description": "",
-      "discriminant": 75
-    },
-    {
-      "name": "MissingIdentifierMode",
-      "description": "",
-      "discriminant": 98
-    },
-    {
-      "name": "MissingIndexByHash",
-      "description": "",
-      "discriminant": 109
-    },
-    {
-      "name": "MissingInstaller",
-      "description": "",
-      "discriminant": 2
-    },
-    {
-      "name": "MissingInstallerKey",
-      "description": "",
-      "discriminant": 39
-    },
-    {
-      "name": "MissingJsonSchema",
-      "description": "",
-      "discriminant": 67
-    },
-    {
-      "name": "MissingMetadataMutability",
-      "description": "",
-      "discriminant": 101
-    },
-    {
-      "name": "MissingMigrationFlag",
-      "description": "",
-      "discriminant": 124
-    },
-    {
-      "name": "MissingMintingMode",
-      "description": "",
-      "discriminant": 37
-    },
-    {
-      "name": "MissingMintingStatus",
-      "description": "",
-      "discriminant": 21
-    },
-    {
-      "name": "MissingNFTMetadataKind",
-      "description": "",
-      "discriminant": 96
-    },
-    {
-      "name": "MissingNftKind",
-      "description": "",
-      "discriminant": 73
-    },
-    {
-      "name": "MissingNumberOfMintedTokens",
-      "description": "",
-      "discriminant": 45
-    },
-    {
-      "name": "MissingOperator",
-      "description": "",
-      "discriminant": 55
-    },
-    {
-      "name": "MissingOperatorBurnMode",
-      "description": "",
-      "discriminant": 168
-    },
-    {
-      "name": "MissingOperatorDict",
-      "description": "",
-      "discriminant": 151
-    },
-    {
-      "name": "MissingOptionalNFTMetadataKind",
-      "description": "",
-      "discriminant": 143
-    },
-    {
-      "name": "MissingOwnedTokens",
-      "description": "",
-      "discriminant": 65
-    },
-    {
-      "name": "MissingOwnedTokensDictionary",
-      "description": "",
-      "discriminant": 33
-    },
-    {
-      "name": "MissingOwnerTokenIdentifierKey",
-      "description": "",
-      "discriminant": 155
-    },
-    {
-      "name": "MissingOwnersUref",
-      "description": "",
-      "discriminant": 11
-    },
-    {
-      "name": "MissingOwnershipMode",
-      "description": "",
-      "discriminant": 62
-    },
-    {
-      "name": "MissingPackageHashForUpgrade",
-      "description": "",
-      "discriminant": 119
-    },
-    {
-      "name": "MissingPackageOperatorMode",
-      "description": "",
-      "discriminant": 166
-    },
-    {
-      "name": "MissingPage",
-      "description": "",
-      "discriminant": 131
-    },
-    {
-      "name": "MissingPageLimit",
-      "description": "",
-      "discriminant": 113
-    },
-    {
-      "name": "MissingPageTableURef",
-      "description": "",
-      "discriminant": 111
-    },
-    {
-      "name": "MissingPageUref",
-      "description": "",
-      "discriminant": 120
-    },
-    {
-      "name": "MissingReceiptName",
-      "description": "",
-      "discriminant": 84
-    },
-    {
-      "name": "MissingReportingMode",
-      "description": "",
-      "discriminant": 129
-    },
-    {
-      "name": "MissingSpenderAccountHash",
-      "description": "",
-      "discriminant": 153
-    },
-    {
-      "name": "MissingStorageUref",
-      "description": "",
-      "discriminant": 9
-    },
-    {
-      "name": "MissingTokenID",
-      "description": "",
-      "discriminant": 27
-    },
-    {
-      "name": "MissingTokenMetaData",
-      "description": "",
-      "discriminant": 47
-    },
-    {
-      "name": "MissingTokenOwner",
-      "description": "",
-      "discriminant": 5
-    },
-    {
-      "name": "MissingTokenOwners",
-      "description": "",
-      "discriminant": 29
-    },
-    {
-      "name": "MissingTokenURI",
-      "description": "",
-      "discriminant": 71
-    },
-    {
-      "name": "MissingTotalTokenSupply",
-      "description": "",
-      "discriminant": 25
-    },
-    {
-      "name": "MissingTransferFilterContract",
-      "description": "",
-      "discriminant": 157
-    },
-    {
-      "name": "MissingUnmatchedHashCount",
-      "description": "",
-      "discriminant": 117
-    },
-    {
-      "name": "MissingWhitelistMode",
-      "description": "",
-      "discriminant": 77
-    },
-    {
-      "name": "OwnerReverseLookupModeNotTransferable",
-      "description": "",
-      "discriminant": 140
-    },
-    {
-      "name": "Phantom",
-      "description": "",
-      "discriminant": 57
-    },
-    {
-      "name": "PreviouslyBurntToken",
-      "description": "",
-      "discriminant": 42
-    },
-    {
-      "name": "ReverseLookupIntegrityViolation",
-      "description": "",
-      "discriminant": 172
-    },
-    {
-      "name": "TokenAlreadyApproved",
-      "description": "",
-      "discriminant": 52
-    },
-    {
-      "name": "TokenAlreadyBelongsToMinterFatal",
-      "description": "",
-      "discriminant": 34
-    },
-    {
-      "name": "TokenSupplyDepleted",
-      "description": "",
-      "discriminant": 32
-    },
-    {
-      "name": "TransferFilterContractDenied",
-      "description": "",
-      "discriminant": 159
-    },
-    {
-      "name": "TransferFilterContractNeedsTransferableMode",
-      "description": "",
-      "discriminant": 158
-    },
-    {
-      "name": "UnexpectedKeyVariant",
-      "description": "",
-      "discriminant": 4
-    },
-    {
-      "name": "UnlistedContractHash",
-      "description": "",
-      "discriminant": 81
-    },
-    {
-      "name": "UnregisteredOwnerFromMigration",
-      "description": "",
-      "discriminant": 132
-    },
-    {
-      "name": "UnregisteredOwnerInBurn",
-      "description": "",
-      "discriminant": 173
-    },
-    {
-      "name": "UnregisteredOwnerInMint",
-      "description": "",
-      "discriminant": 127
-    },
-    {
-      "name": "UnregisteredOwnerInTransfer",
-      "description": "",
-      "discriminant": 128
-    },
-    {
-      "name": "VacantValueInDictionary",
-      "description": "",
-      "discriminant": 61
+      "name": "ValueNotSet",
+      "description": "The value is not set.",
+      "discriminant": 40000
     }
   ],
   "entry_points": [
@@ -1060,13 +253,48 @@
       "is_mutable": false,
       "arguments": [
         {
-          "name": "token_hash",
+          "name": "token_id",
           "description": null,
-          "ty": "String",
+          "ty": "U256",
           "optional": false
         }
       ],
       "return_ty": "Bool",
+      "is_contract_context": true,
+      "access": "public"
+    },
+    {
+      "name": "mint",
+      "description": "",
+      "is_mutable": true,
+      "arguments": [
+        {
+          "name": "recipient",
+          "description": null,
+          "ty": "Key",
+          "optional": false
+        },
+        {
+          "name": "token_id",
+          "description": null,
+          "ty": "U256",
+          "optional": false
+        },
+        {
+          "name": "token_metadata",
+          "description": null,
+          "ty": {
+            "List": {
+              "Tuple2": [
+                "String",
+                "String"
+              ]
+            }
+          },
+          "optional": false
+        }
+      ],
+      "return_ty": "Unit",
       "is_contract_context": true,
       "access": "public"
     },
@@ -1078,14 +306,8 @@
         {
           "name": "token_id",
           "description": null,
-          "ty": "U64",
-          "optional": true
-        },
-        {
-          "name": "token_hash",
-          "description": null,
-          "ty": "String",
-          "optional": true
+          "ty": "U256",
+          "optional": false
         }
       ],
       "return_ty": "Unit",
@@ -1104,10 +326,10 @@
           "optional": false
         },
         {
-          "name": "token_hashes",
+          "name": "token_ids",
           "description": null,
           "ty": {
-            "List": "String"
+            "List": "U256"
           },
           "optional": false
         }
@@ -1117,32 +339,26 @@
       "access": "public"
     },
     {
-      "name": "transfer",
+      "name": "transfer_from",
       "description": "",
       "is_mutable": true,
       "arguments": [
         {
-          "name": "token_id",
-          "description": null,
-          "ty": "U64",
-          "optional": true
-        },
-        {
-          "name": "token_hash",
-          "description": null,
-          "ty": "String",
-          "optional": true
-        },
-        {
-          "name": "source_key",
+          "name": "from",
           "description": null,
           "ty": "Key",
           "optional": false
         },
         {
-          "name": "target_key",
+          "name": "to",
           "description": null,
           "ty": "Key",
+          "optional": false
+        },
+        {
+          "name": "token_id",
+          "description": null,
+          "ty": "U256",
           "optional": false
         }
       ],
@@ -1158,39 +374,24 @@
         {
           "name": "token_id",
           "description": null,
-          "ty": "U64",
-          "optional": true
+          "ty": "U256",
+          "optional": false
         },
         {
-          "name": "token_hash",
+          "name": "token_metadata",
           "description": null,
-          "ty": "String",
-          "optional": true
-        },
-        {
-          "name": "token_meta_data",
-          "description": null,
-          "ty": "String",
+          "ty": {
+            "List": {
+              "Tuple2": [
+                "String",
+                "String"
+              ]
+            }
+          },
           "optional": false
         }
       ],
       "return_ty": "Unit",
-      "is_contract_context": true,
-      "access": "public"
-    },
-    {
-      "name": "metadata_by_hash",
-      "description": "",
-      "is_mutable": false,
-      "arguments": [
-        {
-          "name": "token_hash",
-          "description": null,
-          "ty": "String",
-          "optional": false
-        }
-      ],
-      "return_ty": "String",
       "is_contract_context": true,
       "access": "public"
     },
@@ -1200,9 +401,9 @@
       "is_mutable": false,
       "arguments": [
         {
-          "name": "token_hash",
+          "name": "token_id",
           "description": null,
-          "ty": "String",
+          "ty": "U256",
           "optional": false
         }
       ],
@@ -1218,9 +419,9 @@
       "is_mutable": true,
       "arguments": [
         {
-          "name": "token_hash",
+          "name": "token_id",
           "description": null,
-          "ty": "String",
+          "ty": "U256",
           "optional": false
         },
         {
@@ -1240,9 +441,9 @@
       "is_mutable": false,
       "arguments": [
         {
-          "name": "token_hash",
+          "name": "token_id",
           "description": null,
-          "ty": "String",
+          "ty": "U256",
           "optional": false
         },
         {
@@ -1262,9 +463,9 @@
       "is_mutable": false,
       "arguments": [
         {
-          "name": "token_hash",
+          "name": "token_id",
           "description": null,
-          "ty": "String",
+          "ty": "U256",
           "optional": false
         }
       ],
@@ -1274,7 +475,7 @@
     },
     {
       "name": "set_default_resolver",
-      "description": "",
+      "description": "Only admin. Set the default resolver.",
       "is_mutable": true,
       "arguments": [
         {
@@ -1290,7 +491,7 @@
     },
     {
       "name": "get_default_resolver",
-      "description": "",
+      "description": "Get the default resolver.",
       "is_mutable": false,
       "arguments": [],
       "return_ty": "Key",
@@ -1298,47 +499,15 @@
       "access": "public"
     },
     {
-      "name": "get_collection_name",
-      "description": "Delegated. See `self.token.get_collection_name()` for details.",
-      "is_mutable": false,
-      "arguments": [],
-      "return_ty": "String",
-      "is_contract_context": true,
-      "access": "public"
-    },
-    {
-      "name": "get_collection_symbol",
-      "description": "Delegated. See `self.token.get_collection_symbol()` for details.",
-      "is_mutable": false,
-      "arguments": [],
-      "return_ty": "String",
-      "is_contract_context": true,
-      "access": "public"
-    },
-    {
-      "name": "set_variables",
-      "description": "Delegated. See `self.token.set_variables()` for details.",
+      "name": "whitelist",
+      "description": "",
       "is_mutable": true,
       "arguments": [
         {
-          "name": "allow_minting",
+          "name": "address",
           "description": null,
-          "ty": "Bool",
-          "optional": true
-        },
-        {
-          "name": "acl_whitelist",
-          "description": null,
-          "ty": {
-            "List": "Key"
-          },
-          "optional": true
-        },
-        {
-          "name": "operator_burn_mode",
-          "description": null,
-          "ty": "Bool",
-          "optional": true
+          "ty": "Key",
+          "optional": false
         }
       ],
       "return_ty": "Unit",
@@ -1346,27 +515,105 @@
       "access": "public"
     },
     {
-      "name": "mint",
-      "description": "Delegated. See `self.token.mint()` for details.",
+      "name": "revoke_whitelist",
+      "description": "",
       "is_mutable": true,
       "arguments": [
         {
-          "name": "token_owner",
+          "name": "address",
+          "description": null,
+          "ty": "Key",
+          "optional": false
+        }
+      ],
+      "return_ty": "Unit",
+      "is_contract_context": true,
+      "access": "public"
+    },
+    {
+      "name": "name",
+      "description": "Delegated. See `self.token.name()` for details.",
+      "is_mutable": false,
+      "arguments": [],
+      "return_ty": "String",
+      "is_contract_context": true,
+      "access": "public"
+    },
+    {
+      "name": "symbol",
+      "description": "Delegated. See `self.token.symbol()` for details.",
+      "is_mutable": false,
+      "arguments": [],
+      "return_ty": "String",
+      "is_contract_context": true,
+      "access": "public"
+    },
+    {
+      "name": "balance_of",
+      "description": "Delegated. See `self.token.balance_of()` for details.",
+      "is_mutable": false,
+      "arguments": [
+        {
+          "name": "owner",
+          "description": null,
+          "ty": "Key",
+          "optional": false
+        }
+      ],
+      "return_ty": "U256",
+      "is_contract_context": true,
+      "access": "public"
+    },
+    {
+      "name": "owner_of",
+      "description": "Delegated. See `self.token.owner_of()` for details.",
+      "is_mutable": false,
+      "arguments": [
+        {
+          "name": "token_id",
+          "description": null,
+          "ty": "U256",
+          "optional": false
+        }
+      ],
+      "return_ty": {
+        "Option": "Key"
+      },
+      "is_contract_context": true,
+      "access": "public"
+    },
+    {
+      "name": "safe_transfer_from",
+      "description": "Delegated. See `self.token.safe_transfer_from()` for details.",
+      "is_mutable": true,
+      "arguments": [
+        {
+          "name": "from",
           "description": null,
           "ty": "Key",
           "optional": false
         },
         {
-          "name": "token_meta_data",
+          "name": "to",
           "description": null,
-          "ty": "String",
+          "ty": "Key",
           "optional": false
         },
         {
-          "name": "token_hash",
+          "name": "token_id",
           "description": null,
-          "ty": "String",
-          "optional": true
+          "ty": "U256",
+          "optional": false
+        },
+        {
+          "name": "data",
+          "description": null,
+          "ty": {
+            "Option": {
+              "List": "U8"
+            }
+          },
+          "optional": false
         }
       ],
       "return_ty": "Unit",
@@ -1387,14 +634,8 @@
         {
           "name": "token_id",
           "description": null,
-          "ty": "U64",
-          "optional": true
-        },
-        {
-          "name": "token_hash",
-          "description": null,
-          "ty": "String",
-          "optional": true
+          "ty": "U256",
+          "optional": false
         }
       ],
       "return_ty": "Unit",
@@ -1402,21 +643,15 @@
       "access": "public"
     },
     {
-      "name": "revoke",
-      "description": "Delegated. See `self.token.revoke()` for details.",
+      "name": "revoke_approval",
+      "description": "Delegated. See `self.token.revoke_approval()` for details.",
       "is_mutable": true,
       "arguments": [
         {
           "name": "token_id",
           "description": null,
-          "ty": "U64",
-          "optional": true
-        },
-        {
-          "name": "token_hash",
-          "description": null,
-          "ty": "String",
-          "optional": true
+          "ty": "U256",
+          "optional": false
         }
       ],
       "return_ty": "Unit",
@@ -1424,16 +659,44 @@
       "access": "public"
     },
     {
-      "name": "set_approval_for_all",
-      "description": "Delegated. See `self.token.set_approval_for_all()` for details.",
+      "name": "approved_for",
+      "description": "Delegated. See `self.token.approved_for()` for details.",
+      "is_mutable": false,
+      "arguments": [
+        {
+          "name": "token_id",
+          "description": null,
+          "ty": "U256",
+          "optional": false
+        }
+      ],
+      "return_ty": {
+        "Option": "Key"
+      },
+      "is_contract_context": true,
+      "access": "public"
+    },
+    {
+      "name": "approve_for_all",
+      "description": "Delegated. See `self.token.approve_for_all()` for details.",
       "is_mutable": true,
       "arguments": [
         {
-          "name": "approve_all",
+          "name": "operator",
           "description": null,
-          "ty": "Bool",
+          "ty": "Key",
           "optional": false
-        },
+        }
+      ],
+      "return_ty": "Unit",
+      "is_contract_context": true,
+      "access": "public"
+    },
+    {
+      "name": "revoke_approval_for_all",
+      "description": "Delegated. See `self.token.revoke_approval_for_all()` for details.",
+      "is_mutable": true,
+      "arguments": [
         {
           "name": "operator",
           "description": null,
@@ -1448,10 +711,10 @@
     {
       "name": "is_approved_for_all",
       "description": "Delegated. See `self.token.is_approved_for_all()` for details.",
-      "is_mutable": true,
+      "is_mutable": false,
       "arguments": [
         {
-          "name": "token_owner",
+          "name": "owner",
           "description": null,
           "ty": "Key",
           "optional": false
@@ -1468,102 +731,25 @@
       "access": "public"
     },
     {
-      "name": "owner_of",
-      "description": "Delegated. See `self.token.owner_of()` for details.",
+      "name": "token_metadata",
+      "description": "Delegated. See `self.token.token_metadata()` for details.",
       "is_mutable": false,
       "arguments": [
         {
           "name": "token_id",
           "description": null,
-          "ty": "U64",
-          "optional": true
-        },
-        {
-          "name": "token_hash",
-          "description": null,
-          "ty": "String",
-          "optional": true
-        }
-      ],
-      "return_ty": "Key",
-      "is_contract_context": true,
-      "access": "public"
-    },
-    {
-      "name": "get_approved",
-      "description": "Delegated. See `self.token.get_approved()` for details.",
-      "is_mutable": true,
-      "arguments": [
-        {
-          "name": "token_id",
-          "description": null,
-          "ty": "U64",
-          "optional": true
-        },
-        {
-          "name": "token_hash",
-          "description": null,
-          "ty": "String",
-          "optional": true
-        }
-      ],
-      "return_ty": {
-        "Option": "Key"
-      },
-      "is_contract_context": true,
-      "access": "public"
-    },
-    {
-      "name": "metadata",
-      "description": "Delegated. See `self.token.metadata()` for details.",
-      "is_mutable": false,
-      "arguments": [
-        {
-          "name": "token_id",
-          "description": null,
-          "ty": "U64",
-          "optional": true
-        },
-        {
-          "name": "token_hash",
-          "description": null,
-          "ty": "String",
-          "optional": true
-        }
-      ],
-      "return_ty": "String",
-      "is_contract_context": true,
-      "access": "public"
-    },
-    {
-      "name": "balance_of",
-      "description": "Delegated. See `self.token.balance_of()` for details.",
-      "is_mutable": true,
-      "arguments": [
-        {
-          "name": "token_owner",
-          "description": null,
-          "ty": "Key",
+          "ty": "U256",
           "optional": false
         }
       ],
-      "return_ty": "U64",
-      "is_contract_context": true,
-      "access": "public"
-    },
-    {
-      "name": "register_owner",
-      "description": "Delegated. See `self.token.register_owner()` for details.",
-      "is_mutable": true,
-      "arguments": [
-        {
-          "name": "token_owner",
-          "description": null,
-          "ty": "Key",
-          "optional": true
+      "return_ty": {
+        "List": {
+          "Tuple2": [
+            "String",
+            "String"
+          ]
         }
-      ],
-      "return_ty": "String",
+      },
       "is_contract_context": true,
       "access": "public"
     }
@@ -1578,37 +764,37 @@
       "ty": "ApprovalForAll"
     },
     {
-      "name": "ApprovalRevoked",
-      "ty": "ApprovalRevoked"
-    },
-    {
       "name": "Burn",
       "ty": "Burn"
     },
     {
-      "name": "MetadataUpdated",
-      "ty": "MetadataUpdated"
+      "name": "MetadataUpdate",
+      "ty": "MetadataUpdate"
     },
     {
       "name": "Mint",
       "ty": "Mint"
     },
     {
-      "name": "RevokedForAll",
-      "ty": "RevokedForAll"
+      "name": "OwnershipTransferred",
+      "ty": "OwnershipTransferred"
+    },
+    {
+      "name": "RevokeApproval",
+      "ty": "RevokeApproval"
+    },
+    {
+      "name": "RevokeApprovalForAll",
+      "ty": "RevokeApprovalForAll"
     },
     {
       "name": "Transfer",
       "ty": "Transfer"
-    },
-    {
-      "name": "VariablesSet",
-      "ty": "VariablesSet"
     }
   ],
   "call": {
     "wasm_file_name": "NameToken.wasm",
-    "description": "",
+    "description": "Initializes CEP78 with the given name and symbol.",
     "arguments": [
       {
         "name": "odra_cfg_package_hash_key_name",
@@ -1618,7 +804,7 @@
       },
       {
         "name": "odra_cfg_allow_key_override",
-        "description": "The arg name for the allow key override.",
+        "description": "If true and the key specified in odra_cfg_package_hash_key_name already exists, it will be overwritten.",
         "ty": "Bool",
         "optional": false
       },

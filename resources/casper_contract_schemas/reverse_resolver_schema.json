@@ -1,17 +1,43 @@
 {
   "casper_contract_schema_version": 1,
-  "toolchain": "rustc 1.79.0-nightly (3a36386dc 2024-04-25)",
+  "toolchain": "rustc 1.82.0-nightly (f8060d282 2024-07-30)",
   "authors": [],
   "repository": null,
   "homepage": null,
   "contract_name": "ReverseResolver",
   "contract_version": "0.1.0",
-  "types": [],
+  "types": [
+    {
+      "struct": {
+        "name": "PrimaryNameChanged",
+        "description": null,
+        "members": [
+          {
+            "name": "address",
+            "description": null,
+            "ty": "Key"
+          },
+          {
+            "name": "old_primary_name",
+            "description": null,
+            "ty": {
+              "Option": "String"
+            }
+          },
+          {
+            "name": "new_primary_name",
+            "description": null,
+            "ty": "String"
+          }
+        ]
+      }
+    }
+  ],
   "errors": [],
   "entry_points": [
     {
       "name": "set_primary_name",
-      "description": "",
+      "description": "Sets the primary preffered reverse resolution address for the caller.",
       "is_mutable": true,
       "arguments": [
         {
@@ -27,7 +53,7 @@
     },
     {
       "name": "get_primary_name",
-      "description": "",
+      "description": "Returns the primary name for the address.",
       "is_mutable": false,
       "arguments": [
         {
@@ -44,7 +70,12 @@
       "access": "public"
     }
   ],
-  "events": [],
+  "events": [
+    {
+      "name": "PrimaryNameChanged",
+      "ty": "PrimaryNameChanged"
+    }
+  ],
   "call": {
     "wasm_file_name": "ReverseResolver.wasm",
     "description": null,
@@ -57,7 +88,7 @@
       },
       {
         "name": "odra_cfg_allow_key_override",
-        "description": "The arg name for the allow key override.",
+        "description": "If true and the key specified in odra_cfg_package_hash_key_name already exists, it will be overwritten.",
         "ty": "Bool",
         "optional": false
       },

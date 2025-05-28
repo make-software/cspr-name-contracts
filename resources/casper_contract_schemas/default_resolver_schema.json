@@ -1,6 +1,6 @@
 {
   "casper_contract_schema_version": 1,
-  "toolchain": "rustc 1.79.0-nightly (3a36386dc 2024-04-25)",
+  "toolchain": "rustc 1.82.0-nightly (f8060d282 2024-07-30)",
   "authors": [],
   "repository": null,
   "homepage": null,
@@ -33,9 +33,9 @@
         "description": null,
         "members": [
           {
-            "name": "token_hash",
+            "name": "token_id",
             "description": null,
-            "ty": "String"
+            "ty": "U256"
           }
         ]
       }
@@ -150,7 +150,7 @@
   "entry_points": [
     {
       "name": "set_name_token",
-      "description": "",
+      "description": "Admin only. Sets the name token contract address.",
       "is_mutable": true,
       "arguments": [
         {
@@ -166,7 +166,7 @@
     },
     {
       "name": "set_resolution",
-      "description": "",
+      "description": "Token owner only. Sets the resolution for a domain to an address.",
       "is_mutable": true,
       "arguments": [
         {
@@ -190,7 +190,7 @@
     },
     {
       "name": "resolve",
-      "description": "",
+      "description": "Resolves a domain to an address.",
       "is_mutable": false,
       "arguments": [
         {
@@ -208,13 +208,13 @@
     },
     {
       "name": "cleanup",
-      "description": "",
+      "description": "Cleanup the resolutions for a token. Only the token owner or the admin can do this.",
       "is_mutable": true,
       "arguments": [
         {
-          "name": "token_hash",
+          "name": "token_id",
           "description": null,
-          "ty": "String",
+          "ty": "U256",
           "optional": false
         }
       ],
@@ -319,7 +319,7 @@
   ],
   "call": {
     "wasm_file_name": "DefaultResolver.wasm",
-    "description": "",
+    "description": "Initializes the default resolver with the name token contract address.",
     "arguments": [
       {
         "name": "odra_cfg_package_hash_key_name",
@@ -329,7 +329,7 @@
       },
       {
         "name": "odra_cfg_allow_key_override",
-        "description": "The arg name for the allow key override.",
+        "description": "If true and the key specified in odra_cfg_package_hash_key_name already exists, it will be overwritten.",
         "ty": "Bool",
         "optional": false
       },

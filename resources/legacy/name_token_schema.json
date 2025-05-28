@@ -2,6 +2,32 @@
   "name": "NameToken",
   "events": [
     {
+      "name": "Transfer",
+      "args": [
+        {
+          "name": "from",
+          "ty": "Key",
+          "is_ref": false,
+          "is_slice": false,
+          "is_required": true
+        },
+        {
+          "name": "to",
+          "ty": "Key",
+          "is_ref": false,
+          "is_slice": false,
+          "is_required": true
+        },
+        {
+          "name": "token_id",
+          "ty": "U256",
+          "is_ref": false,
+          "is_slice": false,
+          "is_required": true
+        }
+      ]
+    },
+    {
       "name": "Approval",
       "args": [
         {
@@ -20,7 +46,33 @@
         },
         {
           "name": "token_id",
-          "ty": "String",
+          "ty": "U256",
+          "is_ref": false,
+          "is_slice": false,
+          "is_required": true
+        }
+      ]
+    },
+    {
+      "name": "RevokeApproval",
+      "args": [
+        {
+          "name": "owner",
+          "ty": "Key",
+          "is_ref": false,
+          "is_slice": false,
+          "is_required": true
+        },
+        {
+          "name": "spender",
+          "ty": "Key",
+          "is_ref": false,
+          "is_slice": false,
+          "is_required": true
+        },
+        {
+          "name": "token_id",
+          "ty": "U256",
           "is_ref": false,
           "is_slice": false,
           "is_required": true
@@ -47,97 +99,7 @@
       ]
     },
     {
-      "name": "ApprovalRevoked",
-      "args": [
-        {
-          "name": "owner",
-          "ty": "Key",
-          "is_ref": false,
-          "is_slice": false,
-          "is_required": true
-        },
-        {
-          "name": "token_id",
-          "ty": "String",
-          "is_ref": false,
-          "is_slice": false,
-          "is_required": true
-        }
-      ]
-    },
-    {
-      "name": "Burn",
-      "args": [
-        {
-          "name": "owner",
-          "ty": "Key",
-          "is_ref": false,
-          "is_slice": false,
-          "is_required": true
-        },
-        {
-          "name": "token_id",
-          "ty": "String",
-          "is_ref": false,
-          "is_slice": false,
-          "is_required": true
-        },
-        {
-          "name": "burner",
-          "ty": "Key",
-          "is_ref": false,
-          "is_slice": false,
-          "is_required": true
-        }
-      ]
-    },
-    {
-      "name": "MetadataUpdated",
-      "args": [
-        {
-          "name": "token_id",
-          "ty": "String",
-          "is_ref": false,
-          "is_slice": false,
-          "is_required": true
-        },
-        {
-          "name": "data",
-          "ty": "String",
-          "is_ref": false,
-          "is_slice": false,
-          "is_required": true
-        }
-      ]
-    },
-    {
-      "name": "Mint",
-      "args": [
-        {
-          "name": "recipient",
-          "ty": "Key",
-          "is_ref": false,
-          "is_slice": false,
-          "is_required": true
-        },
-        {
-          "name": "token_id",
-          "ty": "String",
-          "is_ref": false,
-          "is_slice": false,
-          "is_required": true
-        },
-        {
-          "name": "data",
-          "ty": "String",
-          "is_ref": false,
-          "is_slice": false,
-          "is_required": true
-        }
-      ]
-    },
-    {
-      "name": "RevokedForAll",
+      "name": "RevokeApprovalForAll",
       "args": [
         {
           "name": "owner",
@@ -156,17 +118,60 @@
       ]
     },
     {
-      "name": "Transfer",
+      "name": "Mint",
       "args": [
         {
-          "name": "owner",
+          "name": "to",
           "ty": "Key",
           "is_ref": false,
           "is_slice": false,
           "is_required": true
         },
         {
-          "name": "spender",
+          "name": "token_id",
+          "ty": "U256",
+          "is_ref": false,
+          "is_slice": false,
+          "is_required": true
+        }
+      ]
+    },
+    {
+      "name": "Burn",
+      "args": [
+        {
+          "name": "from",
+          "ty": "Key",
+          "is_ref": false,
+          "is_slice": false,
+          "is_required": true
+        },
+        {
+          "name": "token_id",
+          "ty": "U256",
+          "is_ref": false,
+          "is_slice": false,
+          "is_required": true
+        }
+      ]
+    },
+    {
+      "name": "MetadataUpdate",
+      "args": [
+        {
+          "name": "token_id",
+          "ty": "U256",
+          "is_ref": false,
+          "is_slice": false,
+          "is_required": true
+        }
+      ]
+    },
+    {
+      "name": "OwnershipTransferred",
+      "args": [
+        {
+          "name": "previous_owner",
           "ty": {
             "Option": "Key"
           },
@@ -175,24 +180,15 @@
           "is_required": true
         },
         {
-          "name": "recipient",
-          "ty": "Key",
-          "is_ref": false,
-          "is_slice": false,
-          "is_required": true
-        },
-        {
-          "name": "token_id",
-          "ty": "String",
+          "name": "new_owner",
+          "ty": {
+            "Option": "Key"
+          },
           "is_ref": false,
           "is_slice": false,
           "is_required": true
         }
       ]
-    },
-    {
-      "name": "VariablesSet",
-      "args": []
     }
   ],
   "entrypoints": [
@@ -223,8 +219,8 @@
       "name": "token_exists",
       "args": [
         {
-          "name": "token_hash",
-          "ty": "String",
+          "name": "token_id",
+          "ty": "U256",
           "is_ref": false,
           "is_slice": false,
           "is_required": true
@@ -236,21 +232,51 @@
       "attributes": []
     },
     {
+      "name": "mint",
+      "args": [
+        {
+          "name": "recipient",
+          "ty": "Key",
+          "is_ref": false,
+          "is_slice": false,
+          "is_required": true
+        },
+        {
+          "name": "token_id",
+          "ty": "U256",
+          "is_ref": false,
+          "is_slice": false,
+          "is_required": true
+        },
+        {
+          "name": "token_metadata",
+          "ty": {
+            "List": {
+              "Tuple2": [
+                "String",
+                "String"
+              ]
+            }
+          },
+          "is_ref": false,
+          "is_slice": false,
+          "is_required": true
+        }
+      ],
+      "is_mutable": true,
+      "return_ty": "Unit",
+      "ty": "Public",
+      "attributes": []
+    },
+    {
       "name": "burn",
       "args": [
         {
           "name": "token_id",
-          "ty": "U64",
+          "ty": "U256",
           "is_ref": false,
           "is_slice": false,
-          "is_required": false
-        },
-        {
-          "name": "token_hash",
-          "ty": "String",
-          "is_ref": false,
-          "is_slice": false,
-          "is_required": false
+          "is_required": true
         }
       ],
       "is_mutable": true,
@@ -269,9 +295,9 @@
           "is_required": true
         },
         {
-          "name": "token_hashes",
+          "name": "token_ids",
           "ty": {
-            "List": "String"
+            "List": "U256"
           },
           "is_ref": false,
           "is_slice": false,
@@ -284,32 +310,25 @@
       "attributes": []
     },
     {
-      "name": "transfer",
+      "name": "transfer_from",
       "args": [
         {
-          "name": "token_id",
-          "ty": "U64",
-          "is_ref": false,
-          "is_slice": false,
-          "is_required": false
-        },
-        {
-          "name": "token_hash",
-          "ty": "String",
-          "is_ref": false,
-          "is_slice": false,
-          "is_required": false
-        },
-        {
-          "name": "source_key",
+          "name": "from",
           "ty": "Key",
           "is_ref": false,
           "is_slice": false,
           "is_required": true
         },
         {
-          "name": "target_key",
+          "name": "to",
           "ty": "Key",
+          "is_ref": false,
+          "is_slice": false,
+          "is_required": true
+        },
+        {
+          "name": "token_id",
+          "ty": "U256",
           "is_ref": false,
           "is_slice": false,
           "is_required": true
@@ -325,21 +344,21 @@
       "args": [
         {
           "name": "token_id",
-          "ty": "U64",
+          "ty": "U256",
           "is_ref": false,
           "is_slice": false,
-          "is_required": false
+          "is_required": true
         },
         {
-          "name": "token_hash",
-          "ty": "String",
-          "is_ref": false,
-          "is_slice": false,
-          "is_required": false
-        },
-        {
-          "name": "token_meta_data",
-          "ty": "String",
+          "name": "token_metadata",
+          "ty": {
+            "List": {
+              "Tuple2": [
+                "String",
+                "String"
+              ]
+            }
+          },
           "is_ref": false,
           "is_slice": false,
           "is_required": true
@@ -351,27 +370,11 @@
       "attributes": []
     },
     {
-      "name": "metadata_by_hash",
-      "args": [
-        {
-          "name": "token_hash",
-          "ty": "String",
-          "is_ref": false,
-          "is_slice": false,
-          "is_required": true
-        }
-      ],
-      "is_mutable": false,
-      "return_ty": "String",
-      "ty": "Public",
-      "attributes": []
-    },
-    {
       "name": "resolver",
       "args": [
         {
-          "name": "token_hash",
-          "ty": "String",
+          "name": "token_id",
+          "ty": "U256",
           "is_ref": false,
           "is_slice": false,
           "is_required": true
@@ -388,8 +391,8 @@
       "name": "set_resolver",
       "args": [
         {
-          "name": "token_hash",
-          "ty": "String",
+          "name": "token_id",
+          "ty": "U256",
           "is_ref": false,
           "is_slice": false,
           "is_required": true
@@ -411,8 +414,8 @@
       "name": "assert_is_owner",
       "args": [
         {
-          "name": "token_hash",
-          "ty": "String",
+          "name": "token_id",
+          "ty": "U256",
           "is_ref": false,
           "is_slice": false,
           "is_required": true
@@ -434,8 +437,8 @@
       "name": "is_token_valid",
       "args": [
         {
-          "name": "token_hash",
-          "ty": "String",
+          "name": "token_id",
+          "ty": "U256",
           "is_ref": false,
           "is_slice": false,
           "is_required": true
@@ -471,46 +474,14 @@
       "attributes": []
     },
     {
-      "name": "get_collection_name",
-      "args": [],
-      "is_mutable": false,
-      "return_ty": "String",
-      "ty": "Public",
-      "attributes": []
-    },
-    {
-      "name": "get_collection_symbol",
-      "args": [],
-      "is_mutable": false,
-      "return_ty": "String",
-      "ty": "Public",
-      "attributes": []
-    },
-    {
-      "name": "set_variables",
+      "name": "whitelist",
       "args": [
         {
-          "name": "allow_minting",
-          "ty": "Bool",
+          "name": "address",
+          "ty": "Key",
           "is_ref": false,
           "is_slice": false,
-          "is_required": false
-        },
-        {
-          "name": "acl_whitelist",
-          "ty": {
-            "List": "Key"
-          },
-          "is_ref": false,
-          "is_slice": false,
-          "is_required": false
-        },
-        {
-          "name": "operator_burn_mode",
-          "ty": "Bool",
-          "is_ref": false,
-          "is_slice": false,
-          "is_required": false
+          "is_required": true
         }
       ],
       "is_mutable": true,
@@ -519,28 +490,105 @@
       "attributes": []
     },
     {
-      "name": "mint",
+      "name": "revoke_whitelist",
       "args": [
         {
-          "name": "token_owner",
+          "name": "address",
+          "ty": "Key",
+          "is_ref": false,
+          "is_slice": false,
+          "is_required": true
+        }
+      ],
+      "is_mutable": true,
+      "return_ty": "Unit",
+      "ty": "Public",
+      "attributes": []
+    },
+    {
+      "name": "name",
+      "args": [],
+      "is_mutable": false,
+      "return_ty": "String",
+      "ty": "Public",
+      "attributes": []
+    },
+    {
+      "name": "symbol",
+      "args": [],
+      "is_mutable": false,
+      "return_ty": "String",
+      "ty": "Public",
+      "attributes": []
+    },
+    {
+      "name": "balance_of",
+      "args": [
+        {
+          "name": "owner",
+          "ty": "Key",
+          "is_ref": false,
+          "is_slice": false,
+          "is_required": true
+        }
+      ],
+      "is_mutable": false,
+      "return_ty": "U256",
+      "ty": "Public",
+      "attributes": []
+    },
+    {
+      "name": "owner_of",
+      "args": [
+        {
+          "name": "token_id",
+          "ty": "U256",
+          "is_ref": false,
+          "is_slice": false,
+          "is_required": true
+        }
+      ],
+      "is_mutable": false,
+      "return_ty": {
+        "Option": "Key"
+      },
+      "ty": "Public",
+      "attributes": []
+    },
+    {
+      "name": "safe_transfer_from",
+      "args": [
+        {
+          "name": "from",
           "ty": "Key",
           "is_ref": false,
           "is_slice": false,
           "is_required": true
         },
         {
-          "name": "token_meta_data",
-          "ty": "String",
+          "name": "to",
+          "ty": "Key",
           "is_ref": false,
           "is_slice": false,
           "is_required": true
         },
         {
-          "name": "token_hash",
-          "ty": "String",
+          "name": "token_id",
+          "ty": "U256",
           "is_ref": false,
           "is_slice": false,
-          "is_required": false
+          "is_required": true
+        },
+        {
+          "name": "data",
+          "ty": {
+            "Option": {
+              "List": "U8"
+            }
+          },
+          "is_ref": false,
+          "is_slice": false,
+          "is_required": true
         }
       ],
       "is_mutable": true,
@@ -560,57 +608,70 @@
         },
         {
           "name": "token_id",
-          "ty": "U64",
-          "is_ref": false,
-          "is_slice": false,
-          "is_required": false
-        },
-        {
-          "name": "token_hash",
-          "ty": "String",
-          "is_ref": false,
-          "is_slice": false,
-          "is_required": false
-        }
-      ],
-      "is_mutable": true,
-      "return_ty": "Unit",
-      "ty": "Public",
-      "attributes": []
-    },
-    {
-      "name": "revoke",
-      "args": [
-        {
-          "name": "token_id",
-          "ty": "U64",
-          "is_ref": false,
-          "is_slice": false,
-          "is_required": false
-        },
-        {
-          "name": "token_hash",
-          "ty": "String",
-          "is_ref": false,
-          "is_slice": false,
-          "is_required": false
-        }
-      ],
-      "is_mutable": true,
-      "return_ty": "Unit",
-      "ty": "Public",
-      "attributes": []
-    },
-    {
-      "name": "set_approval_for_all",
-      "args": [
-        {
-          "name": "approve_all",
-          "ty": "Bool",
+          "ty": "U256",
           "is_ref": false,
           "is_slice": false,
           "is_required": true
-        },
+        }
+      ],
+      "is_mutable": true,
+      "return_ty": "Unit",
+      "ty": "Public",
+      "attributes": []
+    },
+    {
+      "name": "revoke_approval",
+      "args": [
+        {
+          "name": "token_id",
+          "ty": "U256",
+          "is_ref": false,
+          "is_slice": false,
+          "is_required": true
+        }
+      ],
+      "is_mutable": true,
+      "return_ty": "Unit",
+      "ty": "Public",
+      "attributes": []
+    },
+    {
+      "name": "approved_for",
+      "args": [
+        {
+          "name": "token_id",
+          "ty": "U256",
+          "is_ref": false,
+          "is_slice": false,
+          "is_required": true
+        }
+      ],
+      "is_mutable": false,
+      "return_ty": {
+        "Option": "Key"
+      },
+      "ty": "Public",
+      "attributes": []
+    },
+    {
+      "name": "approve_for_all",
+      "args": [
+        {
+          "name": "operator",
+          "ty": "Key",
+          "is_ref": false,
+          "is_slice": false,
+          "is_required": true
+        }
+      ],
+      "is_mutable": true,
+      "return_ty": "Unit",
+      "ty": "Public",
+      "attributes": []
+    },
+    {
+      "name": "revoke_approval_for_all",
+      "args": [
         {
           "name": "operator",
           "ty": "Key",
@@ -628,7 +689,7 @@
       "name": "is_approved_for_all",
       "args": [
         {
-          "name": "token_owner",
+          "name": "owner",
           "ty": "Key",
           "is_ref": false,
           "is_slice": false,
@@ -642,111 +703,31 @@
           "is_required": true
         }
       ],
-      "is_mutable": true,
+      "is_mutable": false,
       "return_ty": "Bool",
       "ty": "Public",
       "attributes": []
     },
     {
-      "name": "owner_of",
+      "name": "token_metadata",
       "args": [
         {
           "name": "token_id",
-          "ty": "U64",
-          "is_ref": false,
-          "is_slice": false,
-          "is_required": false
-        },
-        {
-          "name": "token_hash",
-          "ty": "String",
-          "is_ref": false,
-          "is_slice": false,
-          "is_required": false
-        }
-      ],
-      "is_mutable": false,
-      "return_ty": "Key",
-      "ty": "Public",
-      "attributes": []
-    },
-    {
-      "name": "get_approved",
-      "args": [
-        {
-          "name": "token_id",
-          "ty": "U64",
-          "is_ref": false,
-          "is_slice": false,
-          "is_required": false
-        },
-        {
-          "name": "token_hash",
-          "ty": "String",
-          "is_ref": false,
-          "is_slice": false,
-          "is_required": false
-        }
-      ],
-      "is_mutable": true,
-      "return_ty": {
-        "Option": "Key"
-      },
-      "ty": "Public",
-      "attributes": []
-    },
-    {
-      "name": "metadata",
-      "args": [
-        {
-          "name": "token_id",
-          "ty": "U64",
-          "is_ref": false,
-          "is_slice": false,
-          "is_required": false
-        },
-        {
-          "name": "token_hash",
-          "ty": "String",
-          "is_ref": false,
-          "is_slice": false,
-          "is_required": false
-        }
-      ],
-      "is_mutable": false,
-      "return_ty": "String",
-      "ty": "Public",
-      "attributes": []
-    },
-    {
-      "name": "balance_of",
-      "args": [
-        {
-          "name": "token_owner",
-          "ty": "Key",
+          "ty": "U256",
           "is_ref": false,
           "is_slice": false,
           "is_required": true
         }
       ],
-      "is_mutable": true,
-      "return_ty": "U64",
-      "ty": "Public",
-      "attributes": []
-    },
-    {
-      "name": "register_owner",
-      "args": [
-        {
-          "name": "token_owner",
-          "ty": "Key",
-          "is_ref": false,
-          "is_slice": false,
-          "is_required": false
+      "is_mutable": false,
+      "return_ty": {
+        "List": {
+          "Tuple2": [
+            "String",
+            "String"
+          ]
         }
-      ],
-      "is_mutable": true,
-      "return_ty": "String",
+      },
       "ty": "Public",
       "attributes": []
     }

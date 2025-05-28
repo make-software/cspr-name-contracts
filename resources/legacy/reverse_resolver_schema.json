@@ -1,6 +1,35 @@
 {
   "name": "ReverseResolver",
-  "events": [],
+  "events": [
+    {
+      "name": "PrimaryNameChanged",
+      "args": [
+        {
+          "name": "address",
+          "ty": "Key",
+          "is_ref": false,
+          "is_slice": false,
+          "is_required": true
+        },
+        {
+          "name": "old_primary_name",
+          "ty": {
+            "Option": "String"
+          },
+          "is_ref": false,
+          "is_slice": false,
+          "is_required": true
+        },
+        {
+          "name": "new_primary_name",
+          "ty": "String",
+          "is_ref": false,
+          "is_slice": false,
+          "is_required": true
+        }
+      ]
+    }
+  ],
   "entrypoints": [
     {
       "name": "set_primary_name",

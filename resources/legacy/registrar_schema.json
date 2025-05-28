@@ -137,9 +137,9 @@
       "name": "expire",
       "args": [
         {
-          "name": "token_hashes",
+          "name": "token_ids",
           "ty": {
-            "List": "String"
+            "List": "U256"
           },
           "is_ref": false,
           "is_slice": false,
@@ -178,9 +178,9 @@
           "is_required": true
         },
         {
-          "name": "token_hashes",
+          "name": "token_ids",
           "ty": {
-            "List": "String"
+            "List": "U256"
           },
           "is_ref": false,
           "is_slice": false,
@@ -196,9 +196,9 @@
       "name": "admin_burn",
       "args": [
         {
-          "name": "token_hashes",
+          "name": "token_ids",
           "ty": {
-            "List": "String"
+            "List": "U256"
           },
           "is_ref": false,
           "is_slice": false,

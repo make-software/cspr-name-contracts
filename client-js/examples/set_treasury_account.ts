@@ -22,9 +22,9 @@ const run = async () => {
     proxyCallerWasmBytes,
   );
 
-  const transaction = controllerContract.setSignerPublicKey(
+  const transaction = controllerContract.setTreasuryAccountAddress(
     adminKeypair.publicKey,
-    adminKeypair.publicKey,
+    adminKeypair.publicKey.accountHash().toPrefixedString(),
     2000000000,
   );
 

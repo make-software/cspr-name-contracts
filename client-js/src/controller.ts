@@ -1,6 +1,15 @@
 import { BigNumberish } from "@ethersproject/bignumber"
 
-import { Args, CLTypeUInt8, CLValue, ContractCallBuilder, PublicKey, SessionBuilder, Transaction } from "casper-js-sdk"
+import {
+    Args,
+    CLTypeUInt8,
+    CLValue,
+    ContractCallBuilder,
+    Key,
+    PublicKey,
+    SessionBuilder,
+    Transaction
+} from "casper-js-sdk"
 
 import {hexToBytes} from "@noble/hashes/utils";
 
@@ -121,11 +130,36 @@ export class Controller {
       .chainName(this.networkName)
       .from(sender)
       .payment(Number(paymentAmount))
-      .byHash(this.contractPackageHash)
+      .byPackageHash(this.contractPackageHash)
       .entryPoint('set_signer_public_key')
       .runtimeArgs(Args.fromMap({
         signer: CLValue.newCLPublicKey(signer),
       }))
       .build();
   }
+
+    /**
+     * Sets public key of a voucher signer account
+     * @param sender the PublicKey of transaction submitter account
+     * @param treasuryAccountHash the Account Hash of a new treasury account
+     * @param paymentAmount the amount of gas price that should be paid in motes
+
+     * @returns Transaction object which can be sent to the node.
+     */
+    public setTreasuryAccountAddress(
+        sender: PublicKey,
+        treasuryAccountHash: string,
+        paymentAmount: BigNumberish,
+    ): Transaction {
+        return new ContractCallBuilder()
+          .chainName(this.networkName)
+          .from(sender)
+          .payment(Number(paymentAmount))
+          .byPackageHash(this.contractPackageHash)
+          .entryPoint('set_treasury')
+          .runtimeArgs(Args.fromMap({
+              treasury: CLValue.newCLKey(Key.newKey(treasuryAccountHash)),
+          }))
+          .build();
+    }
 }

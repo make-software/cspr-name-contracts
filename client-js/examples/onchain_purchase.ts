@@ -27,7 +27,7 @@ const run = async () => {
   expiration.setFullYear(expiration.getFullYear() + 1, expiration.getMonth(), expiration.getDate() + 1);
   
   const voucher = new PaymentVoucher(
-    new PaymentInfo(buyerKeypair.publicKey.accountHash().toPrefixedString(), "payment:1", 50000000000),
+    new PaymentInfo(buyerKeypair.publicKey.accountHash().toPrefixedString(), "payment:1", 5000000000),
     [new NameMintInfo(config.mintingName, buyerKeypair.publicKey.accountHash().toPrefixedString(), expiration)],
     expiration,
   );

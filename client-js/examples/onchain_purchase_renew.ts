@@ -27,7 +27,7 @@ const run = async () => {
   expiration.setFullYear(expiration.getFullYear() + 1, expiration.getMonth(), expiration.getDate());
 
   const voucher = new RenewalPaymentVoucher(
-    new PaymentInfo(buyerKeypair.publicKey.accountHash().toPrefixedString(), "payment:1", 1000),
+    new PaymentInfo(buyerKeypair.publicKey.accountHash().toPrefixedString(), "payment:1", 5000000000),
     [new TokenRenewalInfo(config.mintingName, expiration)],
     expiration,
   );

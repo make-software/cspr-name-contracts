@@ -21,8 +21,8 @@ const run = async () => {
   const transaction = defaultResolver.setResolution(
     config.mintingName,
     ownerKeypair.publicKey.accountHash().toPrefixedString(),
-    // 20 CSPR
-    20000000000,
+    // 5 CSPR
+    5000000000,
     ownerKeypair.publicKey,
   );
 

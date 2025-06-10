@@ -25,7 +25,7 @@ const run = async () => {
   const transaction = controllerContract.setSignerPublicKey(
     adminKeypair.publicKey,
     adminKeypair.publicKey,
-    2000000000,
+    5000000000,
   );
 
   transaction.sign(adminKeypair);

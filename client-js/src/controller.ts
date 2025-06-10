@@ -1,5 +1,5 @@
 import { BigNumberish } from "@ethersproject/bignumber"
-
+import { hexToBytes } from "@noble/hashes/utils";
 import {
     Args,
     CLTypeUInt8,
@@ -10,8 +10,6 @@ import {
     SessionBuilder,
     Transaction
 } from "casper-js-sdk"
-
-import {hexToBytes} from "@noble/hashes/utils";
 
 // eslint-disable-next-line import/prefer-default-export
 export class Controller {
@@ -32,7 +30,7 @@ export class Controller {
    */
   public buy(
     voucherBytes: Uint8Array,
-    domainFee: number,
+    domainFee: BigNumberish,
     signature: Uint8Array,
     paymentAmount: BigNumberish,
     sender: PublicKey,
@@ -78,7 +76,7 @@ export class Controller {
    */
   public renew(
     voucherBytes: Uint8Array,
-    domainFee: number,
+    domainFee: BigNumberish,
     signature: Uint8Array,
     paymentAmount: BigNumberish,
     sender: PublicKey,

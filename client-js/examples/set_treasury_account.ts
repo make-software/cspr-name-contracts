@@ -25,7 +25,7 @@ const run = async () => {
   const transaction = controllerContract.setTreasuryAccountAddress(
     adminKeypair.publicKey,
     adminKeypair.publicKey.accountHash().toPrefixedString(),
-    2000000000,
+    5000000000,
   );
 
   transaction.sign(adminKeypair);

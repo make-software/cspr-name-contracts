@@ -26,7 +26,7 @@ const run = async () => {
   console.log(expiration.toISOString())
 
   const nameMintInfos = [
-    new NameMintInfo("newone", buyerKeypair.publicKey.accountHash().toHex(), expiration),
+    new NameMintInfo(config.mintingName, buyerKeypair.publicKey.accountHash().toHex(), expiration),
   ];
 
   const registrarContract = new Registrar(

@@ -1,9 +1,10 @@
 import { BigNumberish } from "@ethersproject/bignumber"
 import {
-  Args,
+  Args, byteHash,
   CLValue,
-  ContractCallBuilder, Key, PublicKey, Transaction,
+  ContractCallBuilder, Key, PublicKey, toBytesU8, Transaction,
 } from "casper-js-sdk"
+import {bytesToHex, hexToBytes} from "@noble/hashes/utils";
 
 // eslint-disable-next-line import/prefer-default-export
 export class DefaultResolver {
@@ -47,6 +48,37 @@ export class DefaultResolver {
       .runtimeArgs(Args.fromMap({
         full_domain: CLValue.newCLString(fullDomain),
         address: CLValue.newCLOption(addressKey, addressKey.type),
+      }))
+      .build()
+  }
+
+  /**
+   * Cleans up resolutions for a given token
+   * @param domainName domain name of a given token
+   * @param paymentAmount the amount of gas price that should be paid in motes
+   * @param sender the PublicKey of transaction submitter account (admin)
+   * @returns Transaction object which can be sent to the node.
+   */
+  public cleanup(
+    domainName: string,
+    paymentAmount: BigNumberish,
+    sender: PublicKey,
+  ): Transaction {
+    const tokenIdBytes = byteHash(Buffer.from(domainName));
+    let tokenID = BigInt(0);
+    for (let i = 0; i < tokenIdBytes.length; i++) {
+      // eslint-disable-next-line no-bitwise
+      tokenID = (tokenID << BigInt(8)) + BigInt(tokenIdBytes[i]);
+    }
+
+    return new ContractCallBuilder()
+      .chainName(this.networkName)
+      .from(sender)
+      .payment(Number(paymentAmount))
+      .byPackageHash(this.contractPackageHash)
+      .entryPoint('cleanup')
+      .runtimeArgs(Args.fromMap({
+        token_id: CLValue.newCLUInt256(tokenID),
       }))
       .build()
   }

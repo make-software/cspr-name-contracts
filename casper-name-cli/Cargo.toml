@@ -17,6 +17,7 @@ toml = "0.8.13"
 blake2 = "0.10.6"
 hex = "0.4.3"
 odra-cli = { git="https://github.com/odradev/odra.git", branch="release/2.0.1" }
+odra-modules = { git="https://github.com/odradev/odra.git", branch="release/2.0.1" }
 
 [[bin]]
 name = "casper-name-cli"

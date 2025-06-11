@@ -18,6 +18,7 @@ use odra::{
     schema::casper_contract_schema::NamedCLType,
     Addressable,
 };
+use odra_modules::access::DEFAULT_ADMIN_ROLE;
 use std::io::Write;
 
 const ONE_DAY: u64 = 86400000;
@@ -44,6 +45,7 @@ impl odra_cli::scenario::Scenario for SetConfigScript {
 
         let mut registrar = container.get_ref::<Registrar>(env)?;
         let mut name_token = container.get_ref::<NameToken>(env)?;
+        let mut resolver = container.get_ref::<DefaultResolver>(env)?;
 
         // Set default resolver.
         env.set_gas(20_000_000_000);
@@ -63,6 +65,10 @@ impl odra_cli::scenario::Scenario for SetConfigScript {
         // Set the grace period.
         env.set_gas(10_000_000_000);
         registrar.set_grace_period(GRACE_PERIOD);
+
+        // Set the name token permissions in the resolver.
+        env.set_gas(10_000_000_000);
+        resolver.grant_role(&DEFAULT_ADMIN_ROLE, name_token.address());
 
         Ok(())
     }

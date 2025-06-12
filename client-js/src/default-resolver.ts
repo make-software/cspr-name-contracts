@@ -53,6 +53,41 @@ export class DefaultResolver {
   }
 
   /**
+   * Sets resolution for a given CSPR.name
+   * @param fullDomain full domain in a format of (cname.sld.cspr, sld.cspr)
+   * @param paymentAmount the amount of gas price that should be paid in motes
+   * @param sender the PublicKey of transaction submitter account (admin)
+   * @returns Transaction object which can be sent to the node.
+   */
+  public removeResolution(
+    fullDomain: string,
+    paymentAmount: BigNumberish,
+    sender: PublicKey,
+  ): Transaction {
+    const domains = fullDomain.split('.')
+    if (domains.length < 2) {
+      throw new Error('invalid fullDomain format, should be (cname.sld.cspr, sld.cspr)')
+    }
+
+    const tld = domains[domains.length - 1]
+    if (tld !== 'cspr') {
+      throw new Error('top level domain should be equal to .cspr')
+    }
+
+    return new ContractCallBuilder()
+      .chainName(this.networkName)
+      .from(sender)
+      .payment(Number(paymentAmount))
+      .byPackageHash(this.contractPackageHash)
+      .entryPoint('set_resolution')
+      .runtimeArgs(Args.fromMap({
+        full_domain: CLValue.newCLString(fullDomain),
+        address: CLValue.newCLOption(null),
+      }))
+      .build()
+  }
+
+  /**
    * Cleans up resolutions for a given token
    * @param domainName domain name of a given token
    * @param paymentAmount the amount of gas price that should be paid in motes

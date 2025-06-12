@@ -23,7 +23,7 @@ const run = async () => {
 
   const domain = "sld321";
 
-  const createVoucherResponse = await csprCloudClient.post<any, AxiosResponse<{
+  const createVoucherResponse = await csprCloudClient.post<never, AxiosResponse<{
     data: {
       voucher: {
         payment_info: {

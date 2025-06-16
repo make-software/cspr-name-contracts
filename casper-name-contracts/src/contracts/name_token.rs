@@ -514,6 +514,40 @@ mod tests {
         assert_eq!(ctx.token.get_default_resolver(), resolver);
     }
 
+    #[test]
+    fn transfer_from_operator_resets_resolver() {
+        let mut ctx = TestContext::install_and_setup();
+        let (alice, bob, some_address) = (ctx.alice, ctx.bob, ctx.anyone);
+        let token_label = "token_label";
+        let full_domain = String::from("token_label.cspr");
+
+        // Given Alice has a token.
+        mint_for(&mut ctx, alice, token_label);
+
+        // Alice sets the resolver.
+        ctx.set_caller(alice);
+        ctx.default_resolver.set_resolution(full_domain.clone(), Some(some_address));
+
+        // Then the resolver points at some address.
+        assert_eq!(
+            ctx.default_resolver.resolve(full_domain),
+            Some(some_address)
+        );
+
+        // Given Alice sets Bob as an operator.
+        ctx.token.approve_for_all(bob);
+
+        // Then Bob is an operator for Alice.
+        assert!(ctx.token.is_approved_for_all(alice, bob));
+
+        // When Bob transfers the token to himself.
+        ctx.set_caller(bob);
+        ctx.token.transfer_from(alice, bob, generate_token_id(token_label));
+        // TODO: ^^ Fails on `assert_whitelisted` check, but should make the
+        // transfer and cleanup the resolver.`
+    }
+
+
     fn mint_for(ctx: &mut TestContext, owner: Address, name: &str) -> U256 {
         ctx.set_caller(ctx.admin);
         let token_metadata =

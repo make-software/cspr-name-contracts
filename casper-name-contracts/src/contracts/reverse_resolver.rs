@@ -18,10 +18,12 @@ impl ReverseResolver {
         self.primary_names.set(&caller, primary_name.clone());
 
         // Emit event.
+        let block_time = self.env().get_block_time();
         self.env().emit_event(PrimaryNameChanged {
             address: caller,
             old_primary_name: current_primary_name,
             new_primary_name: primary_name,
+            block_time,
         });
     }
 
@@ -37,6 +39,7 @@ pub struct PrimaryNameChanged {
     pub address: Address,
     pub old_primary_name: Option<String>,
     pub new_primary_name: String,
+    pub block_time: u64,
 }
 
 #[cfg(test)]

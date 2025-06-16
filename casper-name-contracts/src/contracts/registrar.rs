@@ -214,6 +214,13 @@ impl Registrar {
     }
 
     #[inline]
+    fn assert_toplevel_domain(&self, full_domain: &str) {
+        if !utils::is_top_level_domain(full_domain) {
+            self.revert(RegistrarError::NotTopLevelDomain);
+        }
+    }
+
+    #[inline]
     fn resolver(&self, address: Address) -> ResolverContractRef {
         ResolverContractRef::new(self.env(), address)
     }
@@ -254,6 +261,7 @@ impl Registrar {
         let block_time = self.env().get_block_time();
         for info in names {
             self.assert_token_expires_in_future(info.token_expiration, block_time);
+            self.assert_toplevel_domain(&info.label);
 
             // Compute token hash.
             let token_id = self.compute_namehash(&info.label);
@@ -287,6 +295,7 @@ pub enum RegistrarError {
     GracePeriodExpired = 1203,
     VoucherExpired = 1204,
     TokenDoesNotExist = 1205,
+    NotTopLevelDomain = 1206,
 }
 
 #[cfg(test)]

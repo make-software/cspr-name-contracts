@@ -164,7 +164,7 @@ impl NameToken {
         }
 
         let metadata: NameTokenMetadata = self.wrapped_metadata(token_id);
-        if metadata.expiration().unwrap_or_revert(self) < self.env().get_block_time() {
+        if metadata.expiration() < self.env().get_block_time() {
             return false;
         }
         true

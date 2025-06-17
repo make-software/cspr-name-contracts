@@ -69,8 +69,8 @@ impl NameTokenMetadata {
         vec
     }
 
-    pub fn expiration(&self) -> OdraResult<u64> {
-        Ok(self.expiration)
+    pub fn expiration(&self) -> u64 {
+        self.expiration
     }
 
     pub fn set_expiration(&mut self, expiration: u64) {

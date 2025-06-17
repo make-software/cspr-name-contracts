@@ -83,6 +83,10 @@ impl DefaultResolver {
             env.revert(ResolverError::ResolutionSetByInvalidOwner);
         }
 
+        if !utils::validate_subdomains(&full_domain) {
+            env.revert(ResolverError::InvalidSubdomainFormat);
+        }
+
         let nonce = self.nonce(&token_id);
         self.resolutions
             .set(&(token_id, full_domain.clone(), nonce), address);
@@ -141,6 +145,7 @@ pub enum ResolverError {
     UnauthorizedCleanup = 1403,
     UnauthorizedTokenAddressUpdate = 1404,
     InvalidDomain = 1405,
+    InvalidSubdomainFormat = 1406,
 }
 
 #[cfg(test)]
@@ -153,6 +158,7 @@ mod tests {
     const NON_CSPR_DOMAIN: &str = "odra.com";
     const MAIN_DOMAIN: &str = "odra.cspr";
     const SUBDOMAIN: &str = "docs.odra.cspr";
+    const INVALID_SUBDOMAIN: &str = "-docs.odra.cspr";
 
     #[test]
     fn deployer_is_admin() {
@@ -272,6 +278,17 @@ mod tests {
             result,
             Err(ResolverError::ResolutionSetWithInvalidToken.into())
         );
+    }
+
+    #[test]
+    fn set_resolution_for_invalid_subdomain_format() {
+        let (mut ctx, _, alice, _) = setup();
+
+        // When alice tries to set the resolution for an invalid subdomain format
+        ctx.set_caller(alice);
+        let result = try_set_resolution(&mut ctx, INVALID_SUBDOMAIN, alice);
+        // Then the operation fails
+        assert_eq!(result, Err(ResolverError::InvalidSubdomainFormat.into()));
     }
 
     #[test]

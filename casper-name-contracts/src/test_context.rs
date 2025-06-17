@@ -45,7 +45,7 @@ pub struct TestContext {
 }
 
 impl TestContext {
-    pub fn install_raw() -> TestContext {
+    pub fn install_raw_with_supply(max_supply: u64) -> TestContext {
         let env = odra_test::env();
         let signer = env.get_account(10);
         let treasury = env.get_account(11);
@@ -55,6 +55,7 @@ impl TestContext {
             NameTokenInitArgs {
                 name: String::from(NAME_TOKEN_NAME),
                 symbol: String::from(NAME_TOKEN_SYMBOL),
+                max_supply: max_supply,
             },
         );
         let resolver = DefaultResolver::deploy(
@@ -94,6 +95,10 @@ impl TestContext {
             anyone: env.get_account(3),
             treasury,
         }
+    }
+
+    pub fn install_raw() -> TestContext {
+        Self::install_raw_with_supply(1_000_000)
     }
 
     pub fn install_and_setup() -> TestContext {

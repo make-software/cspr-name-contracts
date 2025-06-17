@@ -40,13 +40,12 @@ impl NameToken {
     }
 
     /// Initializes CEP78 with the given name and symbol.
-    pub fn init(&mut self, name: String, symbol: String) {
+    pub fn init(&mut self, name: String, symbol: String, max_supply: u64) {
         let caller = self.env().caller();
 
-        let max_total_supply = 1_000_000u64;
         self.token.symbol.set(symbol);
         self.token.name.set(name);
-        self.max_supply.set(max_total_supply);
+        self.max_supply.set(max_supply);
         self.ownable.init(caller);
     }
 
@@ -63,7 +62,8 @@ impl NameToken {
         let caller = self.env().caller();
         self.assert_whitelisted(&caller);
 
-        if self.minted_tokens_count.get_or_default() >= self.max_supply.get_or_default() {
+        let minted_tokens_count = self.minted_tokens_count.get_or_default();
+        if minted_tokens_count >= self.max_supply.get_or_default() {
             self.revert(NameTokenError::TokenSupplyDepleted);
         }
         if self.token.exists(&token_id) {
@@ -71,6 +71,8 @@ impl NameToken {
         }
         // mint the token
         self.token.mint(recipient, token_id, token_metadata);
+        // increment the minted tokens count
+        self.minted_tokens_count.set(minted_tokens_count + 1);
     }
 
     pub fn burn(&mut self, token_id: U256) {
@@ -244,6 +246,27 @@ pub enum NameTokenError {
 mod tests {
     use super::*;
     use crate::test_context::{generate_token_id, TestContext, INIT_TIME, TOKEN_EXPIRATION};
+
+    #[test]
+    fn test_supply_depletion() {
+        // Given a token with max supply of 10
+        let max_supply = 10u64;
+        let mut ctx = TestContext::install_raw_with_supply(max_supply);
+        ctx.whitelist_admin_in_name_token();
+        let token_hash = "token_hash";
+
+        for i in 0..max_supply {
+            // When minting a token
+            ctx.token.mint(ctx.alice, i.into(), vec![]);
+        }
+        // When trying to mint a new token
+        let result = ctx.token.try_mint(ctx.alice, max_supply.into(), vec![]);
+        // Then it should fail with TokenSupplyDepleted error
+        assert_eq!(
+            result.err(),
+            Some(NameTokenError::TokenSupplyDepleted.into())
+        );
+    }
 
     #[test]
     fn test_token_exists() {

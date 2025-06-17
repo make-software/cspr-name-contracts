@@ -26,6 +26,7 @@ impl odra_cli::deploy::DeployScript for DeployScript {
             NameTokenInitArgs {
                 name: "008_CN".to_string(),
                 symbol: "008_CN".to_string(),
+                max_supply: 1_000_000,
             },
         )?;
         container.add_contract(&token)?;

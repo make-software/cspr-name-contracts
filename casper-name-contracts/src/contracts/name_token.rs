@@ -225,7 +225,7 @@ impl NameToken {
         } else {
             let default_resolver = *self.default_resolver.address();
             metadata.set_resolver(default_resolver);
-            self.set_token_metadata(token_id, metadata.to_vec());
+            self.token.set_metadata(token_id, metadata.to_vec());
         }
     }
 }
@@ -512,6 +512,47 @@ mod tests {
         assert!(ctx.token.try_set_default_resolver(resolver).is_ok());
 
         assert_eq!(ctx.token.get_default_resolver(), resolver);
+    }
+
+    #[test]
+    fn transfer_from_operator_resets_resolver() {
+        let mut ctx = TestContext::install_and_setup();
+        let (alice, bob, anyone) = (ctx.alice, ctx.bob, ctx.anyone);
+        let token_label = "token_label";
+        let full_domain = format!("{}.cspr", token_label);
+
+        // Given Alice has a token.
+        mint_for(&mut ctx, alice, token_label);
+
+        // Alice sets the resolver.
+        ctx.set_caller(alice);
+        ctx.default_resolver
+            .set_resolution(full_domain.clone(), Some(anyone));
+
+        // Then the resolver points at some address.
+        assert_eq!(
+            ctx.default_resolver.resolve(full_domain.clone()),
+            Some(anyone)
+        );
+
+        // Given Alice sets Bob as an operator.
+        ctx.token.approve_for_all(bob);
+
+        // Then Bob is an operator for Alice.
+        assert!(ctx.token.is_approved_for_all(alice, bob));
+
+        // When Bob transfers the token to himself.
+        let token_id = generate_token_id(token_label);
+        ctx.set_caller(bob);
+        ctx.token.transfer_from(alice, bob, token_id);
+        assert!(ctx.token.try_assert_is_owner(token_id, bob).is_ok());
+
+        // Then the resolver is reset.
+        assert_eq!(
+            ctx.default_resolver.resolve(full_domain),
+            None,
+            "Resolver should be reset after transfer from operator"
+        );
     }
 
     fn mint_for(ctx: &mut TestContext, owner: Address, name: &str) -> U256 {

@@ -22,7 +22,7 @@ pub struct PaymentFulfilled {
 
 /// Controller smart contract. It handles payments and talks to the [Registrar
 /// Contract](super::registrar::Registrar).
-#[odra::module]
+#[odra::module(errors = ControllerError)]
 pub struct Controller {
     controller: SubModule<BaseController>,
     registrar: External<RegistrarContractRef>,

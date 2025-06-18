@@ -21,7 +21,7 @@ const PENDING_DELETE_PERIOD: u64 = 5 * 24 * 60 * 60 * 1000; // 5 days
 const MAX_GRACE_PERIOD: u64 = 365 * 24 * 60 * 60 * 1000; // 365 days
 
 /// Registrar smart contract. It handles the registration and expiration of name tokens.
-#[odra::module]
+#[odra::module(errors = RegistrarError)]
 pub struct Registrar {
     name_token: External<NameTokenContractRef>,
     access_control: SubModule<AccessControl>,

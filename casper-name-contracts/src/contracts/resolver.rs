@@ -30,7 +30,10 @@ pub struct ResolutionCleared {
 }
 
 /// Default Resolver smart contract. It handles the resolution of domain names to addresses.
-#[odra::module(events = [ResolutionChanged, ResolutionCleared])]
+#[odra::module(
+    errors = ResolverError,
+    events = [ResolutionChanged, ResolutionCleared]
+)]
 pub struct DefaultResolver {
     access_control: SubModule<AccessControl>,
     name_token: External<NameTokenContractRef>,

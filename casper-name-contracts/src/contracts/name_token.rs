@@ -10,7 +10,7 @@ use odra_modules::cep95::{CEP95Interface, Cep95};
 use super::resolver::ResolverContractRef;
 
 /// NameToken contract. It is a CEP78 token with additional functionalities.
-#[odra::module]
+#[odra::module(errors = NameTokenError)]
 pub struct NameToken {
     token: SubModule<Cep95>,
     ownable: SubModule<Ownable>,
@@ -541,7 +541,7 @@ mod tests {
     fn transfer_from_operator_resets_resolver() {
         let mut ctx = TestContext::install_and_setup();
         let (alice, bob, anyone) = (ctx.alice, ctx.bob, ctx.anyone);
-        let token_label = "token_label";
+        let token_label = "token-label";
         let full_domain = format!("{}.cspr", token_label);
 
         // Given Alice has a token.

@@ -25,6 +25,9 @@ impl SecondaryMarket {
             fn set_signer_public_key(&mut self, signer: PublicKey);
             fn set_treasury(&mut self, treasury: Address);
             fn signer_public_key(&self) -> PublicKey;
+            fn pause(&mut self);
+            fn unpause(&mut self);
+            fn is_paused(&self) -> bool;
         }
     }
 
@@ -38,6 +41,7 @@ impl SecondaryMarket {
     /// Payable. Buys name tokens from the secondary market.
     #[odra(payable)]
     pub fn buy(&mut self, voucher: SecondarySaleVoucher, signature: Bytes) {
+        self.controller.require_not_paused();
         self.controller.process_payment_voucher(&voucher, signature);
         for name in voucher.names {
             let token_id = self.compute_token_id(&name.label);

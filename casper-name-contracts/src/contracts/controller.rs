@@ -7,7 +7,10 @@ use odra::{
     },
     prelude::*,
 };
-use odra_modules::access::{AccessControl, Role, DEFAULT_ADMIN_ROLE};
+use odra_modules::{
+    access::{AccessControl, Role, DEFAULT_ADMIN_ROLE},
+    security::Pauseable,
+};
 
 /// Event with the payment information.
 #[odra::event]
@@ -35,6 +38,9 @@ impl Controller {
             fn set_signer_public_key(&mut self, signer: PublicKey);
             fn set_treasury(&mut self, treasury: Address);
             fn signer_public_key(&self) -> PublicKey;
+            fn pause(&mut self);
+            fn unpause(&mut self);
+            fn is_paused(&self) -> bool;
         }
     }
 
@@ -48,6 +54,7 @@ impl Controller {
     /// Payable. Buys new name tokens.
     #[odra(payable)]
     pub fn buy(&mut self, voucher: PaymentVoucher, signature: Bytes) {
+        self.controller.require_not_paused();
         self.controller.process_payment_voucher(&voucher, signature);
         self.registrar.controller_register(voucher.into());
     }
@@ -55,6 +62,7 @@ impl Controller {
     /// Payable. Renews name tokens.
     #[odra(payable)]
     pub fn renew(&mut self, voucher: RenewalPaymentVoucher, signature: Bytes) {
+        self.controller.require_not_paused();
         self.controller.process_payment_voucher(&voucher, signature);
         self.registrar.controller_prolong(voucher.into());
     }
@@ -68,6 +76,7 @@ impl Controller {
         renewal_voucher: RenewalPaymentVoucher,
         renewal_signature: Bytes,
     ) {
+        self.controller.require_not_paused();
         self.controller
             .process_payment_voucher(&payment_voucher, payment_signature);
         self.controller
@@ -89,6 +98,7 @@ pub struct BaseController {
     signer_public_key: Var<PublicKey>,
     treasury: Var<Address>,
     access_control: SubModule<AccessControl>,
+    pausable: SubModule<Pauseable>,
 }
 
 #[odra::module]
@@ -98,6 +108,11 @@ impl BaseController {
             fn has_role(&self, role: &Role, address: &Address) -> bool;
             fn grant_role(&mut self, role: &Role, address: &Address);
             fn revoke_role(&mut self, role: &Role, address: &Address);
+        }
+
+        to self.pausable {
+            fn is_paused(&self) -> bool;
+            fn require_not_paused(&self);
         }
     }
 }
@@ -113,6 +128,18 @@ impl BaseController {
         let admin = self.env().caller();
         self.access_control
             .unchecked_grant_role(&DEFAULT_ADMIN_ROLE, &admin);
+    }
+
+    /// Temporarily stops the contract.
+    pub fn pause(&mut self) {
+        self.assert_caller_is_admin();
+        self.pausable.pause();
+    }
+
+    /// Returns to normal operation.
+    pub fn unpause(&mut self) {
+        self.assert_caller_is_admin();
+        self.pausable.unpause();
     }
 
     /// Admin only. Sets the public key of the signer.
@@ -161,7 +188,7 @@ impl BaseController {
             self.revert(ControllerError::InsufficientPayment);
         }
         if attached_value > payment_info.amount {
-            self.env().revert_with(ControllerError::PaymentTooLarge);
+            self.revert(ControllerError::PaymentTooLarge);
         }
         self.env()
             .transfer_tokens(&fee_collector, &payment_info.amount);
@@ -275,5 +302,154 @@ mod tests {
             fee_collector_balance + amount
         );
         assert_eq!(ctx.balance_of(&alice), alice_balance - amount);
+    }
+
+    #[test]
+    fn test_only_admin_can_pause() {
+        let mut ctx = TestContext::install_and_setup();
+        // Given a contract with an admin and a user.
+        let (admin, alice) = (ctx.admin, ctx.alice);
+
+        // When a non-admin tries to pause it.
+        ctx.set_caller(alice);
+        let result = ctx.controller.try_pause();
+        // Then it should fail and the contract should not be paused.
+        assert!(result.is_err());
+        assert!(!ctx.controller.is_paused());
+
+        // When the admin tries to pause it.
+        ctx.set_caller(admin);
+        ctx.controller.pause();
+
+        // Then the contract should be paused.
+        assert!(ctx.controller.is_paused());
+    }
+
+    #[test]
+    fn test_only_admin_can_unpause() {
+        let mut ctx = TestContext::install_and_setup();
+        // Given a paused contract.
+        let (admin, alice) = (ctx.admin, ctx.alice);
+        ctx.controller.pause();
+        assert!(ctx.controller.is_paused());
+
+        // When a non-admin tries to unpause it.
+        ctx.set_caller(alice);
+        let result = ctx.controller.try_unpause();
+        // Then it should fail.
+        assert!(result.is_err());
+        assert!(ctx.controller.is_paused());
+
+        // When the admin tries to unpause it.
+        ctx.set_caller(admin);
+        ctx.controller.unpause();
+
+        // Then the contract should be unpaused.
+        assert!(!ctx.controller.is_paused());
+    }
+
+    #[test]
+    fn test_buy_require_not_paused() {
+        let mut ctx = TestContext::install_and_setup();
+        // Given a paused contract.
+        ctx.controller.pause();
+        assert!(ctx.controller.is_paused());
+
+        // When a user tries to buy a name.
+        ctx.set_caller(ctx.alice);
+        let voucher = PaymentVoucher::new(
+            U512::from(2000),
+            "id_1",
+            ctx.alice,
+            vec![NameMintInfo::new(
+                TOKEN_NAME,
+                ctx.alice,
+                ctx.token_expiration_time(),
+            )],
+            ctx.token_expiration_time(),
+        );
+        let signature = ctx.sign(&voucher);
+        let result = ctx.controller.try_buy(voucher, signature);
+
+        // Then it should fail.
+        assert_eq!(
+            result,
+            Err(odra_modules::security::errors::Error::UnpausedRequired.into())
+        );
+    }
+
+    #[test]
+    fn test_renew_require_not_paused() {
+        let mut ctx = TestContext::install_and_setup();
+        // Given a paused contract.
+        ctx.controller.pause();
+        assert!(ctx.controller.is_paused());
+
+        // When a user tries to renew a name.
+        ctx.set_caller(ctx.alice);
+        let voucher = RenewalPaymentVoucher::new(
+            U512::from(2000),
+            "id_1",
+            ctx.alice,
+            vec![TokenRenewalInfo::new(
+                generate_token_id(TOKEN_NAME),
+                ctx.token_expiration_time(),
+            )],
+            ctx.token_expiration_time(),
+        );
+        let signature = ctx.sign(&voucher);
+        let result = ctx.controller.try_renew(voucher, signature);
+
+        // Then it should fail.
+        assert_eq!(
+            result,
+            Err(odra_modules::security::errors::Error::UnpausedRequired.into())
+        );
+    }
+
+    #[test]
+    fn test_buy_and_renew_require_not_paused() {
+        let mut ctx = TestContext::install_and_setup();
+        // Given a paused contract.
+        ctx.controller.pause();
+        assert!(ctx.controller.is_paused());
+
+        // When a user tries to buy and renew names.
+        ctx.set_caller(ctx.alice);
+        let payment_voucher = PaymentVoucher::new(
+            U512::from(2000),
+            "id_1",
+            ctx.alice,
+            vec![NameMintInfo::new(
+                TOKEN_NAME,
+                ctx.alice,
+                ctx.token_expiration_time(),
+            )],
+            ctx.token_expiration_time(),
+        );
+        let renewal_voucher = RenewalPaymentVoucher::new(
+            U512::from(2000),
+            "id_2",
+            ctx.alice,
+            vec![TokenRenewalInfo::new(
+                generate_token_id(TOKEN_NAME),
+                ctx.token_expiration_time(),
+            )],
+            ctx.token_expiration_time(),
+        );
+        let payment_signature = ctx.sign(&payment_voucher);
+        let renewal_signature = ctx.sign(&renewal_voucher);
+        let result = ctx.controller.try_buy_and_renew(
+            payment_voucher,
+            payment_signature,
+            renewal_voucher,
+            renewal_signature,
+        );
+
+        // Then it should fail.
+        assert_eq!(
+            result,
+            Err(odra_modules::security::errors::Error::UnpausedRequired.into())
+        );
     }
 }

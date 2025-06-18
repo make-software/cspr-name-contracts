@@ -4,6 +4,7 @@ use odra::module::Revertible;
 use odra::prelude::*;
 use odra::ContractRef;
 use odra_modules::access::{AccessControl, Role, DEFAULT_ADMIN_ROLE};
+use odra_modules::security::Pauseable;
 
 use crate::data_structures::{ExpirableVoucher, NameMintInfo, RenewalVoucher, TokenRenewalInfo};
 use crate::{
@@ -25,6 +26,7 @@ pub struct Registrar {
     name_token: External<NameTokenContractRef>,
     access_control: SubModule<AccessControl>,
     grace_period: Var<u64>,
+    pauseable: SubModule<Pauseable>,
 }
 
 #[odra::module]
@@ -34,6 +36,10 @@ impl Registrar {
             fn has_role(&self, role: &Role, address: &Address) -> bool;
             fn grant_role(&mut self, role: &Role, address: &Address);
             fn revoke_role(&mut self, role: &Role, address: &Address);
+        }
+
+        to self.pauseable {
+            fn is_paused(&self) -> bool;
         }
     }
 
@@ -56,6 +62,18 @@ impl Registrar {
         // Consider removing this line.
         self.access_control
             .unchecked_grant_role(&CONTROLLER_ROLE, &caller);
+    }
+
+    /// Temporarily stops the contract.
+    pub fn pause(&mut self) {
+        self.assert_caller_is_admin();
+        self.pauseable.pause();
+    }
+
+    /// Returns to normal operation.
+    pub fn unpause(&mut self) {
+        self.assert_caller_is_admin();
+        self.pauseable.unpause();
     }
 
     /// Returns the grace period.
@@ -81,6 +99,7 @@ impl Registrar {
 
     /// Expire a list of tokens if they are expired.
     pub fn expire(&mut self, token_ids: Vec<U256>) {
+        self.pauseable.require_not_paused();
         let block_time = self.env().get_block_time();
         let grace_period = self.grace_period();
         for token_id in token_ids {
@@ -137,6 +156,7 @@ impl Registrar {
 
     /// Controller only. Prolong the expiration date of a list of tokens.
     pub fn controller_prolong(&mut self, voucher: RenewalVoucher) {
+        self.pauseable.require_not_paused();
         self.assert_caller_is_controller();
         self.assert_voucher_not_expired(&voucher);
         self.prolong(voucher.tokens);
@@ -144,6 +164,7 @@ impl Registrar {
 
     /// Controller only. Register a list of tokens.
     pub fn controller_register(&mut self, voucher: TokenizationVoucher) {
+        self.pauseable.require_not_paused();
         self.assert_voucher_not_expired(&voucher);
         self.assert_caller_is_controller();
         self.register(voucher.names);
@@ -155,6 +176,7 @@ impl Registrar {
         renewal_voucher: RenewalVoucher,
         tokenization_voucher: TokenizationVoucher,
     ) {
+        self.pauseable.require_not_paused();
         self.assert_caller_is_controller();
         self.assert_voucher_not_expired(&renewal_voucher);
         self.assert_voucher_not_expired(&tokenization_voucher);
@@ -714,6 +736,33 @@ mod tests {
     }
 
     #[test]
+    fn renew_when_paused_fails() {
+        let mut ctx = TestContext::install_and_setup();
+        let (admin, alice) = (ctx.admin, ctx.alice);
+
+        // Given Alice has a token.
+        ctx.with_name_registered(admin, alice, TOKEN_NAME);
+        ctx.set_caller(admin);
+        ctx.registrar.pause();
+
+        // When Admin tries to renew the token.
+        let token_expiration = INIT_TIME + 2 * TOKEN_EXPIRATION;
+        let voucher_expiration = INIT_TIME + TOKEN_EXPIRATION;
+        let tokens = vec![TokenRenewalInfo::new(
+            generate_token_id(TOKEN_NAME),
+            token_expiration,
+        )];
+        let voucher = RenewalVoucher::new(tokens, voucher_expiration);
+        let result = ctx.registrar.try_controller_prolong(voucher);
+
+        // Then registration fails.
+        assert_eq!(
+            result,
+            Err(odra_modules::security::errors::Error::UnpausedRequired.into())
+        );
+    }
+
+    #[test]
     fn test_renew() {
         let mut ctx = TestContext::install_and_setup();
         let (admin, alice) = (ctx.admin, ctx.alice);
@@ -815,5 +864,60 @@ mod tests {
 
         // Then the result is the token owner.
         assert_eq!(result, Some(alice));
+    }
+
+    #[test]
+    fn test_controller_register_fails_when_paused() {
+        let mut ctx = TestContext::install_and_setup();
+        let (admin, alice) = (ctx.admin, ctx.alice);
+
+        // Given Alice has a token.
+        ctx.with_name_registered(admin, alice, TOKEN_NAME);
+        ctx.set_caller(admin);
+        ctx.registrar.pause();
+
+        // When Admin tries to register the token.
+        let token_expiration = INIT_TIME + 2 * TOKEN_EXPIRATION;
+        let voucher_expiration = INIT_TIME + TOKEN_EXPIRATION;
+        let names = vec![NameMintInfo::new(TOKEN_NAME, alice, token_expiration)];
+        let voucher = TokenizationVoucher::new(names, voucher_expiration);
+        let result = ctx.registrar.try_controller_register(voucher);
+
+        // Then registration fails.
+        assert_eq!(
+            result,
+            Err(odra_modules::security::errors::Error::UnpausedRequired.into())
+        );
+    }
+
+    #[test]
+    fn test_controller_register_and_prolong_fails_when_paused() {
+        let mut ctx = TestContext::install_and_setup();
+        let (admin, alice) = (ctx.admin, ctx.alice);
+
+        // Given Alice has a token.
+        ctx.with_name_registered(admin, alice, TOKEN_NAME);
+        ctx.set_caller(admin);
+        ctx.registrar.pause();
+
+        // When Admin tries to register the token.
+        let token_expiration = INIT_TIME + 2 * TOKEN_EXPIRATION;
+        let voucher_expiration = INIT_TIME + TOKEN_EXPIRATION;
+        let names = vec![NameMintInfo::new(TOKEN_NAME, alice, token_expiration)];
+        let tokens = vec![TokenRenewalInfo::new(
+            generate_token_id(TOKEN_NAME),
+            token_expiration,
+        )];
+        let renewal_voucher = RenewalVoucher::new(tokens, voucher_expiration);
+        let voucher = TokenizationVoucher::new(names, voucher_expiration);
+        let result = ctx
+            .registrar
+            .try_controller_prolong_and_register(renewal_voucher, voucher);
+
+        // Then registration fails.
+        assert_eq!(
+            result,
+            Err(odra_modules::security::errors::Error::UnpausedRequired.into())
+        );
     }
 }

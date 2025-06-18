@@ -271,7 +271,6 @@ mod tests {
         // Given the token has been burned
         let (mut ctx, admin, alice, _) = setup();
         ctx.set_caller(admin);
-        ctx.token.whitelist(admin);
         ctx.token.burn(generate_token_id(TOKEN_NAME));
         // When alice tries to set the resolution
         ctx.set_caller(alice);

@@ -198,12 +198,18 @@ impl NameToken {
     pub fn whitelist(&mut self, address: Address) {
         let caller = self.env().caller();
         self.ownable.assert_owner(&caller);
+        if self.whitelist.get(&address).unwrap_or_default() {
+            self.revert(NameTokenError::WhitelistedAlready);
+        }
         self.whitelist.set(&address, true);
     }
 
     pub fn revoke_whitelist(&mut self, address: Address) {
         let caller = self.env().caller();
         self.ownable.assert_owner(&caller);
+        if !self.whitelist.get(&address).unwrap_or_default() {
+            self.revert(NameTokenError::NotWhitelisted);
+        }
         self.whitelist.set(&address, false);
     }
 }
@@ -248,6 +254,7 @@ pub enum NameTokenError {
     InvalidTokenIdentifier = 1304,
     InvalidResolver = 1305,
     TokenSupplyDepleted = 1306,
+    WhitelistedAlready = 1307,
 }
 
 #[cfg(test)]
@@ -583,6 +590,48 @@ mod tests {
             ctx.default_resolver.resolve(full_domain),
             None,
             "Resolver should be reset after transfer from operator"
+        );
+    }
+
+    #[test]
+    fn test_revoke_whitelist() {
+        let mut ctx = TestContext::install_raw();
+        ctx.whitelist_admin_in_name_token();
+        let alice = ctx.alice;
+
+        // Given Alice is whitelisted
+        whitelist_accounts(&mut ctx, vec![alice]);
+
+        // When admin revokes Alice's whitelist
+        ctx.set_caller(ctx.admin);
+        let result = ctx.token.try_revoke_whitelist(alice);
+        // Then it should succeed
+        assert!(result.is_ok());
+
+        // When admin tries to revoke Alice's whitelist again
+        let result = ctx.token.try_revoke_whitelist(alice);
+        // Then it should fail with NotWhitelisted error
+        assert_eq!(result.err(), Some(NameTokenError::NotWhitelisted.into()));
+    }
+
+    #[test]
+    fn test_whitelist() {
+        let mut ctx = TestContext::install_raw();
+        ctx.whitelist_admin_in_name_token();
+        let alice = ctx.alice;
+
+        // When admin tries to whitelist Alice
+        ctx.set_caller(ctx.admin);
+        let result = ctx.token.try_whitelist(alice);
+        // Then it should succeed
+        assert!(result.is_ok());
+
+        // When admin tries to whitelist Alice again
+        let result = ctx.token.try_whitelist(alice);
+        // Then it should fail with WhitelistedAlready error
+        assert_eq!(
+            result.err(),
+            Some(NameTokenError::WhitelistedAlready.into())
         );
     }
 

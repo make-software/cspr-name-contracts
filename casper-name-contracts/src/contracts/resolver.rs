@@ -54,6 +54,9 @@ impl DefaultResolver {
     /// Initializes the default resolver with the name token contract address.
     /// The caller is granted the admin role.
     pub fn init(&mut self, name_token: Address) {
+        if !name_token.is_contract() {
+            self.revert(ResolverError::InvalidTokenName);
+        }
         self.name_token.set(name_token);
 
         let admin = self.env().caller();
@@ -63,6 +66,9 @@ impl DefaultResolver {
 
     /// Admin only. Sets the name token contract address.
     pub fn set_name_token(&mut self, name_token: Address) {
+        if !name_token.is_contract() {
+            self.revert(ResolverError::InvalidTokenName);
+        }
         if !self.has_role(&DEFAULT_ADMIN_ROLE, &self.env().caller()) {
             self.env()
                 .revert(ResolverError::UnauthorizedTokenAddressUpdate);
@@ -149,10 +155,13 @@ pub enum ResolverError {
     UnauthorizedTokenAddressUpdate = 1404,
     InvalidDomain = 1405,
     InvalidSubdomainFormat = 1406,
+    InvalidTokenName = 1407,
 }
 
 #[cfg(test)]
 mod tests {
+    use odra::{host::Deployer, Addressable};
+
     use super::*;
     use crate::test_context::{generate_token_id, TestContext, TOKEN_EXPIRATION};
 
@@ -162,6 +171,18 @@ mod tests {
     const MAIN_DOMAIN: &str = "odra.cspr";
     const SUBDOMAIN: &str = "docs.odra.cspr";
     const INVALID_SUBDOMAIN: &str = "-docs.odra.cspr";
+
+    #[test]
+    fn deploy_fails_if_account_set_as_name_token() {
+        let env = odra_test::env();
+        let result = DefaultResolver::try_deploy(
+            &env,
+            DefaultResolverInitArgs {
+                name_token: env.get_account(1),
+            },
+        );
+        assert!(result.is_err());
+    }
 
     #[test]
     fn deployer_is_admin() {
@@ -174,16 +195,34 @@ mod tests {
     #[test]
     fn only_admin_can_set_name_token() {
         let (mut ctx, admin, alice, _) = setup();
+        let contract_address = *ctx.controller.address();
 
         // When alice tries to set the name token
         ctx.set_caller(alice);
         // Then the operation fails
-        assert!(ctx.default_resolver.try_set_name_token(alice).is_err());
+        assert!(ctx
+            .default_resolver
+            .try_set_name_token(contract_address)
+            .is_err());
 
         // When the admin sets the name token
         ctx.set_caller(admin);
         // Then the operation succeeds
-        assert!(ctx.default_resolver.try_set_name_token(alice).is_ok());
+        assert!(ctx
+            .default_resolver
+            .try_set_name_token(contract_address)
+            .is_ok());
+    }
+
+    #[test]
+    fn name_token_must_be_a_contract() {
+        let (mut ctx, admin, alice, _) = setup();
+
+        // When the admin tries to set a non-contract address as the name token
+        ctx.set_caller(admin);
+        let result = ctx.default_resolver.try_set_name_token(alice);
+        // Then the operation fails
+        assert_eq!(result, Err(ResolverError::InvalidTokenName.into()));
     }
 
     #[test]

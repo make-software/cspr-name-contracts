@@ -22,7 +22,7 @@ pub struct PaymentFulfilled {
 
 /// Controller smart contract. It handles payments and talks to the [Registrar
 /// Contract](super::registrar::Registrar).
-#[odra::module(errors = ControllerError)]
+#[odra::module]
 pub struct Controller {
     controller: SubModule<BaseController>,
     registrar: External<RegistrarContractRef>,
@@ -47,6 +47,9 @@ impl Controller {
     /// Initializes the controller with the registrar contract address, the
     /// signer public key and the treasury address.
     pub fn init(&mut self, registrar: Address, signer: PublicKey, treasury: Address) {
+        if !registrar.is_contract() {
+            self.revert(ControllerError::ContractAddressExpected);
+        }
         self.registrar.set(registrar);
         self.controller.init(signer, treasury);
     }
@@ -93,7 +96,10 @@ impl Controller {
 
 /// Base for all controllers. It handles access controy, treasury and signer
 /// public key.
-#[odra::module(events = [PaymentFulfilled])]
+#[odra::module(
+    errors = ControllerError,
+    events = [PaymentFulfilled]
+)]
 pub struct BaseController {
     signer_public_key: Var<PublicKey>,
     treasury: Var<Address>,
@@ -218,16 +224,37 @@ pub enum ControllerError {
     BuyerMustBeCaller = 1104,
     InsufficientPayment = 1105,
     PaymentTooLarge = 1106,
+    ContractAddressExpected = 1107,
 }
 
 #[cfg(test)]
 mod tests {
-    use odra::{casper_types::U512, host::HostRef};
+    use odra::{
+        casper_types::U512,
+        host::{Deployer, HostRef},
+    };
 
     use crate::{
+        contracts::controller::{Controller, ControllerInitArgs},
         data_structures::{NameMintInfo, PaymentVoucher, RenewalPaymentVoucher, TokenRenewalInfo},
         test_context::{generate_token_id, TestContext, INIT_TIME, TOKEN_EXPIRATION, TOKEN_NAME},
     };
+
+    #[test]
+    fn deploy_fails_if_account_set_as_name_token() {
+        let env = odra_test::env();
+        let signer = env.get_account(10);
+        let treasury = env.get_account(11);
+        let result = Controller::try_deploy(
+            &env,
+            ControllerInitArgs {
+                registrar: env.get_account(1),
+                signer: env.public_key(&signer),
+                treasury,
+            },
+        );
+        assert!(result.is_err());
+    }
 
     #[test]
     fn test_controller() {

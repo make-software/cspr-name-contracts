@@ -4,7 +4,7 @@ use odra::{
 };
 use odra_modules::access::Role;
 
-use crate::data_structures::SecondarySaleVoucher;
+use crate::{contracts::controller::ControllerError, data_structures::SecondarySaleVoucher};
 
 use super::{controller::BaseController, name_token::NameTokenContractRef};
 
@@ -34,6 +34,9 @@ impl SecondaryMarket {
     /// Initializes the secondary market with the signer public key, the treasury
     /// address and the name token contract address.
     pub fn init(&mut self, signer: PublicKey, treasury: Address, name_token: Address) {
+        if !name_token.is_contract() {
+            self.revert(ControllerError::ContractAddressExpected);
+        }
         self.controller.init(signer, treasury);
         self.name_token.set(name_token);
     }
@@ -54,5 +57,27 @@ impl SecondaryMarket {
     fn compute_token_id(&self, label: &String) -> U256 {
         let hash = self.env().hash(label);
         U256::from(hash)
+    }
+}
+
+#[cfg(test)]
+mod tests {
+    use crate::contracts::marketplace::{SecondaryMarket, SecondaryMarketInitArgs};
+    use odra::host::Deployer;
+
+    #[test]
+    fn deploy_fails_if_account_set_as_name_token() {
+        let env = odra_test::env();
+        let signer = env.get_account(10);
+        let treasury = env.get_account(11);
+        let result = SecondaryMarket::try_deploy(
+            &env,
+            SecondaryMarketInitArgs {
+                signer: env.public_key(&signer),
+                treasury,
+                name_token: env.get_account(12), // Using an account instead of a contract address
+            },
+        );
+        assert!(result.is_err());
     }
 }

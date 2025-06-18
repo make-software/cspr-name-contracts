@@ -45,6 +45,9 @@ impl Registrar {
 
     /// Initializes the registrar with the name token contract address.
     pub fn init(&mut self, name_token: Address) {
+        if !name_token.is_contract() {
+            self.revert(RegistrarError::NameTokenIsNotValid);
+        }
         let caller = self.env().caller();
 
         // Set NameToken address.
@@ -314,6 +317,7 @@ pub enum RegistrarError {
     VoucherExpired = 1204,
     TokenDoesNotExist = 1205,
     GracePeriodTooLong = 1206,
+    NameTokenIsNotValid = 1207,
 }
 
 #[cfg(test)]
@@ -325,8 +329,20 @@ mod tests {
             generate_token_id, TestContext, GRACE_PERIOD, INIT_TIME, TOKEN_EXPIRATION, TOKEN_NAME,
         },
     };
-    use odra::host::HostRef;
+    use odra::host::{Deployer, HostRef};
     use odra_modules::{access::errors::Error as AccessControlError, cep95::Burn};
+
+    #[test]
+    fn deploy_fails_if_account_set_as_name_token() {
+        let env = odra_test::env();
+        let result = Registrar::try_deploy(
+            &env,
+            RegistrarInitArgs {
+                name_token: env.get_account(1),
+            },
+        );
+        assert!(result.is_err());
+    }
 
     #[test]
     fn test_admin_can_manage_controller_role() {

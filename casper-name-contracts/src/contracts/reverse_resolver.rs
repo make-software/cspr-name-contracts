@@ -14,6 +14,11 @@ impl ReverseResolver {
         let caller = self.env().caller();
         let current_primary_name = self.get_primary_name(&caller);
 
+        if current_primary_name.as_ref() == Some(&primary_name) {
+            // If the primary name is the same, do nothing.
+            return;
+        }
+
         // Update primary name.
         self.primary_names.set(&caller, primary_name.clone());
 
@@ -68,5 +73,28 @@ mod tests {
 
         // It should have the new primary name.
         assert_eq!(resolver.get_primary_name(&user), Some("test2".to_string()));
+    }
+
+    #[test]
+    fn test_set_same_primary_name() {
+        let env = odra_test::env();
+        let mut resolver = ReverseResolver::deploy(&env, NoArgs);
+
+        let user = env.get_account(1);
+
+        // Set primary name.
+        env.set_caller(user);
+        resolver.set_primary_name("test".to_string());
+
+        // Set a different primary name.
+        env.set_caller(user);
+        resolver.set_primary_name("test2".to_string());
+
+        // Set the same primary name again.
+        env.set_caller(user);
+        resolver.set_primary_name("test2".to_string());
+
+        // The contract should not emit an event for the same primary name.
+        assert_eq!(env.events_count(&resolver), 2);
     }
 }

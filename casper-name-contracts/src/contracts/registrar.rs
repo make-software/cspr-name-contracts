@@ -16,7 +16,8 @@ use super::utils;
 
 pub const CONTROLLER_ROLE: Role = [2u8; 32];
 // Reminting should be possible after 5 days.
-const PENDING_DELETE_PERIOD: u64 = 5 * 24 * 60 * 60 * 1000;
+const PENDING_DELETE_PERIOD: u64 = 5 * 24 * 60 * 60 * 1000; // 5 days
+const MAX_GRACE_PERIOD: u64 = 365 * 24 * 60 * 60 * 1000; // 365 days
 
 /// Registrar smart contract. It handles the registration and expiration of name tokens.
 #[odra::module]
@@ -90,6 +91,9 @@ impl Registrar {
     /// Admin only. Sets the grace period.
     pub fn set_grace_period(&mut self, period: u64) {
         self.assert_caller_is_admin();
+        if period > MAX_GRACE_PERIOD {
+            self.revert(RegistrarError::GracePeriodTooLong);
+        }
         self.grace_period.set(period);
     }
 
@@ -287,6 +291,7 @@ pub enum RegistrarError {
     GracePeriodExpired = 1203,
     VoucherExpired = 1204,
     TokenDoesNotExist = 1205,
+    GracePeriodTooLong = 1206,
 }
 
 #[cfg(test)]
@@ -354,6 +359,20 @@ mod tests {
 
         // Then grace period is not changed.
         assert_eq!(reg.grace_period(), 100);
+    }
+
+    #[test]
+    fn test_grace_period_too_long() {
+        let mut ctx = TestContext::install_raw();
+        let (env, reg) = (ctx.env, &mut ctx.registrar);
+        let admin = ctx.admin;
+
+        // When Admin sets too long grace period.
+        env.set_caller(admin);
+        let result = reg.try_set_grace_period(MAX_GRACE_PERIOD + 1);
+
+        // Then it fails with error.
+        assert_eq!(result, Err(RegistrarError::GracePeriodTooLong.into()));
     }
 
     #[test]

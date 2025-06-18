@@ -156,8 +156,12 @@ impl BaseController {
             .treasury
             .get_or_revert_with(ControllerError::FeeCollectorNotSet);
         let payment_info = voucher.payment_info();
-        if self.env().attached_value() < payment_info.amount {
+        let attached_value = self.env().attached_value();
+        if attached_value < payment_info.amount {
             self.revert(ControllerError::InsufficientPayment);
+        }
+        if attached_value > payment_info.amount {
+            self.env().revert_with(ControllerError::PaymentTooLarge);
         }
         self.env()
             .transfer_tokens(&fee_collector, &payment_info.amount);
@@ -186,6 +190,7 @@ pub enum ControllerError {
     RegistrarNotSet = 1103,
     BuyerMustBeCaller = 1104,
     InsufficientPayment = 1105,
+    PaymentTooLarge = 1106,
 }
 
 #[cfg(test)]

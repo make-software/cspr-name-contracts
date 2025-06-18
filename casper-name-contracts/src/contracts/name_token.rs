@@ -4,7 +4,7 @@ use odra::casper_types::bytesrepr::Bytes;
 use odra::casper_types::U256;
 use odra::module::Revertible;
 use odra::{prelude::*, ContractRef};
-use odra_modules::access::Ownable;
+use odra_modules::access::Ownable2Step;
 use odra_modules::cep95::{CEP95Interface, Cep95};
 
 use super::resolver::ResolverContractRef;
@@ -13,7 +13,7 @@ use super::resolver::ResolverContractRef;
 #[odra::module(errors = NameTokenError)]
 pub struct NameToken {
     token: SubModule<Cep95>,
-    ownable: SubModule<Ownable>,
+    ownable: SubModule<Ownable2Step>,
     default_resolver: External<ResolverContractRef>,
     max_supply: Var<u64>,
     minted_tokens_count: Var<u64>,
@@ -36,6 +36,14 @@ impl NameToken {
             fn revoke_approval_for_all(&mut self, operator: Address);
             fn is_approved_for_all(&self, owner: Address, operator: Address) -> bool;
             fn token_metadata(&self, token_id: U256) -> Vec<(String, String)>;
+        }
+
+        to self.ownable {
+            fn get_owner(&self) -> Address;
+            fn get_pending_owner(&self) -> Option<Address>;
+            fn transfer_ownership(&mut self, new_owner: &Address);
+            fn accept_ownership(&mut self);
+            fn renounce_ownership(&mut self);
         }
     }
 
@@ -195,7 +203,7 @@ impl NameToken {
 
     pub fn revoke_whitelist(&mut self, address: Address) {
         let caller = self.env().caller();
-        self.assert_whitelisted(&caller);
+        self.ownable.assert_owner(&caller);
         self.whitelist.set(&address, false);
     }
 }

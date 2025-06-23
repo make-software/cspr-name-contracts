@@ -59,8 +59,6 @@ impl Registrar {
         // Setup roles.
         self.access_control
             .unchecked_grant_role(&DEFAULT_ADMIN_ROLE, &caller);
-        self.access_control
-            .set_admin_role(&CONTROLLER_ROLE, &DEFAULT_ADMIN_ROLE);
 
         // Consider removing this line.
         self.access_control

@@ -94,7 +94,7 @@ impl Controller {
     }
 }
 
-/// Base for all controllers. It handles access controy, treasury and signer
+/// Base for all controllers. It handles access control, treasury and signer
 /// public key.
 #[odra::module(
     errors = ControllerError,

@@ -9,7 +9,7 @@ use odra_modules::cep95::{CEP95Interface, Cep95};
 
 use super::resolver::ResolverContractRef;
 
-/// NameToken contract. It is a CEP78 token with additional functionalities.
+/// NameToken contract. It is a CEP95 token with additional functionalities.
 #[odra::module(errors = NameTokenError)]
 pub struct NameToken {
     token: SubModule<Cep95>,
@@ -47,7 +47,7 @@ impl NameToken {
         }
     }
 
-    /// Initializes CEP78 with the given name and symbol.
+    /// Initializes CEP95 with the given name and symbol.
     pub fn init(&mut self, name: String, symbol: String, max_supply: u64) {
         let caller = self.env().caller();
 

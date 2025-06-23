@@ -8,7 +8,7 @@ pub struct ReverseResolver {
 
 #[odra::module]
 impl ReverseResolver {
-    /// Sets the primary preffered reverse resolution address for the caller.
+    /// Sets the primary preferred reverse resolution address for the caller.
     pub fn set_primary_name(&mut self, primary_name: String) {
         // Load currently set primary name.
         let caller = self.env().caller();

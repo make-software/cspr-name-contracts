@@ -85,7 +85,7 @@ impl Registrar {
     /// Try to resolve a full domain name to an address.
     pub fn resolve(&self, full_domain: String) -> Option<Address> {
         let token_name = utils::extract_token_name(&full_domain)?;
-        let token_hash = self.compute_namehash(&token_name);
+        let token_hash = self.compute_token_id(&token_name);
         if !self.name_token.is_token_valid(token_hash) {
             return None;
         }
@@ -219,7 +219,8 @@ impl Registrar {
         }
     }
 
-    fn compute_namehash(&self, label: &str) -> U256 {
+    #[inline]
+    fn compute_token_id(&self, label: &str) -> U256 {
         let hash = self.env().hash(label);
         U256::from(hash)
     }
@@ -283,7 +284,7 @@ impl Registrar {
             self.assert_token_expires_in_future(info.token_expiration, block_time);
 
             // Compute token hash.
-            let token_id = self.compute_namehash(&info.label);
+            let token_id = self.compute_token_id(&info.label);
 
             // Check if token already exists.
             let token_exists = self.name_token.token_exists(token_id);
@@ -555,7 +556,7 @@ mod tests {
     }
 
     #[test]
-    fn on_expiration_default_resolver_is_cleanup() {
+    fn on_expiration_default_resolver_is_invalidated() {
         let mut ctx = TestContext::install_and_setup();
         let (admin, alice) = (ctx.admin, ctx.alice);
 

@@ -9,7 +9,7 @@ pub trait Resolver {
     fn set_name_token(&mut self, name_token: Address);
     fn set_resolution(&mut self, full_domain: Domain, address: Option<Address>);
     fn resolve(&self, full_domain: Domain) -> Option<Address>;
-    fn cleanup(&mut self, token_id: TokenId);
+    fn invalidate_resolutions(&mut self, token_id: TokenId);
 }
 
 type Nonce = u32;
@@ -116,13 +116,13 @@ impl DefaultResolver {
             .flatten()
     }
 
-    /// Cleanup the resolutions for a token. Only the token owner or the admin can do this.
-    pub fn cleanup(&mut self, token_id: TokenId) {
+    /// Invalidates all the resolutions for a token. Only the token owner or the admin can do this.
+    pub fn invalidate_resolutions(&mut self, token_id: TokenId) {
         let env = self.env();
         let caller = env.caller();
 
         if !self.has_role(&DEFAULT_ADMIN_ROLE, &caller) && self.owner_of(token_id) != Some(caller) {
-            self.env().revert(ResolverError::UnauthorizedCleanup);
+            self.env().revert(ResolverError::UnauthorizedInvalidation);
         }
         self.nonces.add(&token_id, 1);
 
@@ -151,7 +151,7 @@ impl DefaultResolver {
 pub enum ResolverError {
     ResolutionSetWithInvalidToken = 1401,
     ResolutionSetByInvalidOwner = 1402,
-    UnauthorizedCleanup = 1403,
+    UnauthorizedInvalidation = 1403,
     UnauthorizedTokenAddressUpdate = 1404,
     InvalidDomain = 1405,
     InvalidSubdomainFormat = 1406,
@@ -333,7 +333,7 @@ mod tests {
     }
 
     #[test]
-    fn cleanup_erases_subdomains() {
+    fn invalidate_erases_subdomains() {
         let (mut ctx, _, alice, bob) = setup();
 
         // When alice sets the resolution for the main domain and a subdomain
@@ -346,7 +346,7 @@ mod tests {
         assert_eq!(resolve(&ctx, SUBDOMAIN), Some(bob));
 
         // When alice cleans up the token's resolutions
-        cleanup(&mut ctx, TOKEN_NAME);
+        invalidate(&mut ctx, TOKEN_NAME);
 
         // Then both resolutions are erased
         assert_eq!(resolve(&ctx, MAIN_DOMAIN), None);
@@ -354,7 +354,7 @@ mod tests {
     }
 
     #[test]
-    fn admin_can_cleanup_any_token() {
+    fn admin_can_invalidate_any_token() {
         let (mut ctx, admin, alice, bob) = setup();
 
         // When alice sets the resolution for the main domain and a subdomain
@@ -367,7 +367,7 @@ mod tests {
         assert_eq!(resolve(&ctx, SUBDOMAIN), Some(bob));
 
         // When the admin cleans up alice's token's resolutions
-        cleanup_with_caller(&mut ctx, TOKEN_NAME, admin);
+        invalidate_with_caller(&mut ctx, TOKEN_NAME, admin);
 
         // Then both resolutions are erased
         assert_eq!(resolve(&ctx, MAIN_DOMAIN), None);
@@ -375,7 +375,7 @@ mod tests {
     }
 
     #[test]
-    fn only_owner_or_admin_can_cleanup() {
+    fn only_owner_or_admin_can_invalidate() {
         let (mut ctx, _, alice, bob) = setup();
 
         // When alice sets the resolution for the main domain and a subdomain
@@ -389,9 +389,9 @@ mod tests {
 
         // When bob tries to clean up alice's token's resolutions
         ctx.set_caller(bob);
-        let result = try_cleanup(&mut ctx, TOKEN_NAME);
+        let result = try_invalidate(&mut ctx, TOKEN_NAME);
         // Then the operation fails
-        assert_eq!(result, Err(ResolverError::UnauthorizedCleanup.into()));
+        assert_eq!(result, Err(ResolverError::UnauthorizedInvalidation.into()));
     }
 
     fn setup() -> (TestContext, Address, Address, Address) {
@@ -435,17 +435,17 @@ mod tests {
         resolve(ctx, domain)
     }
 
-    fn cleanup(ctx: &mut TestContext, token_name: &str) {
-        try_cleanup(ctx, token_name).unwrap();
+    fn invalidate(ctx: &mut TestContext, token_name: &str) {
+        try_invalidate(ctx, token_name).unwrap();
     }
 
-    fn cleanup_with_caller(ctx: &mut TestContext, token_hash: &str, caller: Address) {
+    fn invalidate_with_caller(ctx: &mut TestContext, token_name: &str, caller: Address) {
         ctx.set_caller(caller);
-        cleanup(ctx, token_hash);
+        invalidate(ctx, token_name);
     }
 
-    fn try_cleanup(ctx: &mut TestContext, token_name: &str) -> OdraResult<()> {
+    fn try_invalidate(ctx: &mut TestContext, token_name: &str) -> OdraResult<()> {
         ctx.default_resolver
-            .try_cleanup(generate_token_id(token_name))
+            .try_invalidate_resolutions(generate_token_id(token_name))
     }
 }

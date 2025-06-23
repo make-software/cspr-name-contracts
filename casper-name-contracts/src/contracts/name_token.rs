@@ -87,11 +87,11 @@ impl NameToken {
         let caller = self.env().caller();
         self.assert_whitelisted(&caller);
 
-        // cleanup the resolver is the default resolver and update metadata
+        // invalidate resolutions if the resolver is the default resolver and update metadata
         let mut metadata = self.wrapped_metadata(token_id);
         if let Some(resolver) = metadata.resolver().unwrap_or_revert(self) {
             if &resolver == self.default_resolver.address() {
-                self.default_resolver.cleanup(token_id);
+                self.default_resolver.invalidate_resolutions(token_id);
             }
         }
         metadata.clear_resolver();
@@ -118,7 +118,7 @@ impl NameToken {
                 self.cleanup(token_id);
                 self.token.raw_transfer_from(owner, recipient, token_id);
                 // make sure there were no previous records for the new owner
-                self.default_resolver.cleanup(token_id);
+                self.default_resolver.invalidate_resolutions(token_id);
             } else {
                 self.token.raw_transfer_from(owner, recipient, token_id);
             }
@@ -135,7 +135,7 @@ impl NameToken {
         if caller != owner {
             self.cleanup(token_id);
             self.token.transfer_from(from, to, token_id);
-            self.default_resolver.cleanup(token_id);
+            self.default_resolver.invalidate_resolutions(token_id);
         } else {
             self.token.transfer_from(from, to, token_id);
         }
@@ -237,7 +237,7 @@ impl NameToken {
         let mut metadata = self.wrapped_metadata(token_id);
         let resolver = metadata.resolver().unwrap_or_revert(self);
         if resolver == Some(*self.default_resolver.address()) {
-            self.default_resolver.cleanup(token_id);
+            self.default_resolver.invalidate_resolutions(token_id);
         } else {
             let default_resolver = *self.default_resolver.address();
             metadata.set_resolver(default_resolver);

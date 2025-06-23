@@ -92,7 +92,7 @@ impl DefaultResolver {
             env.revert(ResolverError::ResolutionSetByInvalidOwner);
         }
 
-        if !utils::validate_subdomains(&full_domain) {
+        if !utils::is_domain_valid(&full_domain) {
             env.revert(ResolverError::InvalidSubdomainFormat);
         }
 

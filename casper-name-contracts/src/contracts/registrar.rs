@@ -280,7 +280,9 @@ impl Registrar {
         let block_time = self.env().get_block_time();
         for info in names {
             self.assert_token_expires_in_future(info.token_expiration, block_time);
-
+            if !utils::is_label_valid(&info.label) {
+                self.revert(RegistrarError::TokenNameIsNotValid);
+            }
             // Compute token hash.
             let token_id = self.compute_token_id(&info.label);
 
@@ -315,6 +317,7 @@ pub enum RegistrarError {
     TokenDoesNotExist = 1205,
     GracePeriodTooLong = 1206,
     NameTokenIsNotValid = 1207,
+    TokenNameIsNotValid = 1208,
 }
 
 #[cfg(test)]
@@ -448,6 +451,28 @@ mod tests {
 
         // Then registration fails.
         assert_eq!(result, Err(RegistrarError::VoucherExpired.into()));
+    }
+
+    #[test]
+    fn register_invalid_label_fails() {
+        let mut ctx = TestContext::install_and_setup();
+        let (admin, alice) = (ctx.admin, ctx.alice);
+        let invalid_name = "invalid-label-";
+
+        // When Admin tries to register an invalid label.
+        let result = ctx.try_name_register(
+            admin,
+            alice,
+            invalid_name,
+            ctx.token_expiration_time(),
+            ctx.voucher_expiration_time(),
+        );
+
+        // Then registration fails.
+        assert_eq!(
+            result.unwrap_err(),
+            OdraError::from(RegistrarError::TokenNameIsNotValid)
+        );
     }
 
     #[test]

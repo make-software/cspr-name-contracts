@@ -54,7 +54,7 @@ fn is_valid_dns_label(label: &str) -> bool {
 
 /// Validate a full domain with subdomains.
 /// The domain must end with `.cspr` and each subdomain must be a valid DNS label.
-pub fn validate_subdomains(full_domain: &str) -> bool {
+pub fn is_domain_valid(full_domain: &str) -> bool {
     if full_domain.ends_with(CSPR_DOMAIN) {
         let token_name = full_domain.trim_end_matches(CSPR_DOMAIN);
         token_name
@@ -64,6 +64,13 @@ pub fn validate_subdomains(full_domain: &str) -> bool {
     } else {
         false
     }
+}
+
+/// Validate a label for use in a Casper token name.
+/// A valid label must be a valid DNS label, not equal to "cspr", and
+/// must not contain any subdomains (i.e., no `.` character).
+pub fn is_label_valid(label: &str) -> bool {
+    is_valid_dns_label(label) && label != "cspr" && !label.contains('.')
 }
 
 #[cfg(test)]
@@ -100,27 +107,38 @@ mod t {
     }
 
     #[test]
-    fn test_validate_subdomains() {
+    fn test_is_domain_valid() {
         let full_domain = "odra.cspr";
-        assert!(super::validate_subdomains(full_domain));
+        assert!(super::is_domain_valid(full_domain));
 
         let full_domain = "aaa.odra.cspr";
-        assert!(super::validate_subdomains(full_domain));
+        assert!(super::is_domain_valid(full_domain));
 
         let full_domain = "ss.aaa.odra.cspr";
-        assert!(super::validate_subdomains(full_domain));
+        assert!(super::is_domain_valid(full_domain));
 
         let full_domain = "invalid-label-.cspr";
-        assert!(!super::validate_subdomains(full_domain));
+        assert!(!super::is_domain_valid(full_domain));
 
         let full_domain = "invalid-label@.cspr";
-        assert!(!super::validate_subdomains(full_domain));
+        assert!(!super::is_domain_valid(full_domain));
 
         let full_domain =
             "too-long-label-abcdefghijklmnopqrstuvwxyzabcdefghijklmnopqrstuvwxyz.cspr";
-        assert!(!super::validate_subdomains(full_domain));
+        assert!(!super::is_domain_valid(full_domain));
 
         let full_domain = "valid123.cspr";
-        assert!(super::validate_subdomains(full_domain));
+        assert!(super::is_domain_valid(full_domain));
+    }
+
+    #[test]
+    fn test_is_label_valid() {
+        assert!(super::is_label_valid("valid-label"));
+        assert!(!super::is_label_valid("-invalid-start"));
+        assert!(!super::is_label_valid("invalid-end-"));
+        assert!(!super::is_label_valid("invalid_char@"));
+        assert!(!super::is_label_valid("cspr"));
+        assert!(!super::is_label_valid("invalid.label"));
+        assert!(super::is_label_valid("valid123"));
     }
 }

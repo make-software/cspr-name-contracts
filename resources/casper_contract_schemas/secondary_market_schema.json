@@ -1,6 +1,6 @@
 {
   "casper_contract_schema_version": 1,
-  "toolchain": "rustc 1.82.0-nightly (f8060d282 2024-07-30)",
+  "toolchain": "rustc 1.85.0-nightly (d117b7f21 2024-12-31)",
   "authors": [],
   "repository": null,
   "homepage": null,
@@ -19,6 +19,19 @@
           },
           {
             "name": "owner",
+            "description": null,
+            "ty": "Key"
+          }
+        ]
+      }
+    },
+    {
+      "struct": {
+        "name": "Paused",
+        "description": null,
+        "members": [
+          {
+            "name": "account",
             "description": null,
             "ty": "Key"
           }
@@ -174,9 +187,27 @@
           }
         ]
       }
+    },
+    {
+      "struct": {
+        "name": "Unpaused",
+        "description": null,
+        "members": [
+          {
+            "name": "account",
+            "description": null,
+            "ty": "Key"
+          }
+        ]
+      }
     }
   ],
   "errors": [
+    {
+      "name": "BuyerMustBeCaller",
+      "description": "",
+      "discriminant": 1104
+    },
     {
       "name": "CallerNotTheNewOwner",
       "description": "The caller is not the new owner.",
@@ -186,6 +217,26 @@
       "name": "CallerNotTheOwner",
       "description": "The caller is not the owner.",
       "discriminant": 20001
+    },
+    {
+      "name": "ContractAddressExpected",
+      "description": "",
+      "discriminant": 1107
+    },
+    {
+      "name": "FeeCollectorNotSet",
+      "description": "",
+      "discriminant": 1102
+    },
+    {
+      "name": "InsufficientPayment",
+      "description": "",
+      "discriminant": 1105
+    },
+    {
+      "name": "InvalidSignature",
+      "description": "",
+      "discriminant": 1101
     },
     {
       "name": "MissingRole",
@@ -198,9 +249,29 @@
       "discriminant": 20000
     },
     {
+      "name": "PausedRequired",
+      "description": "Contract needs to be paused first.",
+      "discriminant": 21000
+    },
+    {
+      "name": "PaymentTooLarge",
+      "description": "",
+      "discriminant": 1106
+    },
+    {
+      "name": "RegistrarNotSet",
+      "description": "",
+      "discriminant": 1103
+    },
+    {
       "name": "RoleRenounceForAnotherAddress",
       "description": "The role cannot be renounced for another address.",
       "discriminant": 20004
+    },
+    {
+      "name": "UnpausedRequired",
+      "description": "Contract needs to be unpaused first.",
+      "discriminant": 21001
     }
   ],
   "entry_points": [
@@ -340,9 +411,40 @@
       "return_ty": "PublicKey",
       "is_contract_context": true,
       "access": "public"
+    },
+    {
+      "name": "pause",
+      "description": "Delegated. See `self.controller.pause()` for details.",
+      "is_mutable": true,
+      "arguments": [],
+      "return_ty": "Unit",
+      "is_contract_context": true,
+      "access": "public"
+    },
+    {
+      "name": "unpause",
+      "description": "Delegated. See `self.controller.unpause()` for details.",
+      "is_mutable": true,
+      "arguments": [],
+      "return_ty": "Unit",
+      "is_contract_context": true,
+      "access": "public"
+    },
+    {
+      "name": "is_paused",
+      "description": "Delegated. See `self.controller.is_paused()` for details.",
+      "is_mutable": false,
+      "arguments": [],
+      "return_ty": "Bool",
+      "is_contract_context": true,
+      "access": "public"
     }
   ],
   "events": [
+    {
+      "name": "Paused",
+      "ty": "Paused"
+    },
     {
       "name": "PaymentFulfilled",
       "ty": "PaymentFulfilled"
@@ -358,6 +460,10 @@
     {
       "name": "RoleRevoked",
       "ty": "RoleRevoked"
+    },
+    {
+      "name": "Unpaused",
+      "ty": "Unpaused"
     }
   ],
   "call": {

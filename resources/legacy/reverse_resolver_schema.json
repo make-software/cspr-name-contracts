@@ -22,7 +22,9 @@
         },
         {
           "name": "new_primary_name",
-          "ty": "String",
+          "ty": {
+            "Option": "String"
+          },
           "is_ref": false,
           "is_slice": false,
           "is_required": true
@@ -31,6 +33,22 @@
     }
   ],
   "entrypoints": [
+    {
+      "name": "init",
+      "args": [
+        {
+          "name": "name_token",
+          "ty": "Key",
+          "is_ref": false,
+          "is_slice": false,
+          "is_required": true
+        }
+      ],
+      "is_mutable": true,
+      "return_ty": "Unit",
+      "ty": "Constructor",
+      "attributes": []
+    },
     {
       "name": "set_primary_name",
       "args": [

@@ -1,6 +1,6 @@
 {
   "casper_contract_schema_version": 1,
-  "toolchain": "rustc 1.82.0-nightly (f8060d282 2024-07-30)",
+  "toolchain": "rustc 1.85.0-nightly (d117b7f21 2024-12-31)",
   "authors": [],
   "repository": null,
   "homepage": null,
@@ -132,6 +132,21 @@
       "discriminant": 20001
     },
     {
+      "name": "InvalidDomain",
+      "description": "",
+      "discriminant": 1405
+    },
+    {
+      "name": "InvalidSubdomainFormat",
+      "description": "",
+      "discriminant": 1406
+    },
+    {
+      "name": "InvalidTokenName",
+      "description": "",
+      "discriminant": 1407
+    },
+    {
       "name": "MissingRole",
       "description": "The role is missing.",
       "discriminant": 20003
@@ -142,9 +157,29 @@
       "discriminant": 20000
     },
     {
+      "name": "ResolutionSetByInvalidOwner",
+      "description": "",
+      "discriminant": 1402
+    },
+    {
+      "name": "ResolutionSetWithInvalidToken",
+      "description": "",
+      "discriminant": 1401
+    },
+    {
       "name": "RoleRenounceForAnotherAddress",
       "description": "The role cannot be renounced for another address.",
       "discriminant": 20004
+    },
+    {
+      "name": "UnauthorizedInvalidation",
+      "description": "",
+      "discriminant": 1403
+    },
+    {
+      "name": "UnauthorizedTokenAddressUpdate",
+      "description": "",
+      "discriminant": 1404
     }
   ],
   "entry_points": [
@@ -207,8 +242,8 @@
       "access": "public"
     },
     {
-      "name": "cleanup",
-      "description": "Cleanup the resolutions for a token. Only the token owner or the admin can do this.",
+      "name": "invalidate_resolutions",
+      "description": "Invalidates all the resolutions for a token. Only the token owner or the admin can do this.",
       "is_mutable": true,
       "arguments": [
         {

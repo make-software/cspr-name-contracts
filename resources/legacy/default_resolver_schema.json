@@ -200,7 +200,7 @@
       "attributes": []
     },
     {
-      "name": "cleanup",
+      "name": "invalidate_resolutions",
       "args": [
         {
           "name": "token_id",

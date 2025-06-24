@@ -5,7 +5,7 @@ use odra::casper_types::U256;
 use odra::module::Revertible;
 use odra::{prelude::*, ContractRef};
 use odra_modules::access::Ownable2Step;
-use odra_modules::cep95::{CEP95Interface, Cep95};
+use odra_modules::cep95::{CEP95Interface, Cep95, Error as Cep95Error};
 
 use super::resolver::ResolverContractRef;
 
@@ -106,21 +106,18 @@ impl NameToken {
         self.assert_whitelisted(&caller);
 
         for token_id in token_ids {
-            let owner = self
-                .token
-                .owner_of(token_id)
-                .unwrap_or_revert_with(self, odra_modules::cep95::Error::ValueNotSet);
             if !self.is_token_valid(token_id) {
                 self.revert(NameTokenError::ExpiredTokenTransfer);
             }
+
+            let owner = self
+                .token
+                .owner_of(token_id)
+                .unwrap_or_revert_with(self, Cep95Error::ValueNotSet);
+            self.token.raw_transfer_from(owner, recipient, token_id);
             // if called by an operator
             if caller != owner {
                 self.cleanup(token_id);
-                self.token.raw_transfer_from(owner, recipient, token_id);
-                // make sure there were no previous records for the new owner
-                self.default_resolver.invalidate_resolutions(token_id);
-            } else {
-                self.token.raw_transfer_from(owner, recipient, token_id);
             }
         }
     }
@@ -129,15 +126,16 @@ impl NameToken {
         if !self.is_token_valid(token_id) {
             self.revert(NameTokenError::ExpiredTokenTransfer);
         }
+
         let caller = self.env().caller();
-        let owner = self.token.owner_of(token_id).unwrap_or_revert(self);
+        let owner = self
+            .token
+            .owner_of(token_id)
+            .unwrap_or_revert_with(self, Cep95Error::ValueNotSet);
         // if called by an operator
+        self.token.transfer_from(from, to, token_id);
         if caller != owner {
             self.cleanup(token_id);
-            self.token.transfer_from(from, to, token_id);
-            self.default_resolver.invalidate_resolutions(token_id);
-        } else {
-            self.token.transfer_from(from, to, token_id);
         }
     }
 
@@ -236,13 +234,12 @@ impl NameToken {
     fn cleanup(&mut self, token_id: U256) {
         let mut metadata = self.wrapped_metadata(token_id);
         let resolver = metadata.resolver().unwrap_or_revert(self);
-        if resolver == Some(*self.default_resolver.address()) {
-            self.default_resolver.invalidate_resolutions(token_id);
-        } else {
-            let default_resolver = *self.default_resolver.address();
-            metadata.set_resolver(default_resolver);
+        let default_resolver_address = *self.default_resolver.address();
+        if resolver != Some(default_resolver_address) {
+            metadata.set_resolver(default_resolver_address);
             self.token.set_metadata(token_id, metadata.to_vec());
         }
+        self.default_resolver.invalidate_resolutions(token_id);
     }
 }
 

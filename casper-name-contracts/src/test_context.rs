@@ -4,8 +4,8 @@ use blake2::digest::VariableOutput;
 use blake2::Blake2bVar;
 use odra::casper_types::bytesrepr::{Bytes, ToBytes};
 use odra::casper_types::{U256, U512};
-use odra::host::{Deployer, HostEnv, HostRef};
-use odra::prelude::*;
+use odra::host::{Deployer, HostEnv};
+use odra::{prelude::*, Addressable};
 use odra_modules::access::DEFAULT_ADMIN_ROLE;
 use odra_modules::cep95::Mint;
 
@@ -263,6 +263,10 @@ impl TestContext {
 
     pub fn balance_of(&self, account: &Address) -> U512 {
         self.env.balance_of(account)
+    }
+
+    pub fn events_count<T: Addressable>(&self, address: &T) -> u32 {
+        self.env.events_count(address)
     }
 }
 

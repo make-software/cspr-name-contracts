@@ -1,10 +1,13 @@
 use odra::{
-    casper_types::{bytesrepr::Bytes, PublicKey, U256},
+    casper_types::{bytesrepr::Bytes, PublicKey},
     prelude::*,
 };
 use odra_modules::access::Role;
 
-use crate::{contracts::controller::ControllerError, data_structures::SecondarySaleVoucher};
+use crate::{
+    contracts::{controller::ControllerError, token_id::ToTokenId},
+    data_structures::SecondarySaleVoucher,
+};
 
 use super::{controller::BaseController, name_token::NameTokenContractRef};
 
@@ -47,16 +50,11 @@ impl SecondaryMarket {
         self.controller.require_not_paused();
         self.controller.process_payment_voucher(&voucher, signature);
         for name in voucher.names {
-            let token_id = self.compute_token_id(&name.label);
+            let token_id = self.token_id(name.label);
             let to = self.env().caller();
             let from = name.owner;
             self.name_token.transfer_from(from, to, token_id);
         }
-    }
-
-    fn compute_token_id(&self, label: &String) -> U256 {
-        let hash = self.env().hash(label);
-        U256::from(hash)
     }
 }
 

@@ -1,7 +1,7 @@
 use odra::{casper_types::U256, prelude::*};
 use odra_modules::access::{AccessControl, Role, DEFAULT_ADMIN_ROLE};
 
-use super::{name_token::NameTokenContractRef, utils};
+use super::{name_token::NameTokenContractRef, token_id::ToTokenId, utils};
 
 #[odra::external_contract]
 pub trait Resolver {
@@ -80,7 +80,7 @@ impl DefaultResolver {
     pub fn set_resolution(&mut self, full_domain: Domain, address: Option<Address>) {
         let env = self.env();
         let token_id = self
-            .calculate_token_id(&full_domain)
+            .extract_token_id(&full_domain)
             .unwrap_or_revert_with(self, ResolverError::InvalidDomain);
         let caller = env.caller();
 
@@ -108,7 +108,7 @@ impl DefaultResolver {
 
     /// Resolves a domain to an address.
     pub fn resolve(&self, full_domain: Domain) -> Option<Address> {
-        let token_id = self.calculate_token_id(&full_domain)?;
+        let token_id = self.extract_token_id(&full_domain)?;
         let nonce = self.nonce(&token_id);
 
         self.resolutions
@@ -130,10 +130,9 @@ impl DefaultResolver {
     }
 
     #[inline]
-    fn calculate_token_id(&self, full_domain: &str) -> Option<TokenId> {
+    fn extract_token_id(&self, full_domain: &str) -> Option<TokenId> {
         let token_name = utils::extract_token_name(&full_domain)?;
-        let hash = self.env().hash(token_name);
-        Some(U256::from(hash))
+        Some(self.token_id(token_name))
     }
 
     #[inline]

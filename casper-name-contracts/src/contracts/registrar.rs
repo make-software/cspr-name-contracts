@@ -272,6 +272,7 @@ impl Registrar {
             let metadata = NameTokenMetadata::with_resolver(
                 &info.label,
                 info.token_expiration,
+                &info.asset_uri,
                 self.name_token.get_default_resolver(),
             );
             self.name_token
@@ -720,6 +721,7 @@ mod tests {
         let expected = NameTokenMetadata::with_resolver(
             TOKEN_NAME,
             INIT_TIME + 2 * TOKEN_EXPIRATION,
+            "",
             *ctx.default_resolver.address(),
         );
         assert_eq!(metadata, expected.to_vec());

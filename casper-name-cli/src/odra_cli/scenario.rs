@@ -97,6 +97,7 @@ impl odra_cli::scenario::Scenario for RegisterTokenScenario {
             &args.get_single::<String>("name")?,
             owner,
             token_expiration,
+            "",
         )];
         let voucher = TokenizationVoucher::new(names, voucher_expiration);
 
@@ -185,6 +186,7 @@ impl odra_cli::scenario::Scenario for CalculateSignature {
             label: args.get_single::<String>("voucher.names.label")?,
             owner: args.get_single::<Address>("voucher.names.owner")?,
             token_expiration: args.get_single::<u64>("voucher.names.token_expiration")?,
+            asset_uri: args.get_single::<String>("voucher.names.asset_uri")?,
         };
 
         let voucher = PaymentVoucher::new(
@@ -228,6 +230,13 @@ impl odra_cli::scenario::Scenario for CalculateSignature {
                 "voucher.voucher_expiration",
                 "",
                 NamedCLType::U64,
+                true,
+                false,
+            ),
+            odra_cli::CommandArg::new(
+                "voucher.names.asset_uri",
+                "",
+                NamedCLType::String,
                 true,
                 false,
             ),

@@ -383,6 +383,3 @@ mod tests {
         assert_eq!(metadata, deserialized);
     }
 }
-
-//"{\"name\":\"test-label\",\"expiration\":86400,\"resolver\":\"hash-7ba9daac84bebee8111c186588f21ebca35550b6cf1244e71768bd871938be6a\",\"asset_uri\":\"https://example.com/asset-uri\"}"
-//"{\"name\":\"test-label\",\"expiration\":86400,\"resolver\":\"hash-7ba9daac84bebee8111c186588f21ebca35550b6cf1244e71768bd871938be6a\"\"asset_uri\":\"https://example.com/asset-uri\"}"

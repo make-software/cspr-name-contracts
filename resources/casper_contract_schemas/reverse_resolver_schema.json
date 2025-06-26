@@ -27,17 +27,35 @@
           {
             "name": "new_primary_name",
             "description": null,
-            "ty": "String"
+            "ty": {
+              "Option": "String"
+            }
           }
         ]
       }
     }
   ],
-  "errors": [],
+  "errors": [
+    {
+      "name": "InvalidResolutionAddress",
+      "description": "",
+      "discriminant": 1502
+    },
+    {
+      "name": "InvalidTokenName",
+      "description": "",
+      "discriminant": 1500
+    },
+    {
+      "name": "ResolutionForPrimaryNameNotFound",
+      "description": "",
+      "discriminant": 1501
+    }
+  ],
   "entry_points": [
     {
       "name": "set_primary_name",
-      "description": "Sets the primary preffered reverse resolution address for the caller.",
+      "description": "Sets the primary preferred reverse resolution address for the caller.",
       "is_mutable": true,
       "arguments": [
         {
@@ -78,7 +96,7 @@
   ],
   "call": {
     "wasm_file_name": "ReverseResolver.wasm",
-    "description": null,
+    "description": "",
     "arguments": [
       {
         "name": "odra_cfg_package_hash_key_name",
@@ -96,6 +114,12 @@
         "name": "odra_cfg_is_upgradable",
         "description": "The arg name for the contract upgradeability setting.",
         "ty": "Bool",
+        "optional": false
+      },
+      {
+        "name": "name_token",
+        "description": null,
+        "ty": "Key",
         "optional": false
       }
     ]

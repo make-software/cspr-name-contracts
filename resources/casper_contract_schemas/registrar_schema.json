@@ -37,6 +37,19 @@
     },
     {
       "struct": {
+        "name": "Paused",
+        "description": null,
+        "members": [
+          {
+            "name": "account",
+            "description": null,
+            "ty": "Key"
+          }
+        ]
+      }
+    },
+    {
+      "struct": {
         "name": "RenewalVoucher",
         "description": null,
         "members": [
@@ -171,6 +184,19 @@
           }
         ]
       }
+    },
+    {
+      "struct": {
+        "name": "Unpaused",
+        "description": null,
+        "members": [
+          {
+            "name": "account",
+            "description": null,
+            "ty": "Key"
+          }
+        ]
+      }
     }
   ],
   "errors": [
@@ -185,9 +211,29 @@
       "discriminant": 20001
     },
     {
+      "name": "ExpirationDateInThePast",
+      "description": "",
+      "discriminant": 1201
+    },
+    {
+      "name": "GracePeriodExpired",
+      "description": "",
+      "discriminant": 1203
+    },
+    {
+      "name": "GracePeriodTooLong",
+      "description": "",
+      "discriminant": 1206
+    },
+    {
       "name": "MissingRole",
       "description": "The role is missing.",
       "discriminant": 20003
+    },
+    {
+      "name": "NameTokenIsNotValid",
+      "description": "",
+      "discriminant": 1207
     },
     {
       "name": "OwnerNotSet",
@@ -195,12 +241,60 @@
       "discriminant": 20000
     },
     {
+      "name": "PausedRequired",
+      "description": "Contract needs to be paused first.",
+      "discriminant": 21000
+    },
+    {
       "name": "RoleRenounceForAnotherAddress",
       "description": "The role cannot be renounced for another address.",
       "discriminant": 20004
+    },
+    {
+      "name": "TokenDoesNotExist",
+      "description": "",
+      "discriminant": 1205
+    },
+    {
+      "name": "TokenNameIsNotValid",
+      "description": "",
+      "discriminant": 1208
+    },
+    {
+      "name": "TokenNotExpired",
+      "description": "",
+      "discriminant": 1202
+    },
+    {
+      "name": "UnpausedRequired",
+      "description": "Contract needs to be unpaused first.",
+      "discriminant": 21001
+    },
+    {
+      "name": "VoucherExpired",
+      "description": "",
+      "discriminant": 1204
     }
   ],
   "entry_points": [
+    {
+      "name": "pause",
+      "description": "Temporarily stops the contract.",
+      "is_mutable": true,
+      "arguments": [],
+      "return_ty": "Unit",
+      "is_contract_context": true,
+      "access": "public"
+    },
+    {
+      "name": "unpause",
+      "description": "Returns to normal operation.",
+      "is_mutable": true,
+      "arguments": [],
+      "return_ty": "Unit",
+      "is_contract_context": true,
+      "access": "public"
+    },
     {
       "name": "grace_period",
       "description": "Returns the grace period.",
@@ -491,9 +585,22 @@
       "return_ty": "Unit",
       "is_contract_context": true,
       "access": "public"
+    },
+    {
+      "name": "is_paused",
+      "description": "Delegated. See `self.pauseable.is_paused()` for details.",
+      "is_mutable": false,
+      "arguments": [],
+      "return_ty": "Bool",
+      "is_contract_context": true,
+      "access": "public"
     }
   ],
   "events": [
+    {
+      "name": "Paused",
+      "ty": "Paused"
+    },
     {
       "name": "RoleAdminChanged",
       "ty": "RoleAdminChanged"
@@ -505,6 +612,10 @@
     {
       "name": "RoleRevoked",
       "ty": "RoleRevoked"
+    },
+    {
+      "name": "Unpaused",
+      "ty": "Unpaused"
     }
   ],
   "call": {

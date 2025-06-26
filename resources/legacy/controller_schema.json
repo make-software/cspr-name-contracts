@@ -114,6 +114,30 @@
           "is_required": true
         }
       ]
+    },
+    {
+      "name": "Paused",
+      "args": [
+        {
+          "name": "account",
+          "ty": "Key",
+          "is_ref": false,
+          "is_slice": false,
+          "is_required": true
+        }
+      ]
+    },
+    {
+      "name": "Unpaused",
+      "args": [
+        {
+          "name": "account",
+          "ty": "Key",
+          "is_ref": false,
+          "is_slice": false,
+          "is_required": true
+        }
+      ]
     }
   ],
   "entrypoints": [
@@ -374,6 +398,30 @@
       "args": [],
       "is_mutable": false,
       "return_ty": "PublicKey",
+      "ty": "Public",
+      "attributes": []
+    },
+    {
+      "name": "pause",
+      "args": [],
+      "is_mutable": true,
+      "return_ty": "Unit",
+      "ty": "Public",
+      "attributes": []
+    },
+    {
+      "name": "unpause",
+      "args": [],
+      "is_mutable": true,
+      "return_ty": "Unit",
+      "ty": "Public",
+      "attributes": []
+    },
+    {
+      "name": "is_paused",
+      "args": [],
+      "is_mutable": false,
+      "return_ty": "Bool",
       "ty": "Public",
       "attributes": []
     }

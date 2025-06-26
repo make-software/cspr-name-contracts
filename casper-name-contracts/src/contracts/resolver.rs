@@ -1,7 +1,7 @@
 use odra::{casper_types::U256, prelude::*};
 use odra_modules::access::{AccessControl, Role, DEFAULT_ADMIN_ROLE};
 
-use super::{name_token::NameTokenContractRef, utils};
+use super::{name_token::NameTokenContractRef, token_id::ToTokenId, utils};
 
 #[odra::external_contract]
 pub trait Resolver {
@@ -9,7 +9,7 @@ pub trait Resolver {
     fn set_name_token(&mut self, name_token: Address);
     fn set_resolution(&mut self, full_domain: Domain, address: Option<Address>);
     fn resolve(&self, full_domain: Domain) -> Option<Address>;
-    fn cleanup(&mut self, token_id: TokenId);
+    fn invalidate_resolutions(&mut self, token_id: TokenId);
 }
 
 type Nonce = u32;
@@ -30,7 +30,10 @@ pub struct ResolutionCleared {
 }
 
 /// Default Resolver smart contract. It handles the resolution of domain names to addresses.
-#[odra::module(events = [ResolutionChanged, ResolutionCleared])]
+#[odra::module(
+    errors = ResolverError,
+    events = [ResolutionChanged, ResolutionCleared]
+)]
 pub struct DefaultResolver {
     access_control: SubModule<AccessControl>,
     name_token: External<NameTokenContractRef>,
@@ -51,6 +54,9 @@ impl DefaultResolver {
     /// Initializes the default resolver with the name token contract address.
     /// The caller is granted the admin role.
     pub fn init(&mut self, name_token: Address) {
+        if !name_token.is_contract() {
+            self.revert(ResolverError::InvalidTokenName);
+        }
         self.name_token.set(name_token);
 
         let admin = self.env().caller();
@@ -60,6 +66,9 @@ impl DefaultResolver {
 
     /// Admin only. Sets the name token contract address.
     pub fn set_name_token(&mut self, name_token: Address) {
+        if !name_token.is_contract() {
+            self.revert(ResolverError::InvalidTokenName);
+        }
         if !self.has_role(&DEFAULT_ADMIN_ROLE, &self.env().caller()) {
             self.env()
                 .revert(ResolverError::UnauthorizedTokenAddressUpdate);
@@ -71,7 +80,7 @@ impl DefaultResolver {
     pub fn set_resolution(&mut self, full_domain: Domain, address: Option<Address>) {
         let env = self.env();
         let token_id = self
-            .calculate_token_id(&full_domain)
+            .extract_token_id(&full_domain)
             .unwrap_or_revert_with(self, ResolverError::InvalidDomain);
         let caller = env.caller();
 
@@ -81,6 +90,10 @@ impl DefaultResolver {
 
         if self.owner_of(token_id) != Some(caller) {
             env.revert(ResolverError::ResolutionSetByInvalidOwner);
+        }
+
+        if !utils::is_domain_valid(&full_domain) {
+            env.revert(ResolverError::InvalidSubdomainFormat);
         }
 
         let nonce = self.nonce(&token_id);
@@ -95,7 +108,7 @@ impl DefaultResolver {
 
     /// Resolves a domain to an address.
     pub fn resolve(&self, full_domain: Domain) -> Option<Address> {
-        let token_id = self.calculate_token_id(&full_domain)?;
+        let token_id = self.extract_token_id(&full_domain)?;
         let nonce = self.nonce(&token_id);
 
         self.resolutions
@@ -103,13 +116,13 @@ impl DefaultResolver {
             .flatten()
     }
 
-    /// Cleanup the resolutions for a token. Only the token owner or the admin can do this.
-    pub fn cleanup(&mut self, token_id: TokenId) {
+    /// Invalidates all the resolutions for a token. Only the token owner or the admin can do this.
+    pub fn invalidate_resolutions(&mut self, token_id: TokenId) {
         let env = self.env();
         let caller = env.caller();
 
         if !self.has_role(&DEFAULT_ADMIN_ROLE, &caller) && self.owner_of(token_id) != Some(caller) {
-            self.env().revert(ResolverError::UnauthorizedCleanup);
+            self.env().revert(ResolverError::UnauthorizedInvalidation);
         }
         self.nonces.add(&token_id, 1);
 
@@ -117,10 +130,9 @@ impl DefaultResolver {
     }
 
     #[inline]
-    fn calculate_token_id(&self, full_domain: &str) -> Option<TokenId> {
+    fn extract_token_id(&self, full_domain: &str) -> Option<TokenId> {
         let token_name = utils::extract_token_name(&full_domain)?;
-        let hash = self.env().hash(token_name);
-        Some(U256::from(hash))
+        Some(self.token_id(token_name))
     }
 
     #[inline]
@@ -138,13 +150,17 @@ impl DefaultResolver {
 pub enum ResolverError {
     ResolutionSetWithInvalidToken = 1401,
     ResolutionSetByInvalidOwner = 1402,
-    UnauthorizedCleanup = 1403,
+    UnauthorizedInvalidation = 1403,
     UnauthorizedTokenAddressUpdate = 1404,
     InvalidDomain = 1405,
+    InvalidSubdomainFormat = 1406,
+    InvalidTokenName = 1407,
 }
 
 #[cfg(test)]
 mod tests {
+    use odra::{host::Deployer, Addressable};
+
     use super::*;
     use crate::test_context::{generate_token_id, TestContext, TOKEN_EXPIRATION};
 
@@ -153,6 +169,19 @@ mod tests {
     const NON_CSPR_DOMAIN: &str = "odra.com";
     const MAIN_DOMAIN: &str = "odra.cspr";
     const SUBDOMAIN: &str = "docs.odra.cspr";
+    const INVALID_SUBDOMAIN: &str = "-docs.odra.cspr";
+
+    #[test]
+    fn deploy_fails_if_account_set_as_name_token() {
+        let env = odra_test::env();
+        let result = DefaultResolver::try_deploy(
+            &env,
+            DefaultResolverInitArgs {
+                name_token: env.get_account(1),
+            },
+        );
+        assert!(result.is_err());
+    }
 
     #[test]
     fn deployer_is_admin() {
@@ -165,16 +194,34 @@ mod tests {
     #[test]
     fn only_admin_can_set_name_token() {
         let (mut ctx, admin, alice, _) = setup();
+        let contract_address = *ctx.controller.address();
 
         // When alice tries to set the name token
         ctx.set_caller(alice);
         // Then the operation fails
-        assert!(ctx.default_resolver.try_set_name_token(alice).is_err());
+        assert!(ctx
+            .default_resolver
+            .try_set_name_token(contract_address)
+            .is_err());
 
         // When the admin sets the name token
         ctx.set_caller(admin);
         // Then the operation succeeds
-        assert!(ctx.default_resolver.try_set_name_token(alice).is_ok());
+        assert!(ctx
+            .default_resolver
+            .try_set_name_token(contract_address)
+            .is_ok());
+    }
+
+    #[test]
+    fn name_token_must_be_a_contract() {
+        let (mut ctx, admin, alice, _) = setup();
+
+        // When the admin tries to set a non-contract address as the name token
+        ctx.set_caller(admin);
+        let result = ctx.default_resolver.try_set_name_token(alice);
+        // Then the operation fails
+        assert_eq!(result, Err(ResolverError::InvalidTokenName.into()));
     }
 
     #[test]
@@ -262,7 +309,6 @@ mod tests {
         // Given the token has been burned
         let (mut ctx, admin, alice, _) = setup();
         ctx.set_caller(admin);
-        ctx.token.whitelist(admin);
         ctx.token.burn(generate_token_id(TOKEN_NAME));
         // When alice tries to set the resolution
         ctx.set_caller(alice);
@@ -275,7 +321,18 @@ mod tests {
     }
 
     #[test]
-    fn cleanup_erases_subdomains() {
+    fn set_resolution_for_invalid_subdomain_format() {
+        let (mut ctx, _, alice, _) = setup();
+
+        // When alice tries to set the resolution for an invalid subdomain format
+        ctx.set_caller(alice);
+        let result = try_set_resolution(&mut ctx, INVALID_SUBDOMAIN, alice);
+        // Then the operation fails
+        assert_eq!(result, Err(ResolverError::InvalidSubdomainFormat.into()));
+    }
+
+    #[test]
+    fn invalidate_erases_subdomains() {
         let (mut ctx, _, alice, bob) = setup();
 
         // When alice sets the resolution for the main domain and a subdomain
@@ -288,7 +345,7 @@ mod tests {
         assert_eq!(resolve(&ctx, SUBDOMAIN), Some(bob));
 
         // When alice cleans up the token's resolutions
-        cleanup(&mut ctx, TOKEN_NAME);
+        invalidate(&mut ctx, TOKEN_NAME);
 
         // Then both resolutions are erased
         assert_eq!(resolve(&ctx, MAIN_DOMAIN), None);
@@ -296,7 +353,7 @@ mod tests {
     }
 
     #[test]
-    fn admin_can_cleanup_any_token() {
+    fn admin_can_invalidate_any_token() {
         let (mut ctx, admin, alice, bob) = setup();
 
         // When alice sets the resolution for the main domain and a subdomain
@@ -309,7 +366,7 @@ mod tests {
         assert_eq!(resolve(&ctx, SUBDOMAIN), Some(bob));
 
         // When the admin cleans up alice's token's resolutions
-        cleanup_with_caller(&mut ctx, TOKEN_NAME, admin);
+        invalidate_with_caller(&mut ctx, TOKEN_NAME, admin);
 
         // Then both resolutions are erased
         assert_eq!(resolve(&ctx, MAIN_DOMAIN), None);
@@ -317,7 +374,7 @@ mod tests {
     }
 
     #[test]
-    fn only_owner_or_admin_can_cleanup() {
+    fn only_owner_or_admin_can_invalidate() {
         let (mut ctx, _, alice, bob) = setup();
 
         // When alice sets the resolution for the main domain and a subdomain
@@ -331,9 +388,9 @@ mod tests {
 
         // When bob tries to clean up alice's token's resolutions
         ctx.set_caller(bob);
-        let result = try_cleanup(&mut ctx, TOKEN_NAME);
+        let result = try_invalidate(&mut ctx, TOKEN_NAME);
         // Then the operation fails
-        assert_eq!(result, Err(ResolverError::UnauthorizedCleanup.into()));
+        assert_eq!(result, Err(ResolverError::UnauthorizedInvalidation.into()));
     }
 
     fn setup() -> (TestContext, Address, Address, Address) {
@@ -377,17 +434,17 @@ mod tests {
         resolve(ctx, domain)
     }
 
-    fn cleanup(ctx: &mut TestContext, token_name: &str) {
-        try_cleanup(ctx, token_name).unwrap();
+    fn invalidate(ctx: &mut TestContext, token_name: &str) {
+        try_invalidate(ctx, token_name).unwrap();
     }
 
-    fn cleanup_with_caller(ctx: &mut TestContext, token_hash: &str, caller: Address) {
+    fn invalidate_with_caller(ctx: &mut TestContext, token_name: &str, caller: Address) {
         ctx.set_caller(caller);
-        cleanup(ctx, token_hash);
+        invalidate(ctx, token_name);
     }
 
-    fn try_cleanup(ctx: &mut TestContext, token_name: &str) -> OdraResult<()> {
+    fn try_invalidate(ctx: &mut TestContext, token_name: &str) -> OdraResult<()> {
         ctx.default_resolver
-            .try_cleanup(generate_token_id(token_name))
+            .try_invalidate_resolutions(generate_token_id(token_name))
     }
 }

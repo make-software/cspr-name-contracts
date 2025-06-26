@@ -4,11 +4,14 @@ use odra::module::Revertible;
 use odra::prelude::*;
 use odra::ContractRef;
 use odra_modules::access::{AccessControl, Role, DEFAULT_ADMIN_ROLE};
+use odra_modules::security::Pauseable;
 
-use crate::data_structures::{ExpirableVoucher, NameMintInfo, RenewalVoucher, TokenRenewalInfo};
 use crate::{
-    contracts::name_token::NameTokenContractRef,
-    data_structures::{NameTokenMetadata, TokenizationVoucher},
+    contracts::{name_token::NameTokenContractRef, token_id::ToTokenId},
+    data_structures::{
+        ExpirableVoucher, NameMintInfo, NameTokenMetadata, RenewalVoucher, TokenRenewalInfo,
+        TokenizationVoucher,
+    },
 };
 
 use super::resolver::ResolverContractRef;
@@ -16,14 +19,16 @@ use super::utils;
 
 pub const CONTROLLER_ROLE: Role = [2u8; 32];
 // Reminting should be possible after 5 days.
-const PENDING_DELETE_PERIOD: u64 = 5 * 24 * 60 * 60 * 1000;
+const PENDING_DELETE_PERIOD: u64 = 5 * 24 * 60 * 60 * 1000; // 5 days
+const MAX_GRACE_PERIOD: u64 = 365 * 24 * 60 * 60 * 1000; // 365 days
 
 /// Registrar smart contract. It handles the registration and expiration of name tokens.
-#[odra::module]
+#[odra::module(errors = RegistrarError)]
 pub struct Registrar {
     name_token: External<NameTokenContractRef>,
     access_control: SubModule<AccessControl>,
     grace_period: Var<u64>,
+    pauseable: SubModule<Pauseable>,
 }
 
 #[odra::module]
@@ -34,10 +39,17 @@ impl Registrar {
             fn grant_role(&mut self, role: &Role, address: &Address);
             fn revoke_role(&mut self, role: &Role, address: &Address);
         }
+
+        to self.pauseable {
+            fn is_paused(&self) -> bool;
+        }
     }
 
     /// Initializes the registrar with the name token contract address.
     pub fn init(&mut self, name_token: Address) {
+        if !name_token.is_contract() {
+            self.revert(RegistrarError::NameTokenIsNotValid);
+        }
         let caller = self.env().caller();
 
         // Set NameToken address.
@@ -50,11 +62,19 @@ impl Registrar {
         self.access_control
             .unchecked_grant_role(&DEFAULT_ADMIN_ROLE, &caller);
         self.access_control
-            .set_admin_role(&CONTROLLER_ROLE, &DEFAULT_ADMIN_ROLE);
-
-        // Consider removing this line.
-        self.access_control
             .unchecked_grant_role(&CONTROLLER_ROLE, &caller);
+    }
+
+    /// Temporarily stops the contract.
+    pub fn pause(&mut self) {
+        self.assert_caller_is_admin();
+        self.pauseable.pause();
+    }
+
+    /// Returns to normal operation.
+    pub fn unpause(&mut self) {
+        self.assert_caller_is_admin();
+        self.pauseable.unpause();
     }
 
     /// Returns the grace period.
@@ -65,7 +85,7 @@ impl Registrar {
     /// Try to resolve a full domain name to an address.
     pub fn resolve(&self, full_domain: String) -> Option<Address> {
         let token_name = utils::extract_token_name(&full_domain)?;
-        let token_hash = self.compute_namehash(&token_name);
+        let token_hash = self.token_id(token_name);
         if !self.name_token.is_token_valid(token_hash) {
             return None;
         }
@@ -80,6 +100,7 @@ impl Registrar {
 
     /// Expire a list of tokens if they are expired.
     pub fn expire(&mut self, token_ids: Vec<U256>) {
+        self.pauseable.require_not_paused();
         let block_time = self.env().get_block_time();
         let grace_period = self.grace_period();
         for token_id in token_ids {
@@ -90,6 +111,9 @@ impl Registrar {
     /// Admin only. Sets the grace period.
     pub fn set_grace_period(&mut self, period: u64) {
         self.assert_caller_is_admin();
+        if period > MAX_GRACE_PERIOD {
+            self.revert(RegistrarError::GracePeriodTooLong);
+        }
         self.grace_period.set(period);
     }
 
@@ -133,6 +157,7 @@ impl Registrar {
 
     /// Controller only. Prolong the expiration date of a list of tokens.
     pub fn controller_prolong(&mut self, voucher: RenewalVoucher) {
+        self.pauseable.require_not_paused();
         self.assert_caller_is_controller();
         self.assert_voucher_not_expired(&voucher);
         self.prolong(voucher.tokens);
@@ -140,6 +165,7 @@ impl Registrar {
 
     /// Controller only. Register a list of tokens.
     pub fn controller_register(&mut self, voucher: TokenizationVoucher) {
+        self.pauseable.require_not_paused();
         self.assert_voucher_not_expired(&voucher);
         self.assert_caller_is_controller();
         self.register(voucher.names);
@@ -151,6 +177,7 @@ impl Registrar {
         renewal_voucher: RenewalVoucher,
         tokenization_voucher: TokenizationVoucher,
     ) {
+        self.pauseable.require_not_paused();
         self.assert_caller_is_controller();
         self.assert_voucher_not_expired(&renewal_voucher);
         self.assert_voucher_not_expired(&tokenization_voucher);
@@ -190,11 +217,6 @@ impl Registrar {
         if self.is_token_expired(token_expiration, grace_period, block_time) {
             self.name_token.burn(token_id);
         }
-    }
-
-    fn compute_namehash(&self, label: &str) -> U256 {
-        let hash = self.env().hash(label);
-        U256::from(hash)
     }
 
     #[inline]
@@ -254,9 +276,17 @@ impl Registrar {
         let block_time = self.env().get_block_time();
         for info in names {
             self.assert_token_expires_in_future(info.token_expiration, block_time);
-
+            if !utils::is_label_valid(&info.label) {
+                self.revert(RegistrarError::TokenNameIsNotValid);
+            }
+            let metadata = NameTokenMetadata::with_resolver(
+                &info.label,
+                info.token_expiration,
+                &info.asset_uri,
+                self.name_token.get_default_resolver(),
+            );
             // Compute token hash.
-            let token_id = self.compute_namehash(&info.label);
+            let token_id = self.token_id(info.label);
 
             // Check if token already exists.
             let token_exists = self.name_token.token_exists(token_id);
@@ -269,12 +299,6 @@ impl Registrar {
             }
 
             // Mint token.
-            let metadata = NameTokenMetadata::with_resolver(
-                &info.label,
-                info.token_expiration,
-                &info.asset_uri,
-                self.name_token.get_default_resolver(),
-            );
             self.name_token
                 .mint(info.owner, token_id, metadata.to_vec());
         }
@@ -288,6 +312,9 @@ pub enum RegistrarError {
     GracePeriodExpired = 1203,
     VoucherExpired = 1204,
     TokenDoesNotExist = 1205,
+    GracePeriodTooLong = 1206,
+    NameTokenIsNotValid = 1207,
+    TokenNameIsNotValid = 1208,
 }
 
 #[cfg(test)]
@@ -299,8 +326,20 @@ mod tests {
             generate_token_id, TestContext, GRACE_PERIOD, INIT_TIME, TOKEN_EXPIRATION, TOKEN_NAME,
         },
     };
-    use odra::host::HostRef;
+    use odra::host::{Deployer, HostRef};
     use odra_modules::{access::errors::Error as AccessControlError, cep95::Burn};
+
+    #[test]
+    fn deploy_fails_if_account_set_as_name_token() {
+        let env = odra_test::env();
+        let result = Registrar::try_deploy(
+            &env,
+            RegistrarInitArgs {
+                name_token: env.get_account(1),
+            },
+        );
+        assert!(result.is_err());
+    }
 
     #[test]
     fn test_admin_can_manage_controller_role() {
@@ -358,6 +397,20 @@ mod tests {
     }
 
     #[test]
+    fn test_grace_period_too_long() {
+        let mut ctx = TestContext::install_raw();
+        let (env, reg) = (ctx.env, &mut ctx.registrar);
+        let admin = ctx.admin;
+
+        // When Admin sets too long grace period.
+        env.set_caller(admin);
+        let result = reg.try_set_grace_period(MAX_GRACE_PERIOD + 1);
+
+        // Then it fails with error.
+        assert_eq!(result, Err(RegistrarError::GracePeriodTooLong.into()));
+    }
+
+    #[test]
     fn register_with_past_expiration_time_fails() {
         let mut ctx = TestContext::install_and_setup();
         let (admin, alice) = (ctx.admin, ctx.alice);
@@ -395,6 +448,28 @@ mod tests {
 
         // Then registration fails.
         assert_eq!(result, Err(RegistrarError::VoucherExpired.into()));
+    }
+
+    #[test]
+    fn register_invalid_label_fails() {
+        let mut ctx = TestContext::install_and_setup();
+        let (admin, alice) = (ctx.admin, ctx.alice);
+        let invalid_name = "invalid-label-";
+
+        // When Admin tries to register an invalid label.
+        let result = ctx.try_name_register(
+            admin,
+            alice,
+            invalid_name,
+            ctx.token_expiration_time(),
+            ctx.voucher_expiration_time(),
+        );
+
+        // Then registration fails.
+        assert_eq!(
+            result.unwrap_err(),
+            OdraError::from(RegistrarError::TokenNameIsNotValid)
+        );
     }
 
     #[test]
@@ -501,7 +576,7 @@ mod tests {
     }
 
     #[test]
-    fn on_expiration_default_resolver_is_cleanup() {
+    fn on_expiration_default_resolver_is_invalidated() {
         let mut ctx = TestContext::install_and_setup();
         let (admin, alice) = (ctx.admin, ctx.alice);
 
@@ -696,6 +771,33 @@ mod tests {
     }
 
     #[test]
+    fn renew_when_paused_fails() {
+        let mut ctx = TestContext::install_and_setup();
+        let (admin, alice) = (ctx.admin, ctx.alice);
+
+        // Given Alice has a token.
+        ctx.with_name_registered(admin, alice, TOKEN_NAME);
+        ctx.set_caller(admin);
+        ctx.registrar.pause();
+
+        // When Admin tries to renew the token.
+        let token_expiration = INIT_TIME + 2 * TOKEN_EXPIRATION;
+        let voucher_expiration = INIT_TIME + TOKEN_EXPIRATION;
+        let tokens = vec![TokenRenewalInfo::new(
+            generate_token_id(TOKEN_NAME),
+            token_expiration,
+        )];
+        let voucher = RenewalVoucher::new(tokens, voucher_expiration);
+        let result = ctx.registrar.try_controller_prolong(voucher);
+
+        // Then registration fails.
+        assert_eq!(
+            result,
+            Err(odra_modules::security::errors::Error::UnpausedRequired.into())
+        );
+    }
+
+    #[test]
     fn test_renew() {
         let mut ctx = TestContext::install_and_setup();
         let (admin, alice) = (ctx.admin, ctx.alice);
@@ -798,5 +900,60 @@ mod tests {
 
         // Then the result is the token owner.
         assert_eq!(result, Some(alice));
+    }
+
+    #[test]
+    fn test_controller_register_fails_when_paused() {
+        let mut ctx = TestContext::install_and_setup();
+        let (admin, alice) = (ctx.admin, ctx.alice);
+
+        // Given Alice has a token.
+        ctx.with_name_registered(admin, alice, TOKEN_NAME);
+        ctx.set_caller(admin);
+        ctx.registrar.pause();
+
+        // When Admin tries to register the token.
+        let token_expiration = INIT_TIME + 2 * TOKEN_EXPIRATION;
+        let voucher_expiration = INIT_TIME + TOKEN_EXPIRATION;
+        let names = vec![NameMintInfo::new(TOKEN_NAME, alice, token_expiration)];
+        let voucher = TokenizationVoucher::new(names, voucher_expiration);
+        let result = ctx.registrar.try_controller_register(voucher);
+
+        // Then registration fails.
+        assert_eq!(
+            result,
+            Err(odra_modules::security::errors::Error::UnpausedRequired.into())
+        );
+    }
+
+    #[test]
+    fn test_controller_register_and_prolong_fails_when_paused() {
+        let mut ctx = TestContext::install_and_setup();
+        let (admin, alice) = (ctx.admin, ctx.alice);
+
+        // Given Alice has a token.
+        ctx.with_name_registered(admin, alice, TOKEN_NAME);
+        ctx.set_caller(admin);
+        ctx.registrar.pause();
+
+        // When Admin tries to register the token.
+        let token_expiration = INIT_TIME + 2 * TOKEN_EXPIRATION;
+        let voucher_expiration = INIT_TIME + TOKEN_EXPIRATION;
+        let names = vec![NameMintInfo::new(TOKEN_NAME, alice, token_expiration)];
+        let tokens = vec![TokenRenewalInfo::new(
+            generate_token_id(TOKEN_NAME),
+            token_expiration,
+        )];
+        let renewal_voucher = RenewalVoucher::new(tokens, voucher_expiration);
+        let voucher = TokenizationVoucher::new(names, voucher_expiration);
+        let result = ctx
+            .registrar
+            .try_controller_prolong_and_register(renewal_voucher, voucher);
+
+        // Then registration fails.
+        assert_eq!(
+            result,
+            Err(odra_modules::security::errors::Error::UnpausedRequired.into())
+        );
     }
 }

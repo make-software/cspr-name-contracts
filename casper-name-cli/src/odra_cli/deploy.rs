@@ -4,10 +4,10 @@ use casper_name_contracts::contracts::{
     name_token::{NameToken, NameTokenInitArgs},
     registrar::{Registrar, RegistrarInitArgs},
     resolver::{DefaultResolver, DefaultResolverInitArgs},
-    reverse_resolver::ReverseResolver,
+    reverse_resolver::{ReverseResolver, ReverseResolverInitArgs},
 };
 use odra::{
-    host::{Deployer, HostEnv, NoArgs},
+    host::{Deployer, HostEnv},
     Addressable,
 };
 
@@ -26,6 +26,7 @@ impl odra_cli::deploy::DeployScript for DeployScript {
             NameTokenInitArgs {
                 name: "008_CN".to_string(),
                 symbol: "008_CN".to_string(),
+                max_supply: 1_000_000,
             },
         )?;
         container.add_contract(&token)?;
@@ -71,7 +72,12 @@ impl odra_cli::deploy::DeployScript for DeployScript {
         container.add_contract(&market)?;
 
         env.set_gas(300_000_000_000);
-        let reverse_resolver = ReverseResolver::try_deploy(&env, NoArgs)?;
+        let reverse_resolver = ReverseResolver::try_deploy(
+            &env,
+            ReverseResolverInitArgs {
+                name_token: *token.address(),
+            },
+        )?;
         container.add_contract(&reverse_resolver)?;
 
         Ok(())

@@ -4,8 +4,8 @@ use blake2::digest::VariableOutput;
 use blake2::Blake2bVar;
 use odra::casper_types::bytesrepr::{Bytes, ToBytes};
 use odra::casper_types::{U256, U512};
-use odra::host::{Deployer, HostEnv, HostRef};
-use odra::prelude::*;
+use odra::host::{Deployer, HostEnv};
+use odra::{prelude::*, Addressable};
 use odra_modules::access::DEFAULT_ADMIN_ROLE;
 use odra_modules::cep95::Mint;
 
@@ -45,7 +45,7 @@ pub struct TestContext {
 }
 
 impl TestContext {
-    pub fn install_raw() -> TestContext {
+    pub fn install_raw_with_supply(max_supply: u64) -> TestContext {
         let env = odra_test::env();
         let signer = env.get_account(10);
         let treasury = env.get_account(11);
@@ -55,6 +55,7 @@ impl TestContext {
             NameTokenInitArgs {
                 name: String::from(NAME_TOKEN_NAME),
                 symbol: String::from(NAME_TOKEN_SYMBOL),
+                max_supply: max_supply,
             },
         );
         let resolver = DefaultResolver::deploy(
@@ -94,6 +95,10 @@ impl TestContext {
             anyone: env.get_account(3),
             treasury,
         }
+    }
+
+    pub fn install_raw() -> TestContext {
+        Self::install_raw_with_supply(1_000_000)
     }
 
     pub fn install_and_setup() -> TestContext {
@@ -264,6 +269,10 @@ impl TestContext {
 
     pub fn balance_of(&self, account: &Address) -> U512 {
         self.env.balance_of(account)
+    }
+
+    pub fn events_count<T: Addressable>(&self, address: &T) -> u32 {
+        self.env.events_count(address)
     }
 }
 

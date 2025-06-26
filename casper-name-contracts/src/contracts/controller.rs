@@ -7,7 +7,10 @@ use odra::{
     },
     prelude::*,
 };
-use odra_modules::access::{AccessControl, Role, DEFAULT_ADMIN_ROLE};
+use odra_modules::{
+    access::{AccessControl, Role, DEFAULT_ADMIN_ROLE},
+    security::Pauseable,
+};
 
 /// Event with the payment information.
 #[odra::event]
@@ -35,12 +38,18 @@ impl Controller {
             fn set_signer_public_key(&mut self, signer: PublicKey);
             fn set_treasury(&mut self, treasury: Address);
             fn signer_public_key(&self) -> PublicKey;
+            fn pause(&mut self);
+            fn unpause(&mut self);
+            fn is_paused(&self) -> bool;
         }
     }
 
     /// Initializes the controller with the registrar contract address, the
     /// signer public key and the treasury address.
     pub fn init(&mut self, registrar: Address, signer: PublicKey, treasury: Address) {
+        if !registrar.is_contract() {
+            self.revert(ControllerError::ContractAddressExpected);
+        }
         self.registrar.set(registrar);
         self.controller.init(signer, treasury);
     }
@@ -48,6 +57,7 @@ impl Controller {
     /// Payable. Buys new name tokens.
     #[odra(payable)]
     pub fn buy(&mut self, voucher: PaymentVoucher, signature: Bytes) {
+        self.controller.require_not_paused();
         self.controller.process_payment_voucher(&voucher, signature);
         self.registrar.controller_register(voucher.into());
     }
@@ -55,6 +65,7 @@ impl Controller {
     /// Payable. Renews name tokens.
     #[odra(payable)]
     pub fn renew(&mut self, voucher: RenewalPaymentVoucher, signature: Bytes) {
+        self.controller.require_not_paused();
         self.controller.process_payment_voucher(&voucher, signature);
         self.registrar.controller_prolong(voucher.into());
     }
@@ -68,6 +79,7 @@ impl Controller {
         renewal_voucher: RenewalPaymentVoucher,
         renewal_signature: Bytes,
     ) {
+        self.controller.require_not_paused();
         self.controller
             .process_payment_voucher(&payment_voucher, payment_signature);
         self.controller
@@ -82,13 +94,17 @@ impl Controller {
     }
 }
 
-/// Base for all controllers. It handles access controy, treasury and signer
+/// Base for all controllers. It handles access control, treasury and signer
 /// public key.
-#[odra::module(events = [PaymentFulfilled])]
+#[odra::module(
+    errors = ControllerError,
+    events = [PaymentFulfilled]
+)]
 pub struct BaseController {
     signer_public_key: Var<PublicKey>,
     treasury: Var<Address>,
     access_control: SubModule<AccessControl>,
+    pausable: SubModule<Pauseable>,
 }
 
 #[odra::module]
@@ -98,6 +114,11 @@ impl BaseController {
             fn has_role(&self, role: &Role, address: &Address) -> bool;
             fn grant_role(&mut self, role: &Role, address: &Address);
             fn revoke_role(&mut self, role: &Role, address: &Address);
+        }
+
+        to self.pausable {
+            fn is_paused(&self) -> bool;
+            fn require_not_paused(&self);
         }
     }
 }
@@ -113,6 +134,18 @@ impl BaseController {
         let admin = self.env().caller();
         self.access_control
             .unchecked_grant_role(&DEFAULT_ADMIN_ROLE, &admin);
+    }
+
+    /// Temporarily stops the contract.
+    pub fn pause(&mut self) {
+        self.assert_caller_is_admin();
+        self.pausable.pause();
+    }
+
+    /// Returns to normal operation.
+    pub fn unpause(&mut self) {
+        self.assert_caller_is_admin();
+        self.pausable.unpause();
     }
 
     /// Admin only. Sets the public key of the signer.
@@ -156,8 +189,12 @@ impl BaseController {
             .treasury
             .get_or_revert_with(ControllerError::FeeCollectorNotSet);
         let payment_info = voucher.payment_info();
-        if self.env().attached_value() < payment_info.amount {
+        let attached_value = self.env().attached_value();
+        if attached_value < payment_info.amount {
             self.revert(ControllerError::InsufficientPayment);
+        }
+        if attached_value > payment_info.amount {
+            self.revert(ControllerError::PaymentTooLarge);
         }
         self.env()
             .transfer_tokens(&fee_collector, &payment_info.amount);
@@ -186,16 +223,38 @@ pub enum ControllerError {
     RegistrarNotSet = 1103,
     BuyerMustBeCaller = 1104,
     InsufficientPayment = 1105,
+    PaymentTooLarge = 1106,
+    ContractAddressExpected = 1107,
 }
 
 #[cfg(test)]
 mod tests {
-    use odra::{casper_types::U512, host::HostRef};
+    use odra::{
+        casper_types::U512,
+        host::{Deployer, HostRef},
+    };
 
     use crate::{
+        contracts::controller::{Controller, ControllerInitArgs},
         data_structures::{NameMintInfo, PaymentVoucher, RenewalPaymentVoucher, TokenRenewalInfo},
         test_context::{generate_token_id, TestContext, INIT_TIME, TOKEN_EXPIRATION, TOKEN_NAME},
     };
+
+    #[test]
+    fn deploy_fails_if_account_set_as_registrar() {
+        let env = odra_test::env();
+        let signer = env.get_account(10);
+        let treasury = env.get_account(11);
+        let result = Controller::try_deploy(
+            &env,
+            ControllerInitArgs {
+                registrar: env.get_account(1),
+                signer: env.public_key(&signer),
+                treasury,
+            },
+        );
+        assert!(result.is_err());
+    }
 
     #[test]
     fn test_controller() {
@@ -270,5 +329,154 @@ mod tests {
             fee_collector_balance + amount
         );
         assert_eq!(ctx.balance_of(&alice), alice_balance - amount);
+    }
+
+    #[test]
+    fn test_only_admin_can_pause() {
+        let mut ctx = TestContext::install_and_setup();
+        // Given a contract with an admin and a user.
+        let (admin, alice) = (ctx.admin, ctx.alice);
+
+        // When a non-admin tries to pause it.
+        ctx.set_caller(alice);
+        let result = ctx.controller.try_pause();
+        // Then it should fail and the contract should not be paused.
+        assert!(result.is_err());
+        assert!(!ctx.controller.is_paused());
+
+        // When the admin tries to pause it.
+        ctx.set_caller(admin);
+        ctx.controller.pause();
+
+        // Then the contract should be paused.
+        assert!(ctx.controller.is_paused());
+    }
+
+    #[test]
+    fn test_only_admin_can_unpause() {
+        let mut ctx = TestContext::install_and_setup();
+        // Given a paused contract.
+        let (admin, alice) = (ctx.admin, ctx.alice);
+        ctx.controller.pause();
+        assert!(ctx.controller.is_paused());
+
+        // When a non-admin tries to unpause it.
+        ctx.set_caller(alice);
+        let result = ctx.controller.try_unpause();
+        // Then it should fail.
+        assert!(result.is_err());
+        assert!(ctx.controller.is_paused());
+
+        // When the admin tries to unpause it.
+        ctx.set_caller(admin);
+        ctx.controller.unpause();
+
+        // Then the contract should be unpaused.
+        assert!(!ctx.controller.is_paused());
+    }
+
+    #[test]
+    fn test_buy_require_not_paused() {
+        let mut ctx = TestContext::install_and_setup();
+        // Given a paused contract.
+        ctx.controller.pause();
+        assert!(ctx.controller.is_paused());
+
+        // When a user tries to buy a name.
+        ctx.set_caller(ctx.alice);
+        let voucher = PaymentVoucher::new(
+            U512::from(2000),
+            "id_1",
+            ctx.alice,
+            vec![NameMintInfo::new(
+                TOKEN_NAME,
+                ctx.alice,
+                ctx.token_expiration_time(),
+            )],
+            ctx.token_expiration_time(),
+        );
+        let signature = ctx.sign(&voucher);
+        let result = ctx.controller.try_buy(voucher, signature);
+
+        // Then it should fail.
+        assert_eq!(
+            result,
+            Err(odra_modules::security::errors::Error::UnpausedRequired.into())
+        );
+    }
+
+    #[test]
+    fn test_renew_require_not_paused() {
+        let mut ctx = TestContext::install_and_setup();
+        // Given a paused contract.
+        ctx.controller.pause();
+        assert!(ctx.controller.is_paused());
+
+        // When a user tries to renew a name.
+        ctx.set_caller(ctx.alice);
+        let voucher = RenewalPaymentVoucher::new(
+            U512::from(2000),
+            "id_1",
+            ctx.alice,
+            vec![TokenRenewalInfo::new(
+                generate_token_id(TOKEN_NAME),
+                ctx.token_expiration_time(),
+            )],
+            ctx.token_expiration_time(),
+        );
+        let signature = ctx.sign(&voucher);
+        let result = ctx.controller.try_renew(voucher, signature);
+
+        // Then it should fail.
+        assert_eq!(
+            result,
+            Err(odra_modules::security::errors::Error::UnpausedRequired.into())
+        );
+    }
+
+    #[test]
+    fn test_buy_and_renew_require_not_paused() {
+        let mut ctx = TestContext::install_and_setup();
+        // Given a paused contract.
+        ctx.controller.pause();
+        assert!(ctx.controller.is_paused());
+
+        // When a user tries to buy and renew names.
+        ctx.set_caller(ctx.alice);
+        let payment_voucher = PaymentVoucher::new(
+            U512::from(2000),
+            "id_1",
+            ctx.alice,
+            vec![NameMintInfo::new(
+                TOKEN_NAME,
+                ctx.alice,
+                ctx.token_expiration_time(),
+            )],
+            ctx.token_expiration_time(),
+        );
+        let renewal_voucher = RenewalPaymentVoucher::new(
+            U512::from(2000),
+            "id_2",
+            ctx.alice,
+            vec![TokenRenewalInfo::new(
+                generate_token_id(TOKEN_NAME),
+                ctx.token_expiration_time(),
+            )],
+            ctx.token_expiration_time(),
+        );
+        let payment_signature = ctx.sign(&payment_voucher);
+        let renewal_signature = ctx.sign(&renewal_voucher);
+        let result = ctx.controller.try_buy_and_renew(
+            payment_voucher,
+            payment_signature,
+            renewal_voucher,
+            renewal_signature,
+        );
+
+        // Then it should fail.
+        assert_eq!(
+            result,
+            Err(odra_modules::security::errors::Error::UnpausedRequired.into())
+        );
     }
 }

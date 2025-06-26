@@ -51,7 +51,7 @@ impl NameTokenMetadata {
     }
 
     pub fn resolver(&self) -> OdraResult<Option<Address>> {
-        Ok(self.resolver.clone())
+        Ok(self.resolver)
     }
 
     pub fn clear_resolver(&mut self) {

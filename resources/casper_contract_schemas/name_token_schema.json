@@ -99,6 +99,28 @@
     },
     {
       "struct": {
+        "name": "OwnershipTransferStarted",
+        "description": null,
+        "members": [
+          {
+            "name": "previous_owner",
+            "description": null,
+            "ty": {
+              "Option": "Key"
+            }
+          },
+          {
+            "name": "new_owner",
+            "description": null,
+            "ty": {
+              "Option": "Key"
+            }
+          }
+        ]
+      }
+    },
+    {
+      "struct": {
         "name": "OwnershipTransferred",
         "description": null,
         "members": [
@@ -206,9 +228,29 @@
       "discriminant": 20001
     },
     {
+      "name": "ExpiredTokenTransfer",
+      "description": "",
+      "discriminant": 1303
+    },
+    {
+      "name": "InvalidResolver",
+      "description": "",
+      "discriminant": 1305
+    },
+    {
       "name": "InvalidTokenId",
       "description": "The token ID is invalid.",
       "discriminant": 40005
+    },
+    {
+      "name": "InvalidTokenIdentifier",
+      "description": "",
+      "discriminant": 1304
+    },
+    {
+      "name": "InvalidTokenOwner",
+      "description": "",
+      "discriminant": 1302
     },
     {
       "name": "MissingRole",
@@ -219,6 +261,11 @@
       "name": "NotAnOwnerOrApproved",
       "description": "The token ID is invalid.",
       "discriminant": 40002
+    },
+    {
+      "name": "NotWhitelisted",
+      "description": "",
+      "discriminant": 1301
     },
     {
       "name": "OwnerNotSet",
@@ -236,6 +283,11 @@
       "discriminant": 40006
     },
     {
+      "name": "TokenSupplyDepleted",
+      "description": "",
+      "discriminant": 1306
+    },
+    {
       "name": "TransferFailed",
       "description": "The transfer failed.",
       "discriminant": 40001
@@ -244,6 +296,11 @@
       "name": "ValueNotSet",
       "description": "The value is not set.",
       "discriminant": 40000
+    },
+    {
+      "name": "WhitelistedAlready",
+      "description": "",
+      "discriminant": 1307
     }
   ],
   "entry_points": [
@@ -752,6 +809,60 @@
       },
       "is_contract_context": true,
       "access": "public"
+    },
+    {
+      "name": "get_owner",
+      "description": "Delegated. See `self.ownable.get_owner()` for details.",
+      "is_mutable": false,
+      "arguments": [],
+      "return_ty": "Key",
+      "is_contract_context": true,
+      "access": "public"
+    },
+    {
+      "name": "get_pending_owner",
+      "description": "Delegated. See `self.ownable.get_pending_owner()` for details.",
+      "is_mutable": false,
+      "arguments": [],
+      "return_ty": {
+        "Option": "Key"
+      },
+      "is_contract_context": true,
+      "access": "public"
+    },
+    {
+      "name": "transfer_ownership",
+      "description": "Delegated. See `self.ownable.transfer_ownership()` for details.",
+      "is_mutable": true,
+      "arguments": [
+        {
+          "name": "new_owner",
+          "description": null,
+          "ty": "Key",
+          "optional": false
+        }
+      ],
+      "return_ty": "Unit",
+      "is_contract_context": true,
+      "access": "public"
+    },
+    {
+      "name": "accept_ownership",
+      "description": "Delegated. See `self.ownable.accept_ownership()` for details.",
+      "is_mutable": true,
+      "arguments": [],
+      "return_ty": "Unit",
+      "is_contract_context": true,
+      "access": "public"
+    },
+    {
+      "name": "renounce_ownership",
+      "description": "Delegated. See `self.ownable.renounce_ownership()` for details.",
+      "is_mutable": true,
+      "arguments": [],
+      "return_ty": "Unit",
+      "is_contract_context": true,
+      "access": "public"
     }
   ],
   "events": [
@@ -776,6 +887,10 @@
       "ty": "Mint"
     },
     {
+      "name": "OwnershipTransferStarted",
+      "ty": "OwnershipTransferStarted"
+    },
+    {
       "name": "OwnershipTransferred",
       "ty": "OwnershipTransferred"
     },
@@ -794,7 +909,7 @@
   ],
   "call": {
     "wasm_file_name": "NameToken.wasm",
-    "description": "Initializes CEP78 with the given name and symbol.",
+    "description": "Initializes CEP95 with the given name and symbol.",
     "arguments": [
       {
         "name": "odra_cfg_package_hash_key_name",
@@ -824,6 +939,12 @@
         "name": "symbol",
         "description": null,
         "ty": "String",
+        "optional": false
+      },
+      {
+        "name": "max_supply",
+        "description": null,
+        "ty": "U64",
         "optional": false
       }
     ]

@@ -4,16 +4,16 @@ use odra::casper_types::bytesrepr::Bytes;
 use odra::casper_types::U256;
 use odra::module::Revertible;
 use odra::{prelude::*, ContractRef};
-use odra_modules::access::Ownable;
-use odra_modules::cep95::{CEP95Interface, Cep95};
+use odra_modules::access::Ownable2Step;
+use odra_modules::cep95::{CEP95Interface, Cep95, Error as Cep95Error};
 
 use super::resolver::ResolverContractRef;
 
-/// NameToken contract. It is a CEP78 token with additional functionalities.
-#[odra::module]
+/// NameToken contract. It is a CEP95 token with additional functionalities.
+#[odra::module(errors = NameTokenError)]
 pub struct NameToken {
     token: SubModule<Cep95>,
-    ownable: SubModule<Ownable>,
+    ownable: SubModule<Ownable2Step>,
     default_resolver: External<ResolverContractRef>,
     max_supply: Var<u64>,
     minted_tokens_count: Var<u64>,
@@ -37,16 +37,23 @@ impl NameToken {
             fn is_approved_for_all(&self, owner: Address, operator: Address) -> bool;
             fn token_metadata(&self, token_id: U256) -> Vec<(String, String)>;
         }
+
+        to self.ownable {
+            fn get_owner(&self) -> Address;
+            fn get_pending_owner(&self) -> Option<Address>;
+            fn transfer_ownership(&mut self, new_owner: &Address);
+            fn accept_ownership(&mut self);
+            fn renounce_ownership(&mut self);
+        }
     }
 
-    /// Initializes CEP78 with the given name and symbol.
-    pub fn init(&mut self, name: String, symbol: String) {
+    /// Initializes CEP95 with the given name and symbol.
+    pub fn init(&mut self, name: String, symbol: String, max_supply: u64) {
         let caller = self.env().caller();
 
-        let max_total_supply = 1_000_000u64;
         self.token.symbol.set(symbol);
         self.token.name.set(name);
-        self.max_supply.set(max_total_supply);
+        self.max_supply.set(max_supply);
         self.ownable.init(caller);
     }
 
@@ -63,7 +70,8 @@ impl NameToken {
         let caller = self.env().caller();
         self.assert_whitelisted(&caller);
 
-        if self.minted_tokens_count.get_or_default() >= self.max_supply.get_or_default() {
+        let minted_tokens_count = self.minted_tokens_count.get_or_default();
+        if minted_tokens_count >= self.max_supply.get_or_default() {
             self.revert(NameTokenError::TokenSupplyDepleted);
         }
         if self.token.exists(&token_id) {
@@ -71,17 +79,19 @@ impl NameToken {
         }
         // mint the token
         self.token.mint(recipient, token_id, token_metadata);
+        // increment the minted tokens count
+        self.minted_tokens_count.set(minted_tokens_count + 1);
     }
 
     pub fn burn(&mut self, token_id: U256) {
         let caller = self.env().caller();
         self.assert_whitelisted(&caller);
 
-        // cleanup the resolver is the default resolver and update metadata
+        // invalidate resolutions if the resolver is the default resolver and update metadata
         let mut metadata = self.wrapped_metadata(token_id);
         if let Some(resolver) = metadata.resolver().unwrap_or_revert(self) {
             if &resolver == self.default_resolver.address() {
-                self.default_resolver.cleanup(token_id);
+                self.default_resolver.invalidate_resolutions(token_id);
             }
         }
         metadata.clear_resolver();
@@ -96,21 +106,18 @@ impl NameToken {
         self.assert_whitelisted(&caller);
 
         for token_id in token_ids {
-            let owner = self
-                .token
-                .owner_of(token_id)
-                .unwrap_or_revert_with(self, odra_modules::cep95::Error::ValueNotSet);
             if !self.is_token_valid(token_id) {
                 self.revert(NameTokenError::ExpiredTokenTransfer);
             }
+
+            let owner = self
+                .token
+                .owner_of(token_id)
+                .unwrap_or_revert_with(self, Cep95Error::ValueNotSet);
+            self.token.raw_transfer_from(owner, recipient, token_id);
             // if called by an operator
             if caller != owner {
                 self.cleanup(token_id);
-                self.token.raw_transfer_from(owner, recipient, token_id);
-                // make sure there were no previous records for the new owner
-                self.default_resolver.cleanup(token_id);
-            } else {
-                self.token.raw_transfer_from(owner, recipient, token_id);
             }
         }
     }
@@ -119,15 +126,16 @@ impl NameToken {
         if !self.is_token_valid(token_id) {
             self.revert(NameTokenError::ExpiredTokenTransfer);
         }
+
         let caller = self.env().caller();
-        let owner = self.token.owner_of(token_id).unwrap_or_revert(self);
+        let owner = self
+            .token
+            .owner_of(token_id)
+            .unwrap_or_revert_with(self, Cep95Error::ValueNotSet);
         // if called by an operator
+        self.token.transfer_from(from, to, token_id);
         if caller != owner {
             self.cleanup(token_id);
-            self.token.transfer_from(from, to, token_id);
-            self.default_resolver.cleanup(token_id);
-        } else {
-            self.token.transfer_from(from, to, token_id);
         }
     }
 
@@ -188,12 +196,18 @@ impl NameToken {
     pub fn whitelist(&mut self, address: Address) {
         let caller = self.env().caller();
         self.ownable.assert_owner(&caller);
+        if self.is_whitelisted(&address) {
+            self.revert(NameTokenError::WhitelistedAlready);
+        }
         self.whitelist.set(&address, true);
     }
 
     pub fn revoke_whitelist(&mut self, address: Address) {
         let caller = self.env().caller();
-        self.assert_whitelisted(&caller);
+        self.ownable.assert_owner(&caller);
+        if !self.is_whitelisted(&address) {
+            self.revert(NameTokenError::NotWhitelisted);
+        }
         self.whitelist.set(&address, false);
     }
 }
@@ -220,13 +234,12 @@ impl NameToken {
     fn cleanup(&mut self, token_id: U256) {
         let mut metadata = self.wrapped_metadata(token_id);
         let resolver = metadata.resolver().unwrap_or_revert(self);
-        if resolver == Some(*self.default_resolver.address()) {
-            self.default_resolver.cleanup(token_id);
-        } else {
-            let default_resolver = *self.default_resolver.address();
-            metadata.set_resolver(default_resolver);
+        let default_resolver_address = *self.default_resolver.address();
+        if resolver != Some(default_resolver_address) {
+            metadata.set_resolver(default_resolver_address);
             self.token.set_metadata(token_id, metadata.to_vec());
         }
+        self.default_resolver.invalidate_resolutions(token_id);
     }
 }
 
@@ -238,12 +251,34 @@ pub enum NameTokenError {
     InvalidTokenIdentifier = 1304,
     InvalidResolver = 1305,
     TokenSupplyDepleted = 1306,
+    WhitelistedAlready = 1307,
 }
 
 #[cfg(test)]
 mod tests {
     use super::*;
     use crate::test_context::{generate_token_id, TestContext, INIT_TIME, TOKEN_EXPIRATION};
+
+    #[test]
+    fn test_supply_depletion() {
+        // Given a token with max supply of 10
+        let max_supply = 10u64;
+        let mut ctx = TestContext::install_raw_with_supply(max_supply);
+        ctx.whitelist_admin_in_name_token();
+        let token_hash = "token_hash";
+
+        for i in 0..max_supply {
+            // When minting a token
+            ctx.token.mint(ctx.alice, i.into(), vec![]);
+        }
+        // When trying to mint a new token
+        let result = ctx.token.try_mint(ctx.alice, max_supply.into(), vec![]);
+        // Then it should fail with TokenSupplyDepleted error
+        assert_eq!(
+            result.unwrap_err(),
+            NameTokenError::TokenSupplyDepleted.into()
+        );
+    }
 
     #[test]
     fn test_token_exists() {
@@ -521,7 +556,7 @@ mod tests {
     fn transfer_from_operator_resets_resolver() {
         let mut ctx = TestContext::install_and_setup();
         let (alice, bob, anyone) = (ctx.alice, ctx.bob, ctx.anyone);
-        let token_label = "token_label";
+        let token_label = "token-label";
         let full_domain = format!("{}.cspr", token_label);
 
         // Given Alice has a token.
@@ -555,6 +590,48 @@ mod tests {
             ctx.default_resolver.resolve(full_domain),
             None,
             "Resolver should be reset after transfer from operator"
+        );
+    }
+
+    #[test]
+    fn test_revoke_whitelist() {
+        let mut ctx = TestContext::install_raw();
+        ctx.whitelist_admin_in_name_token();
+        let alice = ctx.alice;
+
+        // Given Alice is whitelisted
+        whitelist_accounts(&mut ctx, vec![alice]);
+
+        // When admin revokes Alice's whitelist
+        ctx.set_caller(ctx.admin);
+        let result = ctx.token.try_revoke_whitelist(alice);
+        // Then it should succeed
+        assert!(result.is_ok());
+
+        // When admin tries to revoke Alice's whitelist again
+        let result = ctx.token.try_revoke_whitelist(alice);
+        // Then it should fail with NotWhitelisted error
+        assert_eq!(result.err(), Some(NameTokenError::NotWhitelisted.into()));
+    }
+
+    #[test]
+    fn test_whitelist() {
+        let mut ctx = TestContext::install_raw();
+        ctx.whitelist_admin_in_name_token();
+        let alice = ctx.alice;
+
+        // When admin tries to whitelist Alice
+        ctx.set_caller(ctx.admin);
+        let result = ctx.token.try_whitelist(alice);
+        // Then it should succeed
+        assert!(result.is_ok());
+
+        // When admin tries to whitelist Alice again
+        let result = ctx.token.try_whitelist(alice);
+        // Then it should fail with WhitelistedAlready error
+        assert_eq!(
+            result.err(),
+            Some(NameTokenError::WhitelistedAlready.into())
         );
     }
 

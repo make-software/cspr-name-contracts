@@ -149,7 +149,12 @@ impl TestContext {
         token_expiration: u64,
         voucher_expiration: u64,
     ) -> OdraResult<()> {
-        let names = vec![NameMintInfo::new(token_name, recipient, token_expiration)];
+        let names = vec![NameMintInfo::new(
+            token_name,
+            recipient,
+            token_expiration,
+            "",
+        )];
         let voucher = TokenizationVoucher::new(names, voucher_expiration);
         self.set_caller(caller);
         self.registrar.try_controller_register(voucher)
@@ -178,7 +183,7 @@ impl TestContext {
         let voucher_expiration = self.voucher_expiration_time();
         let names = token_names
             .iter()
-            .map(|label| NameMintInfo::new(*label, recipient, token_expiration))
+            .map(|label| NameMintInfo::new(*label, recipient, token_expiration, ""))
             .collect();
         let voucher = TokenizationVoucher::new(names, voucher_expiration);
         self.set_caller(caller);
@@ -196,6 +201,7 @@ impl TestContext {
         let expected_metadata = NameTokenMetadata::with_resolver(
             token_name,
             self.token_expiration_time(),
+            "",
             *self.default_resolver.address(),
         );
         assert_eq!(metadata, expected_metadata.to_vec());

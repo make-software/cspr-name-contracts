@@ -1,6 +1,7 @@
 use casper_name_contracts::data_structures::NameMintInfo;
 use odra::{
-    casper_types::{bytesrepr::ToBytes, CLTyped}, prelude::Address,
+    casper_types::{bytesrepr::ToBytes, CLTyped},
+    prelude::Address,
 };
 
 pub fn main() {
@@ -11,6 +12,7 @@ pub fn main() {
         )
         .unwrap(),
         token_expiration: 6401000000000000,
+        asset_uri: String::from("https://example.com/asset"),
     }];
 
     println!("Type:\n{:?}\n", Vec::<NameMintInfo>::cl_type());

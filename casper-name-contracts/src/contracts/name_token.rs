@@ -464,8 +464,10 @@ mod tests {
         let token_hash = "token_hash";
         let token_id = generate_token_id(token_hash);
         let expiration = INIT_TIME + 100;
+        let asset_uri = "https://example.com/asset";
         ctx.set_caller(ctx.admin);
-        let token_meta_data = NameTokenMetadata::with_no_resolver(token_hash, expiration);
+        let token_meta_data =
+            NameTokenMetadata::with_no_resolver(token_hash, expiration, asset_uri);
         ctx.token.mint(alice, token_id, token_meta_data.to_vec());
         // Then the token should be valid
         assert!(ctx.token.is_token_valid(token_id));
@@ -485,8 +487,9 @@ mod tests {
         let name = "token hash";
         let token_id = generate_token_id(name);
         let expiration = INIT_TIME + 100;
+        let asset_uri = "https://example.com/asset";
         ctx.set_caller(ctx.admin);
-        let token_meta_data = NameTokenMetadata::with_no_resolver(name, expiration);
+        let token_meta_data = NameTokenMetadata::with_no_resolver(name, expiration, asset_uri);
         ctx.token.mint(alice, token_id, token_meta_data.to_vec());
         // Then the token should be valid
         assert!(ctx.token.is_token_valid(token_id));
@@ -558,7 +561,7 @@ mod tests {
     fn mint_for(ctx: &mut TestContext, owner: Address, name: &str) -> U256 {
         ctx.set_caller(ctx.admin);
         let token_metadata =
-            NameTokenMetadata::with_no_resolver(name, INIT_TIME + TOKEN_EXPIRATION);
+            NameTokenMetadata::with_no_resolver(name, INIT_TIME + TOKEN_EXPIRATION, "");
         let token_id = generate_token_id(name);
         ctx.token.mint(owner, token_id, token_metadata.to_vec());
         token_id

@@ -2,7 +2,8 @@ use std::fmt::Debug;
 
 use casper_name_contracts::data_structures::*;
 use odra::{
-    casper_types::{bytesrepr::ToBytes, U256, U512}, prelude::Address,
+    casper_types::{bytesrepr::ToBytes, U256, U512},
+    prelude::Address,
 };
 
 pub fn main() {
@@ -39,6 +40,7 @@ fn example_name_mint_info() -> NameMintInfo {
         )
         .unwrap(),
         token_expiration: 123124,
+        asset_uri: String::from("https://example.com/asset"),
     }
 }
 

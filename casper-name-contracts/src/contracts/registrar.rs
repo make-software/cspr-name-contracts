@@ -213,7 +213,7 @@ impl Registrar {
 
     fn expire_single(&mut self, token_id: U256, block_time: u64, grace_period: u64) {
         let metadata = self.wrapped_metadata(token_id);
-        let token_expiration = metadata.expiration().unwrap_or_revert(self);
+        let token_expiration = metadata.expiration();
         if self.is_token_expired(token_expiration, grace_period, block_time) {
             self.name_token.burn(token_id);
         }
@@ -263,7 +263,7 @@ impl Registrar {
             // get the token metadata
             let mut metadata = self.wrapped_metadata(token_id);
             // check if the time for the renewal does not elapsed
-            let expiration = metadata.expiration().unwrap_or_revert(self);
+            let expiration = metadata.expiration();
             self.assert_in_renewal_period(expiration);
             metadata.set_expiration(token.token_expiration);
 
@@ -294,7 +294,7 @@ impl Registrar {
             // If token exists and is expired and grace period is over, burn it.
             if token_exists {
                 let metadata = self.wrapped_metadata(token_id);
-                self.assert_token_expired(metadata.expiration().unwrap_or_revert(self), block_time);
+                self.assert_token_expired(metadata.expiration(), block_time);
                 self.name_token.burn(token_id);
             }
 

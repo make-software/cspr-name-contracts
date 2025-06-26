@@ -24,22 +24,25 @@ pub struct NameTokenMetadata {
     name: String,
     expiration: u64,
     resolver: Option<Address>,
+    asset_uri: String,
 }
 
 impl NameTokenMetadata {
-    pub fn with_resolver(name: &str, expiration: u64, resolver: Address) -> Self {
+    pub fn with_resolver(name: &str, expiration: u64, asset_uri: &str, resolver: Address) -> Self {
         Self {
             name: String::from(name),
             expiration,
             resolver: Some(resolver),
+            asset_uri: String::from(asset_uri),
         }
     }
 
-    pub fn with_no_resolver(name: &str, expiration: u64) -> Self {
+    pub fn with_no_resolver(name: &str, expiration: u64, asset_uri: &str) -> Self {
         Self {
             name: String::from(name),
             expiration,
             resolver: None,
+            asset_uri: String::from(asset_uri),
         }
     }
 
@@ -61,6 +64,7 @@ impl NameTokenMetadata {
 
     pub fn to_vec(&self) -> Vec<(String, String)> {
         let mut vec = Vec::new();
+        vec.push(("asset_uri".to_string(), self.asset_uri.clone()));
         vec.push(("expiration".to_string(), self.expiration.to_string()));
         vec.push(("name".to_string(), self.name.clone()));
         if let Some(resolver) = &self.resolver {
@@ -114,10 +118,17 @@ impl TryFrom<Vec<(String, String)>> for NameTokenMetadata {
             })
             .transpose()?;
 
+        let asset_uri = value
+            .iter()
+            .find(|(key, _)| key == "asset_uri")
+            .map(|(_, value)| value.clone())
+            .unwrap_or_default();
+
         Ok(NameTokenMetadata {
             name,
             expiration,
             resolver,
+            asset_uri,
         })
     }
 }
@@ -204,14 +215,16 @@ pub struct NameMintInfo {
     pub label: String,
     pub owner: Address,
     pub token_expiration: u64,
+    pub asset_uri: String,
 }
 
 impl NameMintInfo {
-    pub fn new(label: &str, owner: Address, token_expiration: u64) -> Self {
+    pub fn new(label: &str, owner: Address, token_expiration: u64, asset_uri: &str) -> Self {
         Self {
             label: String::from(label),
             owner,
             token_expiration,
+            asset_uri: String::from(asset_uri),
         }
     }
 }
@@ -332,13 +345,14 @@ mod tests {
         let expected = r#"{
             "name": "test-label",
             "expiration": 86400,
-            "resolver": null
+            "resolver": null,
+            "asset_uri": ""
         }"#
         .replace(" ", "")
         .replace("\n", "");
 
         // Test metadata to_json.
-        let metadata = NameTokenMetadata::with_no_resolver("test-label", 86400);
+        let metadata = NameTokenMetadata::with_no_resolver("test-label", 86400, "");
         assert_eq!(expected, metadata.json());
 
         // Test metadata from_json.
@@ -348,7 +362,8 @@ mod tests {
         let expected = r#"{
             "name": "test-label",
             "expiration": 86400,
-            "resolver": "hash-7ba9daac84bebee8111c186588f21ebca35550b6cf1244e71768bd871938be6a"
+            "resolver": "hash-7ba9daac84bebee8111c186588f21ebca35550b6cf1244e71768bd871938be6a",
+            "asset_uri": "https://example.com/asset-uri"
         }"#
         .replace(" ", "")
         .replace("\n", "");
@@ -357,6 +372,7 @@ mod tests {
         let metadata = NameTokenMetadata::with_resolver(
             "test-label",
             86400,
+            "https://example.com/asset-uri",
             Address::new("hash-7ba9daac84bebee8111c186588f21ebca35550b6cf1244e71768bd871938be6a")
                 .unwrap(),
         );

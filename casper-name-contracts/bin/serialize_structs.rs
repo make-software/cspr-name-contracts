@@ -12,6 +12,7 @@ pub fn main() {
         )
         .unwrap(),
         token_expiration: 6401000000000000,
+        asset_uri: String::from("https://example.com/asset"),
     }];
 
     println!("Type:\n{:?}\n", Vec::<NameMintInfo>::cl_type());

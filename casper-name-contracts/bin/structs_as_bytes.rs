@@ -40,6 +40,7 @@ fn example_name_mint_info() -> NameMintInfo {
         )
         .unwrap(),
         token_expiration: 123124,
+        asset_uri: String::from("https://example.com/asset"),
     }
 }
 

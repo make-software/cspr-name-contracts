@@ -26,6 +26,11 @@
             "name": "token_expiration",
             "description": null,
             "ty": "U64"
+          },
+          {
+            "name": "asset_uri",
+            "description": null,
+            "ty": "String"
           }
         ]
       }

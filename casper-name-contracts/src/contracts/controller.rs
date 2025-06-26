@@ -266,7 +266,7 @@ mod tests {
         let voucher_expiration = ctx.token_expiration_time();
         let amount = U512::from(2000);
 
-        let names = vec![NameMintInfo::new(TOKEN_NAME, alice, token_expiration)];
+        let names = vec![NameMintInfo::new(TOKEN_NAME, alice, token_expiration, "")];
         let voucher = PaymentVoucher::new(amount, "id_1", alice, names, voucher_expiration);
         let signature = ctx.sign(&voucher);
 

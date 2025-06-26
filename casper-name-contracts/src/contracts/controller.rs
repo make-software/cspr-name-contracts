@@ -241,7 +241,7 @@ mod tests {
     };
 
     #[test]
-    fn deploy_fails_if_account_set_as_name_token() {
+    fn deploy_fails_if_account_set_as_registrar() {
         let env = odra_test::env();
         let signer = env.get_account(10);
         let treasury = env.get_account(11);

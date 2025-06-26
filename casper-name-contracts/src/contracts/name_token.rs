@@ -196,7 +196,7 @@ impl NameToken {
     pub fn whitelist(&mut self, address: Address) {
         let caller = self.env().caller();
         self.ownable.assert_owner(&caller);
-        if self.whitelist.get(&address).unwrap_or_default() {
+        if self.is_whitelisted(&address) {
             self.revert(NameTokenError::WhitelistedAlready);
         }
         self.whitelist.set(&address, true);
@@ -205,7 +205,7 @@ impl NameToken {
     pub fn revoke_whitelist(&mut self, address: Address) {
         let caller = self.env().caller();
         self.ownable.assert_owner(&caller);
-        if !self.whitelist.get(&address).unwrap_or_default() {
+        if !self.is_whitelisted(&address) {
             self.revert(NameTokenError::NotWhitelisted);
         }
         self.whitelist.set(&address, false);
@@ -275,8 +275,8 @@ mod tests {
         let result = ctx.token.try_mint(ctx.alice, max_supply.into(), vec![]);
         // Then it should fail with TokenSupplyDepleted error
         assert_eq!(
-            result.err(),
-            Some(NameTokenError::TokenSupplyDepleted.into())
+            result.unwrap_err(),
+            NameTokenError::TokenSupplyDepleted.into()
         );
     }
 

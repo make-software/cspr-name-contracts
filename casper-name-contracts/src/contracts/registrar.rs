@@ -572,7 +572,7 @@ mod tests {
         ctx.with_name_registered(admin, bob, TOKEN_NAME);
 
         // Then Alice's token is burned.
-        let event: Burn = ctx.token.get_event(-3).unwrap();
+        let event: Burn = ctx.token.get_event(-4).unwrap();
         let expected = Burn {
             from: alice,
             token_id: generate_token_id(TOKEN_NAME),
@@ -620,7 +620,7 @@ mod tests {
         );
         assert_eq!(
             ctx.token.resolver(generate_token_id(TOKEN_NAME)),
-            Some(*ctx.default_resolver.address())
+            Some(ctx.default_resolver.address())
         );
 
         // And is after grace period.
@@ -686,7 +686,7 @@ mod tests {
         );
         assert_eq!(
             ctx.token.resolver(generate_token_id(TOKEN_NAME)),
-            Some(*ctx.default_resolver.address())
+            Some(ctx.default_resolver.address())
         );
 
         ctx.admin_transfer(bob, vec![TOKEN_NAME]);
@@ -762,7 +762,7 @@ mod tests {
         );
         assert_eq!(
             ctx.token.resolver(generate_token_id(TOKEN_NAME)),
-            Some(*ctx.default_resolver.address())
+            Some(ctx.default_resolver.address())
         );
 
         ctx.admin_burn(vec![TOKEN_NAME]);
@@ -850,7 +850,7 @@ mod tests {
             TOKEN_NAME,
             INIT_TIME + 2 * TOKEN_EXPIRATION,
             "",
-            *ctx.default_resolver.address(),
+            ctx.default_resolver.address(),
         );
         assert_eq!(metadata, expected.to_vec());
     }

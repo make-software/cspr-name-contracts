@@ -5,7 +5,7 @@ use blake2::Blake2bVar;
 use odra::casper_types::bytesrepr::{Bytes, ToBytes};
 use odra::casper_types::{U256, U512};
 use odra::host::{Deployer, HostEnv};
-use odra::{prelude::*, Addressable};
+use odra::prelude::*;
 use odra_modules::access::DEFAULT_ADMIN_ROLE;
 use odra_modules::cep95::Mint;
 
@@ -61,19 +61,19 @@ impl TestContext {
         let resolver = DefaultResolver::deploy(
             &env,
             DefaultResolverInitArgs {
-                name_token: *name_token.address(),
+                name_token: name_token.address(),
             },
         );
         let registrar = Registrar::deploy(
             &env,
             RegistrarInitArgs {
-                name_token: *name_token.address(),
+                name_token: name_token.address(),
             },
         );
         let controller = Controller::deploy(
             &env,
             controller::ControllerInitArgs {
-                registrar: *registrar.address(),
+                registrar: registrar.address(),
                 signer: env.public_key(&signer),
                 treasury,
             },
@@ -119,7 +119,7 @@ impl TestContext {
     }
 
     pub fn whitelist_registrar_in_name_token(&mut self) {
-        self.token.whitelist(*self.registrar.address());
+        self.token.whitelist(self.registrar.address());
     }
 
     pub fn whitelist_admin_in_name_token(&mut self) {
@@ -128,16 +128,16 @@ impl TestContext {
 
     pub fn set_controller_in_registrar(&mut self) {
         self.registrar
-            .grant_role(&CONTROLLER_ROLE, self.controller.address());
+            .grant_role(&CONTROLLER_ROLE, &self.controller.address());
     }
 
     pub fn set_name_token_in_resolver(&mut self) {
         self.default_resolver
-            .grant_role(&DEFAULT_ADMIN_ROLE, self.token.address());
+            .grant_role(&DEFAULT_ADMIN_ROLE, &self.token.address());
     }
 
     pub fn register_default_resolver_in_name_token(&mut self) {
-        let address = *self.default_resolver.address();
+        let address = self.default_resolver.address();
         self.token.set_default_resolver(address);
     }
 
@@ -207,14 +207,14 @@ impl TestContext {
             token_name,
             self.token_expiration_time(),
             "",
-            *self.default_resolver.address(),
+            self.default_resolver.address(),
         );
         assert_eq!(metadata, expected_metadata.to_vec());
 
         assert!(
             self.env.emitted_event(
                 &self.token,
-                &Mint {
+                Mint {
                     to: owner,
                     token_id
                 }

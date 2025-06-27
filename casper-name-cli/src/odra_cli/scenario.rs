@@ -15,8 +15,7 @@ use odra::{
         AsymmetricType, PublicKey, U512,
     },
     prelude::*,
-    schema::casper_contract_schema::NamedCLType,
-    Addressable,
+    schema::casper_contract_schema::NamedCLType
 };
 use odra_modules::access::DEFAULT_ADMIN_ROLE;
 use std::io::Write;
@@ -39,9 +38,9 @@ impl odra_cli::scenario::Scenario for SetConfigScript {
         container: odra_cli::DeployedContractsContainer,
         _args: odra_cli::scenario::Args,
     ) -> Result<(), odra_cli::scenario::Error> {
-        let resolver_address = *container.get_ref::<DefaultResolver>(env)?.address();
-        let controller_address = *container.get_ref::<Controller>(env)?.address();
-        let marketplace_address = *container.get_ref::<SecondaryMarket>(env)?.address();
+        let resolver_address = container.get_ref::<DefaultResolver>(env)?.address();
+        let controller_address = container.get_ref::<Controller>(env)?.address();
+        let marketplace_address = container.get_ref::<SecondaryMarket>(env)?.address();
 
         let mut registrar = container.get_ref::<Registrar>(env)?;
         let mut name_token = container.get_ref::<NameToken>(env)?;
@@ -54,7 +53,7 @@ impl odra_cli::scenario::Scenario for SetConfigScript {
 
         // // Whitelist the registrar in the name token.
         env.set_gas(20_000_000_000);
-        name_token.whitelist(*registrar.address());
+        name_token.whitelist(registrar.address());
 
         // Whitelist controllers in the registrar.
         env.set_gas(10_000_000_000);
@@ -68,7 +67,7 @@ impl odra_cli::scenario::Scenario for SetConfigScript {
 
         // Set the name token permissions in the resolver.
         env.set_gas(10_000_000_000);
-        resolver.grant_role(&DEFAULT_ADMIN_ROLE, name_token.address());
+        resolver.grant_role(&DEFAULT_ADMIN_ROLE, &name_token.address());
 
         Ok(())
     }

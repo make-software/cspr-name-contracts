@@ -93,7 +93,7 @@ pub struct PrimaryNameChanged {
 mod tests {
     use super::*;
     use crate::test_context::{self, TestContext};
-    use odra::{host::Deployer, Addressable};
+    use odra::host::Deployer;
 
     const TOKEN_TEST: &str = "test";
     const TOKEN_TEST2: &str = "test2";
@@ -108,7 +108,7 @@ mod tests {
         let mut reverse_resolver = ReverseResolver::deploy(
             &ctx.env,
             ReverseResolverInitArgs {
-                name_token: *ctx.token.address(),
+                name_token: ctx.token.address(),
             },
         );
 
@@ -151,7 +151,7 @@ mod tests {
         let mut reverse_resolver = ReverseResolver::deploy(
             &ctx.env,
             ReverseResolverInitArgs {
-                name_token: *ctx.token.address(),
+                name_token: ctx.token.address(),
             },
         );
 
@@ -260,7 +260,7 @@ mod tests {
         let reverse_resolver = ReverseResolver::deploy(
             &ctx.env,
             ReverseResolverInitArgs {
-                name_token: *ctx.token.address(),
+                name_token: ctx.token.address(),
             },
         );
         (ctx, reverse_resolver)

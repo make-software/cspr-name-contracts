@@ -168,7 +168,7 @@ pub enum ResolverError {
 
 #[cfg(test)]
 mod tests {
-    use odra::{casper_event_standard::EventInstance, host::Deployer, Addressable};
+    use odra::{casper_event_standard::EventInstance, host::Deployer};
 
     use super::*;
     use crate::test_context::{generate_token_id, TestContext, TOKEN_EXPIRATION};
@@ -203,7 +203,7 @@ mod tests {
     #[test]
     fn only_admin_can_set_name_token() {
         let (mut ctx, admin, alice, _) = setup();
-        let contract_address = *ctx.controller.address();
+        let contract_address = ctx.controller.address();
 
         // When alice tries to set the name token
         ctx.set_caller(alice);
@@ -236,7 +236,7 @@ mod tests {
     #[test]
     fn set_name_token_emits_event() {
         let (mut ctx, admin, _, _) = setup();
-        let name_token = *ctx.token.address();
+        let name_token = ctx.token.address();
 
         // When the admin updates the name token address.
         ctx.set_caller(admin);

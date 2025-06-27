@@ -6,10 +6,8 @@ use casper_name_contracts::contracts::{
     resolver::{DefaultResolver, DefaultResolverInitArgs},
     reverse_resolver::{ReverseResolver, ReverseResolverInitArgs},
 };
-use odra::{
-    host::{Deployer, HostEnv},
-    Addressable,
-};
+use odra::host::{Deployer, HostEnv};
+use odra::prelude::*;
 
 pub struct DeployScript;
 
@@ -35,7 +33,7 @@ impl odra_cli::deploy::DeployScript for DeployScript {
         let resolver = DefaultResolver::try_deploy(
             &env,
             DefaultResolverInitArgs {
-                name_token: *token.address(),
+                name_token: token.address(),
             },
         )?;
         container.add_contract(&resolver)?;
@@ -44,7 +42,7 @@ impl odra_cli::deploy::DeployScript for DeployScript {
         let registrar = Registrar::try_deploy(
             &env,
             RegistrarInitArgs {
-                name_token: *token.address(),
+                name_token: token.address(),
             },
         )?;
         container.add_contract(&registrar)?;
@@ -53,7 +51,7 @@ impl odra_cli::deploy::DeployScript for DeployScript {
         let controller = Controller::try_deploy(
             &env,
             ControllerInitArgs {
-                registrar: *registrar.address(),
+                registrar: registrar.address(),
                 treasury: admin,
                 signer: env.public_key(&admin),
             },
@@ -66,7 +64,7 @@ impl odra_cli::deploy::DeployScript for DeployScript {
             SecondaryMarketInitArgs {
                 signer: env.public_key(&admin),
                 treasury: admin,
-                name_token: *token.address(),
+                name_token: token.address(),
             },
         )?;
         container.add_contract(&market)?;
@@ -75,7 +73,7 @@ impl odra_cli::deploy::DeployScript for DeployScript {
         let reverse_resolver = ReverseResolver::try_deploy(
             &env,
             ReverseResolverInitArgs {
-                name_token: *token.address(),
+                name_token: token.address(),
             },
         )?;
         container.add_contract(&reverse_resolver)?;

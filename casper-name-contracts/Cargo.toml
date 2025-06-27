@@ -4,22 +4,22 @@ version = "0.1.0"
 edition = "2021"
 
 [dependencies]
-odra = { version = "2.0.1", features = [], default-features = false }
-odra-modules = { version = "2.0.1", features = [], default-features = false }
+odra = { workspace = true }
+odra-modules = { workspace = true }
 hex = { version = "0.4.3", default-features = false }
 serde = { version = "1.0.80", default-features = false }
 serde-json-wasm = { version = "1.0.1", default-features = false }
 
 [target.'cfg(not(target_arch = "wasm32"))'.dependencies]
-odra-build = { version = "2.0.1" }
+odra-build = { workspace = true }
 
 [dev-dependencies]
-odra-test = { version = "2.0.1", features = [], default-features = false }
+odra-test = { workspace = true }
 blake2 = "0.10.6"
 hex = "0.4.3"
 
 [build-dependencies]
-odra-build = { version = "2.0.1", features = [], default-features = false }
+odra-build = { workspace = true }
 
 [[bin]]
 name = "casper_name_contracts_build_contract"

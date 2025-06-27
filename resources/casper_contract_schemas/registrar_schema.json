@@ -9,6 +9,19 @@
   "types": [
     {
       "struct": {
+        "name": "GracePeriodChanged",
+        "description": null,
+        "members": [
+          {
+            "name": "new_grace_period",
+            "description": null,
+            "ty": "U64"
+          }
+        ]
+      }
+    },
+    {
+      "struct": {
         "name": "NameMintInfo",
         "description": null,
         "members": [
@@ -597,6 +610,10 @@
     }
   ],
   "events": [
+    {
+      "name": "GracePeriodChanged",
+      "ty": "GracePeriodChanged"
+    },
     {
       "name": "Paused",
       "ty": "Paused"

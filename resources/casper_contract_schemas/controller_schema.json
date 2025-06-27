@@ -225,6 +225,19 @@
     },
     {
       "struct": {
+        "name": "SignerPublicKeyChanged",
+        "description": null,
+        "members": [
+          {
+            "name": "new_signer_public_key",
+            "description": null,
+            "ty": "PublicKey"
+          }
+        ]
+      }
+    },
+    {
+      "struct": {
         "name": "TokenRenewalInfo",
         "description": null,
         "members": [
@@ -237,6 +250,19 @@
             "name": "token_expiration",
             "description": null,
             "ty": "U64"
+          }
+        ]
+      }
+    },
+    {
+      "struct": {
+        "name": "TreasuryAddressChanged",
+        "description": null,
+        "members": [
+          {
+            "name": "new_treasury_address",
+            "description": null,
+            "ty": "Key"
           }
         ]
       }
@@ -593,6 +619,14 @@
     {
       "name": "RoleRevoked",
       "ty": "RoleRevoked"
+    },
+    {
+      "name": "SignerPublicKeyChanged",
+      "ty": "SignerPublicKeyChanged"
+    },
+    {
+      "name": "TreasuryAddressChanged",
+      "ty": "TreasuryAddressChanged"
     },
     {
       "name": "Unpaused",

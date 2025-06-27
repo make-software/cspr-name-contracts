@@ -28,6 +28,30 @@
       ]
     },
     {
+      "name": "SignerPublicKeyChanged",
+      "args": [
+        {
+          "name": "new_signer_public_key",
+          "ty": "PublicKey",
+          "is_ref": false,
+          "is_slice": false,
+          "is_required": true
+        }
+      ]
+    },
+    {
+      "name": "TreasuryAddressChanged",
+      "args": [
+        {
+          "name": "new_treasury_address",
+          "ty": "Key",
+          "is_ref": false,
+          "is_slice": false,
+          "is_required": true
+        }
+      ]
+    },
+    {
       "name": "RoleAdminChanged",
       "args": [
         {

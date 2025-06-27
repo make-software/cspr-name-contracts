@@ -35,6 +35,18 @@
       ]
     },
     {
+      "name": "NameTokenAddressChanged",
+      "args": [
+        {
+          "name": "new_name_token",
+          "ty": "Key",
+          "is_ref": false,
+          "is_slice": false,
+          "is_required": true
+        }
+      ]
+    },
+    {
       "name": "RoleAdminChanged",
       "args": [
         {

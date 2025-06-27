@@ -2,6 +2,18 @@
   "name": "Registrar",
   "events": [
     {
+      "name": "GracePeriodChanged",
+      "args": [
+        {
+          "name": "new_grace_period",
+          "ty": "U64",
+          "is_ref": false,
+          "is_slice": false,
+          "is_required": true
+        }
+      ]
+    },
+    {
       "name": "RoleAdminChanged",
       "args": [
         {

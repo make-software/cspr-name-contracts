@@ -9,6 +9,19 @@
   "types": [
     {
       "struct": {
+        "name": "NameTokenAddressChanged",
+        "description": null,
+        "members": [
+          {
+            "name": "new_name_token",
+            "description": null,
+            "ty": "Key"
+          }
+        ]
+      }
+    },
+    {
+      "struct": {
         "name": "ResolutionChanged",
         "description": null,
         "members": [
@@ -331,6 +344,10 @@
     }
   ],
   "events": [
+    {
+      "name": "NameTokenAddressChanged",
+      "ty": "NameTokenAddressChanged"
+    },
     {
       "name": "ResolutionChanged",
       "ty": "ResolutionChanged"

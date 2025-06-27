@@ -915,7 +915,8 @@ mod tests {
         // When Admin tries to register the token.
         let token_expiration = INIT_TIME + 2 * TOKEN_EXPIRATION;
         let voucher_expiration = INIT_TIME + TOKEN_EXPIRATION;
-        let names = vec![NameMintInfo::new(TOKEN_NAME, alice, token_expiration)];
+        let asset_uri = "https://example.com/asset";
+        let names = vec![NameMintInfo::new(TOKEN_NAME, alice, token_expiration, asset_uri)];
         let voucher = TokenizationVoucher::new(names, voucher_expiration);
         let result = ctx.registrar.try_controller_register(voucher);
 
@@ -939,7 +940,8 @@ mod tests {
         // When Admin tries to register the token.
         let token_expiration = INIT_TIME + 2 * TOKEN_EXPIRATION;
         let voucher_expiration = INIT_TIME + TOKEN_EXPIRATION;
-        let names = vec![NameMintInfo::new(TOKEN_NAME, alice, token_expiration)];
+        let asset_uri = "https://example.com/asset";
+        let names = vec![NameMintInfo::new(TOKEN_NAME, alice, token_expiration, asset_uri)];
         let tokens = vec![TokenRenewalInfo::new(
             generate_token_id(TOKEN_NAME),
             token_expiration,

@@ -392,6 +392,7 @@ mod tests {
                 TOKEN_NAME,
                 ctx.alice,
                 ctx.token_expiration_time(),
+                ""
             )],
             ctx.token_expiration_time(),
         );
@@ -451,6 +452,7 @@ mod tests {
                 TOKEN_NAME,
                 ctx.alice,
                 ctx.token_expiration_time(),
+                ""
             )],
             ctx.token_expiration_time(),
         );

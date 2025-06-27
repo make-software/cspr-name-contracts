@@ -1,0 +1,25 @@
+time = "2025-06-27T17:46:56Z"
+
+[[contracts]]
+name = "NameToken"
+package_hash = "hash-96a231a77e02052b227e6935c28ecd6ee976bad203d772b5b9920f1124bab91f"
+
+[[contracts]]
+name = "DefaultResolver"
+package_hash = "hash-4667be06e3da9d43b52ce9caf1bf44a44910c297c64d51dc71b5d30edc0afd73"
+
+[[contracts]]
+name = "Registrar"
+package_hash = "hash-2585656c35ae8337a86f5e9e4c26ca6a9c56a13f84522c458c9a54d35e48149c"
+
+[[contracts]]
+name = "Controller"
+package_hash = "hash-9c12c0eafd3315c17e6b23ee25e1f62f2c55c50b5dbd7835d359e281123c4b9f"
+
+[[contracts]]
+name = "SecondaryMarket"
+package_hash = "hash-bf93814cd184f66c914dc6506f1b8188f7e35330307f51012588f033fae0a747"
+
+[[contracts]]
+name = "ReverseResolver"
+package_hash = "hash-d7c924514b8650d1bed85ad97c6715c3424b4c710e91f46b9d3e0cef464cea13"

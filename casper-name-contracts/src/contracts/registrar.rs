@@ -22,8 +22,14 @@ pub const CONTROLLER_ROLE: Role = [2u8; 32];
 const PENDING_DELETE_PERIOD: u64 = 5 * 24 * 60 * 60 * 1000; // 5 days
 const MAX_GRACE_PERIOD: u64 = 365 * 24 * 60 * 60 * 1000; // 365 days
 
+/// Event emitted when the grace period is changed.
+#[odra::event]
+pub struct GracePeriodChanged {
+    new_grace_period: u64,
+}
+
 /// Registrar smart contract. It handles the registration and expiration of name tokens.
-#[odra::module(errors = RegistrarError)]
+#[odra::module(errors = RegistrarError, events = [GracePeriodChanged])]
 pub struct Registrar {
     name_token: External<NameTokenContractRef>,
     access_control: SubModule<AccessControl>,
@@ -115,6 +121,9 @@ impl Registrar {
             self.revert(RegistrarError::GracePeriodTooLong);
         }
         self.grace_period.set(period);
+        self.env().emit_event(GracePeriodChanged {
+            new_grace_period: period,
+        });
     }
 
     /// Admin only. Transfer ownership of a list of tokens.
@@ -326,7 +335,10 @@ mod tests {
             generate_token_id, TestContext, GRACE_PERIOD, INIT_TIME, TOKEN_EXPIRATION, TOKEN_NAME,
         },
     };
-    use odra::host::{Deployer, HostRef};
+    use odra::{
+        casper_event_standard::EventInstance,
+        host::{Deployer, HostRef},
+    };
     use odra_modules::{access::errors::Error as AccessControlError, cep95::Burn};
 
     #[test]
@@ -408,6 +420,20 @@ mod tests {
 
         // Then it fails with error.
         assert_eq!(result, Err(RegistrarError::GracePeriodTooLong.into()));
+    }
+
+    #[test]
+    fn test_set_grace_period_emits_event() {
+        let mut ctx = TestContext::install_raw();
+        let (env, reg) = (ctx.env, &mut ctx.registrar);
+        let admin = ctx.admin;
+
+        // When Admin sets grace period.
+        env.set_caller(admin);
+        reg.set_grace_period(MAX_GRACE_PERIOD);
+
+        // Then the contract emits GracePeriodChanged event.
+        assert!(env.emitted(reg, GracePeriodChanged::name()));
     }
 
     #[test]
@@ -915,7 +941,13 @@ mod tests {
         // When Admin tries to register the token.
         let token_expiration = INIT_TIME + 2 * TOKEN_EXPIRATION;
         let voucher_expiration = INIT_TIME + TOKEN_EXPIRATION;
-        let names = vec![NameMintInfo::new(TOKEN_NAME, alice, token_expiration)];
+        let asset_uri = "https://example.com/asset";
+        let names = vec![NameMintInfo::new(
+            TOKEN_NAME,
+            alice,
+            token_expiration,
+            asset_uri,
+        )];
         let voucher = TokenizationVoucher::new(names, voucher_expiration);
         let result = ctx.registrar.try_controller_register(voucher);
 
@@ -939,7 +971,13 @@ mod tests {
         // When Admin tries to register the token.
         let token_expiration = INIT_TIME + 2 * TOKEN_EXPIRATION;
         let voucher_expiration = INIT_TIME + TOKEN_EXPIRATION;
-        let names = vec![NameMintInfo::new(TOKEN_NAME, alice, token_expiration)];
+        let asset_uri = "https://example.com/asset";
+        let names = vec![NameMintInfo::new(
+            TOKEN_NAME,
+            alice,
+            token_expiration,
+            asset_uri,
+        )];
         let tokens = vec![TokenRenewalInfo::new(
             generate_token_id(TOKEN_NAME),
             token_expiration,

@@ -29,10 +29,16 @@ pub struct ResolutionCleared {
     token_id: U256,
 }
 
+/// Event emitted when the name token address is changed.
+#[odra::event]
+pub struct NameTokenAddressChanged {
+    new_name_token: Address,
+}
+
 /// Default Resolver smart contract. It handles the resolution of domain names to addresses.
 #[odra::module(
     errors = ResolverError,
-    events = [ResolutionChanged, ResolutionCleared]
+    events = [ResolutionChanged, ResolutionCleared, NameTokenAddressChanged]
 )]
 pub struct DefaultResolver {
     access_control: SubModule<AccessControl>,
@@ -74,6 +80,9 @@ impl DefaultResolver {
                 .revert(ResolverError::UnauthorizedTokenAddressUpdate);
         }
         self.name_token.set(name_token);
+        self.env().emit_event(NameTokenAddressChanged {
+            new_name_token: name_token,
+        });
     }
 
     /// Token owner only. Sets the resolution for a domain to an address.
@@ -159,7 +168,7 @@ pub enum ResolverError {
 
 #[cfg(test)]
 mod tests {
-    use odra::{host::Deployer, Addressable};
+    use odra::{casper_event_standard::EventInstance, host::Deployer, Addressable};
 
     use super::*;
     use crate::test_context::{generate_token_id, TestContext, TOKEN_EXPIRATION};
@@ -222,6 +231,20 @@ mod tests {
         let result = ctx.default_resolver.try_set_name_token(alice);
         // Then the operation fails
         assert_eq!(result, Err(ResolverError::InvalidTokenName.into()));
+    }
+
+    #[test]
+    fn set_name_token_emits_event() {
+        let (mut ctx, admin, _, _) = setup();
+        let name_token = *ctx.token.address();
+
+        // When the admin updates the name token address.
+        ctx.set_caller(admin);
+        ctx.default_resolver.set_name_token(name_token);
+        // Then the event is emitted.
+        assert!(ctx
+            .env
+            .emitted(&ctx.default_resolver, NameTokenAddressChanged::name()))
     }
 
     #[test]

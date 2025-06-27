@@ -20,6 +20,18 @@ pub struct PaymentFulfilled {
     amount: U512,
 }
 
+/// Event emitted when the signer public key is changed.
+#[odra::event]
+pub struct SignerPublicKeyChanged {
+    new_signer_public_key: PublicKey,
+}
+
+/// Event emitted when the treasury address is changed.
+#[odra::event]
+pub struct TreasuryAddressChanged {
+    new_treasury_address: Address,
+}
+
 /// Controller smart contract. It handles payments and talks to the [Registrar
 /// Contract](super::registrar::Registrar).
 #[odra::module]
@@ -98,7 +110,7 @@ impl Controller {
 /// public key.
 #[odra::module(
     errors = ControllerError,
-    events = [PaymentFulfilled]
+    events = [PaymentFulfilled, SignerPublicKeyChanged, TreasuryAddressChanged]
 )]
 pub struct BaseController {
     signer_public_key: Var<PublicKey>,
@@ -151,13 +163,19 @@ impl BaseController {
     /// Admin only. Sets the public key of the signer.
     pub fn set_signer_public_key(&mut self, signer: PublicKey) {
         self.assert_caller_is_admin();
-        self.signer_public_key.set(signer);
+        self.signer_public_key.set(signer.clone());
+        self.env().emit_event(SignerPublicKeyChanged {
+            new_signer_public_key: signer,
+        });
     }
 
     /// Admin only. Sets the treasury address.
     pub fn set_treasury(&mut self, treasury: Address) {
         self.assert_caller_is_admin();
         self.treasury.set(treasury);
+        self.env().emit_event(TreasuryAddressChanged {
+            new_treasury_address: treasury,
+        });
     }
 
     /// Returns the public key of the signer.
@@ -230,12 +248,15 @@ pub enum ControllerError {
 #[cfg(test)]
 mod tests {
     use odra::{
+        casper_event_standard::EventInstance,
         casper_types::U512,
         host::{Deployer, HostRef},
     };
 
     use crate::{
-        contracts::controller::{Controller, ControllerInitArgs},
+        contracts::controller::{
+            Controller, ControllerInitArgs, SignerPublicKeyChanged, TreasuryAddressChanged,
+        },
         data_structures::{NameMintInfo, PaymentVoucher, RenewalPaymentVoucher, TokenRenewalInfo},
         test_context::{generate_token_id, TestContext, INIT_TIME, TOKEN_EXPIRATION, TOKEN_NAME},
     };
@@ -392,7 +413,7 @@ mod tests {
                 TOKEN_NAME,
                 ctx.alice,
                 ctx.token_expiration_time(),
-                ""
+                "",
             )],
             ctx.token_expiration_time(),
         );
@@ -452,7 +473,7 @@ mod tests {
                 TOKEN_NAME,
                 ctx.alice,
                 ctx.token_expiration_time(),
-                ""
+                "",
             )],
             ctx.token_expiration_time(),
         );
@@ -480,5 +501,51 @@ mod tests {
             result,
             Err(odra_modules::security::errors::Error::UnpausedRequired.into())
         );
+    }
+
+    #[test]
+    fn test_set_signer_public_key() {
+        let mut ctx = TestContext::install_and_setup();
+        // Given a contract with an admin and a user.
+        let (admin, user) = (ctx.admin, ctx.alice);
+        // When the admin sets the signer public key.
+        ctx.set_caller(admin);
+        let result = ctx
+            .controller
+            .try_set_signer_public_key(ctx.env.public_key(&user));
+        // Then it should succeed and emit an event.
+        assert!(result.is_ok());
+        assert!(ctx
+            .env
+            .emitted(&ctx.controller, SignerPublicKeyChanged::name()));
+
+        // When a non-admin tries to set the signer public key.
+        ctx.set_caller(user);
+        let result = ctx
+            .controller
+            .try_set_signer_public_key(ctx.env.public_key(&user));
+        // Then it should fail.
+        assert!(result.is_err());
+    }
+
+    #[test]
+    fn test_set_treasury() {
+        let mut ctx = TestContext::install_and_setup();
+        // Given a contract with an admin and two users.
+        let (admin, alice, bob) = (ctx.admin, ctx.alice, ctx.bob);
+        // When the admin sets the treasury address.
+        ctx.set_caller(admin);
+        let result = ctx.controller.try_set_treasury(alice);
+        // Then it should succeed and emit an event.
+        assert!(result.is_ok());
+        assert!(ctx
+            .env
+            .emitted(&ctx.controller, TreasuryAddressChanged::name()));
+
+        // When a non-admin tries to set the treasury address.
+        ctx.set_caller(alice);
+        let result = ctx.controller.try_set_treasury(bob);
+        // Then it should fail.
+        assert!(result.is_err());
     }
 }

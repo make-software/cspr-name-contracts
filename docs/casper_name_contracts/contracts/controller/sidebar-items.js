@@ -1,1 +1,1 @@
-window.SIDEBAR_ITEMS = {"enum":["ControllerError"],"struct":["BaseController","BaseControllerContractRef","BaseControllerHostRef","Controller","ControllerContractRef","ControllerHostRef","ControllerInitArgs","PaymentFulfilled"]};
+window.SIDEBAR_ITEMS = {"enum":["ControllerError"],"struct":["BaseController","BaseControllerContractRef","BaseControllerHostRef","Controller","ControllerContractRef","ControllerHostRef","ControllerInitArgs","PaymentFulfilled","SignerPublicKeyChanged","TreasuryAddressChanged"]};

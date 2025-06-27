@@ -1,4 +1,5 @@
-<!DOCTYPE html><html lang="en"><head><meta charset="utf-8"><meta name="viewport" content="width=device-width, initial-scale=1.0"><meta name="generator" content="rustdoc"><meta name="description" content="Source of the Rust file `casper-name-contracts/src/contracts/resolver.rs`."><title>resolver.rs - source</title><script>if(window.location.protocol!=="file:")document.head.insertAdjacentHTML("beforeend","SourceSerif4-Regular-46f98efaafac5295.ttf.woff2,FiraSans-Regular-018c141bf0843ffd.woff2,FiraSans-Medium-8f9a781e4970d388.woff2,SourceCodePro-Regular-562dcc5011b6de7d.ttf.woff2,SourceCodePro-Semibold-d899c5a5c4aeb14a.ttf.woff2".split(",").map(f=>`<link rel="preload" as="font" type="font/woff2" crossorigin href="../../../static.files/${f}">`).join(""))</script><link rel="stylesheet" href="../../../static.files/normalize-76eba96aa4d2e634.css"><link rel="stylesheet" href="../../../static.files/rustdoc-081576b923113409.css"><meta name="rustdoc-vars" data-root-path="../../../" data-static-root-path="../../../static.files/" data-current-crate="casper_name_contracts" data-themes="" data-resource-suffix="" data-rustdoc-version="1.79.0-nightly (3a36386dc 2024-04-25)" data-channel="nightly" data-search-js="search-bf21c90c8c1d92b1.js" data-settings-js="settings-4313503d2e1961c2.js" ><script src="../../../static.files/storage-e32f0c247825364d.js"></script><script defer src="../../../static.files/src-script-e66d777a5a92e9b2.js"></script><script defer src="../../../src-files.js"></script><script defer src="../../../static.files/main-20a3ad099b048cf2.js"></script><noscript><link rel="stylesheet" href="../../../static.files/noscript-09095024cf37855e.css"></noscript><link rel="alternate icon" type="image/png" href="../../../static.files/favicon-32x32-422f7d1d52889060.png"><link rel="icon" type="image/svg+xml" href="../../../static.files/favicon-2c020d218678b618.svg"></head><body class="rustdoc src"><!--[if lte IE 11]><div class="warning">This old browser is unsupported and will most likely display funky things.</div><![endif]--><nav class="sidebar"><div class="src-sidebar-title"><h2>Files</h2></div></nav><div class="sidebar-resizer"></div><main><nav class="sub"><form class="search-form"><span></span><div id="sidebar-button" tabindex="-1"><a href="../../../casper_name_contracts/all.html" title="show sidebar"></a></div><input class="search-input" name="search" aria-label="Run search in the documentation" autocomplete="off" spellcheck="false" placeholder="Type ‘S’ or ‘/’ to search, ‘?’ for more options…" type="search"><div id="help-button" tabindex="-1"><a href="../../../help.html" title="help">?</a></div><div id="settings-menu" tabindex="-1"><a href="../../../settings.html" title="settings">Settings</a></div></form></nav><section id="main-content" class="content"><div class="example-wrap"><div data-nosnippet><pre class="src-line-numbers"><a href="#1" id="1">1</a>
+<!DOCTYPE html><html lang="en"><head><meta charset="utf-8"><meta name="viewport" content="width=device-width, initial-scale=1.0"><meta name="generator" content="rustdoc"><meta name="description" content="Source of the Rust file `casper-name-contracts/src/contracts/resolver.rs`."><title>resolver.rs - source</title><script>if(window.location.protocol!=="file:")document.head.insertAdjacentHTML("beforeend","SourceSerif4-Regular-6b053e98.ttf.woff2,FiraSans-Regular-0fe48ade.woff2,FiraSans-Medium-e1aa3f0a.woff2,SourceCodePro-Regular-8badfe75.ttf.woff2,SourceCodePro-Semibold-aa29a496.ttf.woff2".split(",").map(f=>`<link rel="preload" as="font" type="font/woff2" crossorigin href="../../../static.files/${f}">`).join(""))</script><link rel="stylesheet" href="../../../static.files/normalize-9960930a.css"><link rel="stylesheet" href="../../../static.files/rustdoc-46132b98.css"><meta name="rustdoc-vars" data-root-path="../../../" data-static-root-path="../../../static.files/" data-current-crate="casper_name_contracts" data-themes="" data-resource-suffix="" data-rustdoc-version="1.85.0-nightly (d117b7f21 2024-12-31)" data-channel="nightly" data-search-js="search-036cda7a.js" data-settings-js="settings-0f613d39.js" ><script src="../../../static.files/storage-59e33391.js"></script><script defer src="../../../static.files/src-script-56102188.js"></script><script defer src="../../../src-files.js"></script><script defer src="../../../static.files/main-5f194d8c.js"></script><noscript><link rel="stylesheet" href="../../../static.files/noscript-893ab5e7.css"></noscript><link rel="alternate icon" type="image/png" href="../../../static.files/favicon-32x32-6580c154.png"><link rel="icon" type="image/svg+xml" href="../../../static.files/favicon-044be391.svg"></head><body class="rustdoc src"><!--[if lte IE 11]><div class="warning">This old browser is unsupported and will most likely display funky things.</div><![endif]--><nav class="sidebar"><div class="src-sidebar-title"><h2>Files</h2></div></nav><div class="sidebar-resizer"></div><main><rustdoc-search></rustdoc-search><section id="main-content" class="content"><div class="main-heading"><h1><div class="sub-heading">casper_name_contracts/contracts/</div>resolver.rs</h1><rustdoc-toolbar></rustdoc-toolbar></div><div class="example-wrap"><div data-nosnippet><pre class="src-line-numbers">
+<a href="#1" id="1">1</a>
 <a href="#2" id="2">2</a>
 <a href="#3" id="3">3</a>
 <a href="#4" id="4">4</a>
@@ -399,12 +400,81 @@
 <a href="#399" id="399">399</a>
 <a href="#400" id="400">400</a>
 <a href="#401" id="401">401</a>
-</pre></div><pre class="rust"><code><span class="kw">use </span>core::ops::Deref;
-
-<span class="kw">use </span>odra::{args::Maybe, prelude::<span class="kw-2">*</span>, Address, External, Mapping, SubModule, UnwrapOrRevert};
+<a href="#402" id="402">402</a>
+<a href="#403" id="403">403</a>
+<a href="#404" id="404">404</a>
+<a href="#405" id="405">405</a>
+<a href="#406" id="406">406</a>
+<a href="#407" id="407">407</a>
+<a href="#408" id="408">408</a>
+<a href="#409" id="409">409</a>
+<a href="#410" id="410">410</a>
+<a href="#411" id="411">411</a>
+<a href="#412" id="412">412</a>
+<a href="#413" id="413">413</a>
+<a href="#414" id="414">414</a>
+<a href="#415" id="415">415</a>
+<a href="#416" id="416">416</a>
+<a href="#417" id="417">417</a>
+<a href="#418" id="418">418</a>
+<a href="#419" id="419">419</a>
+<a href="#420" id="420">420</a>
+<a href="#421" id="421">421</a>
+<a href="#422" id="422">422</a>
+<a href="#423" id="423">423</a>
+<a href="#424" id="424">424</a>
+<a href="#425" id="425">425</a>
+<a href="#426" id="426">426</a>
+<a href="#427" id="427">427</a>
+<a href="#428" id="428">428</a>
+<a href="#429" id="429">429</a>
+<a href="#430" id="430">430</a>
+<a href="#431" id="431">431</a>
+<a href="#432" id="432">432</a>
+<a href="#433" id="433">433</a>
+<a href="#434" id="434">434</a>
+<a href="#435" id="435">435</a>
+<a href="#436" id="436">436</a>
+<a href="#437" id="437">437</a>
+<a href="#438" id="438">438</a>
+<a href="#439" id="439">439</a>
+<a href="#440" id="440">440</a>
+<a href="#441" id="441">441</a>
+<a href="#442" id="442">442</a>
+<a href="#443" id="443">443</a>
+<a href="#444" id="444">444</a>
+<a href="#445" id="445">445</a>
+<a href="#446" id="446">446</a>
+<a href="#447" id="447">447</a>
+<a href="#448" id="448">448</a>
+<a href="#449" id="449">449</a>
+<a href="#450" id="450">450</a>
+<a href="#451" id="451">451</a>
+<a href="#452" id="452">452</a>
+<a href="#453" id="453">453</a>
+<a href="#454" id="454">454</a>
+<a href="#455" id="455">455</a>
+<a href="#456" id="456">456</a>
+<a href="#457" id="457">457</a>
+<a href="#458" id="458">458</a>
+<a href="#459" id="459">459</a>
+<a href="#460" id="460">460</a>
+<a href="#461" id="461">461</a>
+<a href="#462" id="462">462</a>
+<a href="#463" id="463">463</a>
+<a href="#464" id="464">464</a>
+<a href="#465" id="465">465</a>
+<a href="#466" id="466">466</a>
+<a href="#467" id="467">467</a>
+<a href="#468" id="468">468</a>
+<a href="#469" id="469">469</a>
+<a href="#470" id="470">470</a>
+<a href="#471" id="471">471</a>
+<a href="#472" id="472">472</a>
+<a href="#473" id="473">473</a></pre></div><pre class="rust"><code><span class="kw">use </span>odra::{casper_types::U256, prelude::<span class="kw-2">*</span>};
 <span class="kw">use </span>odra_modules::access::{AccessControl, Role, DEFAULT_ADMIN_ROLE};
 
-<span class="kw">use super</span>::{name_token::NameTokenContractRef, utils};
+<span class="kw">use super</span>::{name_token::NameTokenContractRef, token_id::ToTokenId, utils};
 
 <span class="attr">#[odra::external_contract]
 </span><span class="kw">pub trait </span>Resolver {
@@ -412,12 +482,12 @@
     <span class="kw">fn </span>set_name_token(<span class="kw-2">&amp;mut </span><span class="self">self</span>, name_token: Address);
     <span class="kw">fn </span>set_resolution(<span class="kw-2">&amp;mut </span><span class="self">self</span>, full_domain: Domain, address: <span class="prelude-ty">Option</span>&lt;Address&gt;);
     <span class="kw">fn </span>resolve(<span class="kw-2">&amp;</span><span class="self">self</span>, full_domain: Domain) -&gt; <span class="prelude-ty">Option</span>&lt;Address&gt;;
-    <span class="kw">fn </span>cleanup(<span class="kw-2">&amp;mut </span><span class="self">self</span>, token_hash: TokenHash);
+    <span class="kw">fn </span>invalidate_resolutions(<span class="kw-2">&amp;mut </span><span class="self">self</span>, token_id: TokenId);
 }
 
 <span class="kw">type </span>Nonce = u32;
 <span class="kw">type </span>Domain = String;
-<span class="kw">type </span>TokenHash = String;
+<span class="kw">type </span>TokenId = U256;
 
 <span class="doccomment">/// Event emitted when a resolution is changed.
 </span><span class="attr">#[odra::event]
@@ -429,16 +499,25 @@
 <span class="doccomment">/// Event emitted when a resolution is cleared.
 </span><span class="attr">#[odra::event]
 </span><span class="kw">pub struct </span>ResolutionCleared {
-    token_hash: String,
+    token_id: U256,
+}
+
+<span class="doccomment">/// Event emitted when the name token address is changed.
+</span><span class="attr">#[odra::event]
+</span><span class="kw">pub struct </span>NameTokenAddressChanged {
+    new_name_token: Address,
 }
 
 <span class="doccomment">/// Default Resolver smart contract. It handles the resolution of domain names to addresses.
-</span><span class="attr">#[odra::module(events = [ResolutionChanged, ResolutionCleared]</span>)]
+</span><span class="attr">#[odra::module(
+    errors = ResolverError,
+    events = [ResolutionChanged, ResolutionCleared, NameTokenAddressChanged]
+</span>)]
 <span class="kw">pub struct </span>DefaultResolver {
     access_control: SubModule&lt;AccessControl&gt;,
     name_token: External&lt;NameTokenContractRef&gt;,
-    nonces: Mapping&lt;String, Nonce&gt;,
-    resolutions: Mapping&lt;(String, String, Nonce), <span class="prelude-ty">Option</span>&lt;Address&gt;&gt;,
+    nonces: Mapping&lt;TokenId, Nonce&gt;,
+    resolutions: Mapping&lt;(TokenId, String, Nonce), <span class="prelude-ty">Option</span>&lt;Address&gt;&gt;,
 }
 
 <span class="attr">#[odra::module]
@@ -454,6 +533,9 @@
     <span class="doccomment">/// Initializes the default resolver with the name token contract address.
     /// The caller is granted the admin role.
     </span><span class="kw">pub fn </span>init(<span class="kw-2">&amp;mut </span><span class="self">self</span>, name_token: Address) {
+        <span class="kw">if </span>!name_token.is_contract() {
+            <span class="self">self</span>.revert(ResolverError::InvalidTokenName);
+        }
         <span class="self">self</span>.name_token.set(name_token);
 
         <span class="kw">let </span>admin = <span class="self">self</span>.env().caller();
@@ -463,32 +545,42 @@
 
     <span class="doccomment">/// Admin only. Sets the name token contract address.
     </span><span class="kw">pub fn </span>set_name_token(<span class="kw-2">&amp;mut </span><span class="self">self</span>, name_token: Address) {
+        <span class="kw">if </span>!name_token.is_contract() {
+            <span class="self">self</span>.revert(ResolverError::InvalidTokenName);
+        }
         <span class="kw">if </span>!<span class="self">self</span>.has_role(<span class="kw-2">&amp;</span>DEFAULT_ADMIN_ROLE, <span class="kw-2">&amp;</span><span class="self">self</span>.env().caller()) {
             <span class="self">self</span>.env()
                 .revert(ResolverError::UnauthorizedTokenAddressUpdate);
         }
         <span class="self">self</span>.name_token.set(name_token);
+        <span class="self">self</span>.env().emit_event(NameTokenAddressChanged {
+            new_name_token: name_token,
+        });
     }
 
     <span class="doccomment">/// Token owner only. Sets the resolution for a domain to an address.
     </span><span class="kw">pub fn </span>set_resolution(<span class="kw-2">&amp;mut </span><span class="self">self</span>, full_domain: Domain, address: <span class="prelude-ty">Option</span>&lt;Address&gt;) {
         <span class="kw">let </span>env = <span class="self">self</span>.env();
-        <span class="kw">let </span>token_hash = <span class="self">self
-            </span>.calculate_token_hash(<span class="kw-2">&amp;</span>full_domain)
+        <span class="kw">let </span>token_id = <span class="self">self
+            </span>.extract_token_id(<span class="kw-2">&amp;</span>full_domain)
             .unwrap_or_revert_with(<span class="self">self</span>, ResolverError::InvalidDomain);
         <span class="kw">let </span>caller = env.caller();
 
-        <span class="kw">if </span>!<span class="self">self</span>.name_token.is_token_valid(<span class="kw-2">&amp;</span>token_hash) {
+        <span class="kw">if </span>!<span class="self">self</span>.name_token.is_token_valid(token_id) {
             env.revert(ResolverError::ResolutionSetWithInvalidToken);
         }
 
-        <span class="kw">if </span><span class="self">self</span>.owner_of(<span class="kw-2">&amp;</span>token_hash) != caller {
+        <span class="kw">if </span><span class="self">self</span>.owner_of(token_id) != <span class="prelude-val">Some</span>(caller) {
             env.revert(ResolverError::ResolutionSetByInvalidOwner);
         }
 
-        <span class="kw">let </span>nonce = <span class="self">self</span>.nonce(<span class="kw-2">&amp;</span>token_hash);
+        <span class="kw">if </span>!utils::is_domain_valid(<span class="kw-2">&amp;</span>full_domain) {
+            env.revert(ResolverError::InvalidSubdomainFormat);
+        }
+
+        <span class="kw">let </span>nonce = <span class="self">self</span>.nonce(<span class="kw-2">&amp;</span>token_id);
         <span class="self">self</span>.resolutions
-            .set(<span class="kw-2">&amp;</span>(token_hash, full_domain.clone(), nonce), address);
+            .set(<span class="kw-2">&amp;</span>(token_id, full_domain.clone(), nonce), address);
 
         env.emit_event(ResolutionChanged {
             full_domain,
@@ -498,45 +590,41 @@
 
     <span class="doccomment">/// Resolves a domain to an address.
     </span><span class="kw">pub fn </span>resolve(<span class="kw-2">&amp;</span><span class="self">self</span>, full_domain: Domain) -&gt; <span class="prelude-ty">Option</span>&lt;Address&gt; {
-        <span class="kw">let </span>token_hash = <span class="self">self</span>.calculate_token_hash(<span class="kw-2">&amp;</span>full_domain)<span class="question-mark">?</span>;
-        <span class="kw">let </span>nonce = <span class="self">self</span>.nonce(<span class="kw-2">&amp;</span>token_hash);
+        <span class="kw">let </span>token_id = <span class="self">self</span>.extract_token_id(<span class="kw-2">&amp;</span>full_domain)<span class="question-mark">?</span>;
+        <span class="kw">let </span>nonce = <span class="self">self</span>.nonce(<span class="kw-2">&amp;</span>token_id);
 
         <span class="self">self</span>.resolutions
-            .get(<span class="kw-2">&amp;</span>(token_hash, full_domain, nonce))
+            .get(<span class="kw-2">&amp;</span>(token_id, full_domain, nonce))
             .flatten()
     }
 
-    <span class="doccomment">/// Cleanup the resolutions for a token. Only the token owner or the admin can do this.
-    </span><span class="kw">pub fn </span>cleanup(<span class="kw-2">&amp;mut </span><span class="self">self</span>, token_hash: TokenHash) {
+    <span class="doccomment">/// Invalidates all the resolutions for a token. Only the token owner or the admin can do this.
+    </span><span class="kw">pub fn </span>invalidate_resolutions(<span class="kw-2">&amp;mut </span><span class="self">self</span>, token_id: TokenId) {
         <span class="kw">let </span>env = <span class="self">self</span>.env();
         <span class="kw">let </span>caller = env.caller();
 
-        <span class="kw">if </span>!<span class="self">self</span>.has_role(<span class="kw-2">&amp;</span>DEFAULT_ADMIN_ROLE, <span class="kw-2">&amp;</span>caller) &amp;&amp; <span class="self">self</span>.owner_of(<span class="kw-2">&amp;</span>token_hash) != caller {
-            <span class="self">self</span>.env().revert(ResolverError::UnauthorizedCleanup);
+        <span class="kw">if </span>!<span class="self">self</span>.has_role(<span class="kw-2">&amp;</span>DEFAULT_ADMIN_ROLE, <span class="kw-2">&amp;</span>caller) &amp;&amp; <span class="self">self</span>.owner_of(token_id) != <span class="prelude-val">Some</span>(caller) {
+            <span class="self">self</span>.env().revert(ResolverError::UnauthorizedInvalidation);
         }
-        <span class="self">self</span>.nonces.add(<span class="kw-2">&amp;</span>token_hash, <span class="number">1</span>);
+        <span class="self">self</span>.nonces.add(<span class="kw-2">&amp;</span>token_id, <span class="number">1</span>);
 
-        env.emit_event(ResolutionCleared {
-            token_hash: token_hash.deref().to_owned(),
-        });
+        env.emit_event(ResolutionCleared { token_id });
     }
 
     <span class="attr">#[inline]
-    </span><span class="kw">fn </span>calculate_token_hash(<span class="kw-2">&amp;</span><span class="self">self</span>, full_domain: <span class="kw-2">&amp;</span>str) -&gt; <span class="prelude-ty">Option</span>&lt;TokenHash&gt; {
+    </span><span class="kw">fn </span>extract_token_id(<span class="kw-2">&amp;</span><span class="self">self</span>, full_domain: <span class="kw-2">&amp;</span>str) -&gt; <span class="prelude-ty">Option</span>&lt;TokenId&gt; {
         <span class="kw">let </span>token_name = utils::extract_token_name(<span class="kw-2">&amp;</span>full_domain)<span class="question-mark">?</span>;
-        <span class="kw">let </span>hash = <span class="self">self</span>.env().hash(token_name);
-        <span class="prelude-val">Some</span>(utils::to_utf8_string(<span class="kw-2">&amp;</span>hash).unwrap_or_revert(<span class="self">self</span>))
+        <span class="prelude-val">Some</span>(<span class="self">self</span>.token_id(token_name))
     }
 
     <span class="attr">#[inline]
-    </span><span class="kw">fn </span>nonce(<span class="kw-2">&amp;</span><span class="self">self</span>, token_hash: <span class="kw-2">&amp;</span>TokenHash) -&gt; Nonce {
-        <span class="self">self</span>.nonces.get_or_default(token_hash)
+    </span><span class="kw">fn </span>nonce(<span class="kw-2">&amp;</span><span class="self">self</span>, token_id: <span class="kw-2">&amp;</span>TokenId) -&gt; Nonce {
+        <span class="self">self</span>.nonces.get_or_default(token_id)
     }
 
     <span class="attr">#[inline]
-    </span><span class="kw">fn </span>owner_of(<span class="kw-2">&amp;</span><span class="self">self</span>, token_hash: <span class="kw-2">&amp;</span>TokenHash) -&gt; Address {
-        <span class="self">self</span>.name_token
-            .owner_of(Maybe::None, Maybe::Some(token_hash.to_owned()))
+    </span><span class="kw">fn </span>owner_of(<span class="kw-2">&amp;</span><span class="self">self</span>, token_id: TokenId) -&gt; <span class="prelude-ty">Option</span>&lt;Address&gt; {
+        <span class="self">self</span>.name_token.owner_of(token_id)
     }
 }
 
@@ -544,23 +632,38 @@
 </span><span class="kw">pub enum </span>ResolverError {
     ResolutionSetWithInvalidToken = <span class="number">1401</span>,
     ResolutionSetByInvalidOwner = <span class="number">1402</span>,
-    UnauthorizedCleanup = <span class="number">1403</span>,
+    UnauthorizedInvalidation = <span class="number">1403</span>,
     UnauthorizedTokenAddressUpdate = <span class="number">1404</span>,
     InvalidDomain = <span class="number">1405</span>,
+    InvalidSubdomainFormat = <span class="number">1406</span>,
+    InvalidTokenName = <span class="number">1407</span>,
 }
 
 <span class="attr">#[cfg(test)]
 </span><span class="kw">mod </span>tests {
-    <span class="kw">use </span>odra::OdraResult;
+    <span class="kw">use </span>odra::{casper_event_standard::EventInstance, host::Deployer};
 
     <span class="kw">use super</span>::<span class="kw-2">*</span>;
-    <span class="kw">use </span><span class="kw">crate</span>::test_context::{blake2b, TestContext, TOKEN_EXPIRATION};
+    <span class="kw">use </span><span class="kw">crate</span>::test_context::{generate_token_id, TestContext, TOKEN_EXPIRATION};
 
     <span class="kw">const </span>TOKEN_NAME: <span class="kw-2">&amp;</span>str = <span class="string">"odra"</span>;
     <span class="kw">const </span>NON_EXISTENT_TOKEN_DOMAIN: <span class="kw-2">&amp;</span>str = <span class="string">"odra2.cspr"</span>;
     <span class="kw">const </span>NON_CSPR_DOMAIN: <span class="kw-2">&amp;</span>str = <span class="string">"odra.com"</span>;
     <span class="kw">const </span>MAIN_DOMAIN: <span class="kw-2">&amp;</span>str = <span class="string">"odra.cspr"</span>;
     <span class="kw">const </span>SUBDOMAIN: <span class="kw-2">&amp;</span>str = <span class="string">"docs.odra.cspr"</span>;
+    <span class="kw">const </span>INVALID_SUBDOMAIN: <span class="kw-2">&amp;</span>str = <span class="string">"-docs.odra.cspr"</span>;
+
+    <span class="attr">#[test]
+    </span><span class="kw">fn </span>deploy_fails_if_account_set_as_name_token() {
+        <span class="kw">let </span>env = odra_test::env();
+        <span class="kw">let </span>result = DefaultResolver::try_deploy(
+            <span class="kw-2">&amp;</span>env,
+            DefaultResolverInitArgs {
+                name_token: env.get_account(<span class="number">1</span>),
+            },
+        );
+        <span class="macro">assert!</span>(result.is_err());
+    }
 
     <span class="attr">#[test]
     </span><span class="kw">fn </span>deployer_is_admin() {
@@ -573,16 +676,48 @@
     <span class="attr">#[test]
     </span><span class="kw">fn </span>only_admin_can_set_name_token() {
         <span class="kw">let </span>(<span class="kw-2">mut </span>ctx, admin, alice, <span class="kw">_</span>) = setup();
+        <span class="kw">let </span>contract_address = ctx.controller.address();
 
         <span class="comment">// When alice tries to set the name token
         </span>ctx.set_caller(alice);
         <span class="comment">// Then the operation fails
-        </span><span class="macro">assert!</span>(ctx.default_resolver.try_set_name_token(alice).is_err());
+        </span><span class="macro">assert!</span>(ctx
+            .default_resolver
+            .try_set_name_token(contract_address)
+            .is_err());
 
         <span class="comment">// When the admin sets the name token
         </span>ctx.set_caller(admin);
         <span class="comment">// Then the operation succeeds
-        </span><span class="macro">assert!</span>(ctx.default_resolver.try_set_name_token(alice).is_ok());
+        </span><span class="macro">assert!</span>(ctx
+            .default_resolver
+            .try_set_name_token(contract_address)
+            .is_ok());
+    }
+
+    <span class="attr">#[test]
+    </span><span class="kw">fn </span>name_token_must_be_a_contract() {
+        <span class="kw">let </span>(<span class="kw-2">mut </span>ctx, admin, alice, <span class="kw">_</span>) = setup();
+
+        <span class="comment">// When the admin tries to set a non-contract address as the name token
+        </span>ctx.set_caller(admin);
+        <span class="kw">let </span>result = ctx.default_resolver.try_set_name_token(alice);
+        <span class="comment">// Then the operation fails
+        </span><span class="macro">assert_eq!</span>(result, <span class="prelude-val">Err</span>(ResolverError::InvalidTokenName.into()));
+    }
+
+    <span class="attr">#[test]
+    </span><span class="kw">fn </span>set_name_token_emits_event() {
+        <span class="kw">let </span>(<span class="kw-2">mut </span>ctx, admin, <span class="kw">_</span>, <span class="kw">_</span>) = setup();
+        <span class="kw">let </span>name_token = ctx.token.address();
+
+        <span class="comment">// When the admin updates the name token address.
+        </span>ctx.set_caller(admin);
+        ctx.default_resolver.set_name_token(name_token);
+        <span class="comment">// Then the event is emitted.
+        </span><span class="macro">assert!</span>(ctx
+            .env
+            .emitted(<span class="kw-2">&amp;</span>ctx.default_resolver, NameTokenAddressChanged::name()))
     }
 
     <span class="attr">#[test]
@@ -670,10 +805,7 @@
         <span class="comment">// Given the token has been burned
         </span><span class="kw">let </span>(<span class="kw-2">mut </span>ctx, admin, alice, <span class="kw">_</span>) = setup();
         ctx.set_caller(admin);
-        ctx.token
-            .set_variables(Maybe::Some(<span class="bool-val">true</span>), Maybe::Some(<span class="macro">vec!</span>[admin]), Maybe::None);
-        ctx.token
-            .burn(Maybe::None, Maybe::Some(blake2b(TOKEN_NAME)));
+        ctx.token.burn(generate_token_id(TOKEN_NAME));
         <span class="comment">// When alice tries to set the resolution
         </span>ctx.set_caller(alice);
         <span class="kw">let </span>result = try_set_resolution(<span class="kw-2">&amp;mut </span>ctx, SUBDOMAIN, alice);
@@ -685,7 +817,18 @@
     }
 
     <span class="attr">#[test]
-    </span><span class="kw">fn </span>cleanup_erases_subdomains() {
+    </span><span class="kw">fn </span>set_resolution_for_invalid_subdomain_format() {
+        <span class="kw">let </span>(<span class="kw-2">mut </span>ctx, <span class="kw">_</span>, alice, <span class="kw">_</span>) = setup();
+
+        <span class="comment">// When alice tries to set the resolution for an invalid subdomain format
+        </span>ctx.set_caller(alice);
+        <span class="kw">let </span>result = try_set_resolution(<span class="kw-2">&amp;mut </span>ctx, INVALID_SUBDOMAIN, alice);
+        <span class="comment">// Then the operation fails
+        </span><span class="macro">assert_eq!</span>(result, <span class="prelude-val">Err</span>(ResolverError::InvalidSubdomainFormat.into()));
+    }
+
+    <span class="attr">#[test]
+    </span><span class="kw">fn </span>invalidate_erases_subdomains() {
         <span class="kw">let </span>(<span class="kw-2">mut </span>ctx, <span class="kw">_</span>, alice, bob) = setup();
 
         <span class="comment">// When alice sets the resolution for the main domain and a subdomain
@@ -698,7 +841,7 @@
         <span class="macro">assert_eq!</span>(resolve(<span class="kw-2">&amp;</span>ctx, SUBDOMAIN), <span class="prelude-val">Some</span>(bob));
 
         <span class="comment">// When alice cleans up the token's resolutions
-        </span>cleanup(<span class="kw-2">&amp;mut </span>ctx, TOKEN_NAME);
+        </span>invalidate(<span class="kw-2">&amp;mut </span>ctx, TOKEN_NAME);
 
         <span class="comment">// Then both resolutions are erased
         </span><span class="macro">assert_eq!</span>(resolve(<span class="kw-2">&amp;</span>ctx, MAIN_DOMAIN), <span class="prelude-val">None</span>);
@@ -706,7 +849,7 @@
     }
 
     <span class="attr">#[test]
-    </span><span class="kw">fn </span>admin_can_cleanup_any_token() {
+    </span><span class="kw">fn </span>admin_can_invalidate_any_token() {
         <span class="kw">let </span>(<span class="kw-2">mut </span>ctx, admin, alice, bob) = setup();
 
         <span class="comment">// When alice sets the resolution for the main domain and a subdomain
@@ -719,7 +862,7 @@
         <span class="macro">assert_eq!</span>(resolve(<span class="kw-2">&amp;</span>ctx, SUBDOMAIN), <span class="prelude-val">Some</span>(bob));
 
         <span class="comment">// When the admin cleans up alice's token's resolutions
-        </span>cleanup_with_caller(<span class="kw-2">&amp;mut </span>ctx, TOKEN_NAME, admin);
+        </span>invalidate_with_caller(<span class="kw-2">&amp;mut </span>ctx, TOKEN_NAME, admin);
 
         <span class="comment">// Then both resolutions are erased
         </span><span class="macro">assert_eq!</span>(resolve(<span class="kw-2">&amp;</span>ctx, MAIN_DOMAIN), <span class="prelude-val">None</span>);
@@ -727,7 +870,7 @@
     }
 
     <span class="attr">#[test]
-    </span><span class="kw">fn </span>only_owner_or_admin_can_cleanup() {
+    </span><span class="kw">fn </span>only_owner_or_admin_can_invalidate() {
         <span class="kw">let </span>(<span class="kw-2">mut </span>ctx, <span class="kw">_</span>, alice, bob) = setup();
 
         <span class="comment">// When alice sets the resolution for the main domain and a subdomain
@@ -741,9 +884,9 @@
 
         <span class="comment">// When bob tries to clean up alice's token's resolutions
         </span>ctx.set_caller(bob);
-        <span class="kw">let </span>result = try_cleanup(<span class="kw-2">&amp;mut </span>ctx, TOKEN_NAME);
+        <span class="kw">let </span>result = try_invalidate(<span class="kw-2">&amp;mut </span>ctx, TOKEN_NAME);
         <span class="comment">// Then the operation fails
-        </span><span class="macro">assert_eq!</span>(result, <span class="prelude-val">Err</span>(ResolverError::UnauthorizedCleanup.into()));
+        </span><span class="macro">assert_eq!</span>(result, <span class="prelude-val">Err</span>(ResolverError::UnauthorizedInvalidation.into()));
     }
 
     <span class="kw">fn </span>setup() -&gt; (TestContext, Address, Address, Address) {
@@ -787,17 +930,18 @@
         resolve(ctx, domain)
     }
 
-    <span class="kw">fn </span>cleanup(ctx: <span class="kw-2">&amp;mut </span>TestContext, token_name: <span class="kw-2">&amp;</span>str) {
-        try_cleanup(ctx, token_name).unwrap();
+    <span class="kw">fn </span>invalidate(ctx: <span class="kw-2">&amp;mut </span>TestContext, token_name: <span class="kw-2">&amp;</span>str) {
+        try_invalidate(ctx, token_name).unwrap();
     }
 
-    <span class="kw">fn </span>cleanup_with_caller(ctx: <span class="kw-2">&amp;mut </span>TestContext, token_hash: <span class="kw-2">&amp;</span>str, caller: Address) {
+    <span class="kw">fn </span>invalidate_with_caller(ctx: <span class="kw-2">&amp;mut </span>TestContext, token_name: <span class="kw-2">&amp;</span>str, caller: Address) {
         ctx.set_caller(caller);
-        cleanup(ctx, token_hash);
+        invalidate(ctx, token_name);
     }
 
-    <span class="kw">fn </span>try_cleanup(ctx: <span class="kw-2">&amp;mut </span>TestContext, token_name: <span class="kw-2">&amp;</span>str) -&gt; OdraResult&lt;()&gt; {
-        ctx.default_resolver.try_cleanup(blake2b(token_name))
+    <span class="kw">fn </span>try_invalidate(ctx: <span class="kw-2">&amp;mut </span>TestContext, token_name: <span class="kw-2">&amp;</span>str) -&gt; OdraResult&lt;()&gt; {
+        ctx.default_resolver
+            .try_invalidate_resolutions(generate_token_id(token_name))
     }
 }
 </code></pre></div></section></main></body></html>

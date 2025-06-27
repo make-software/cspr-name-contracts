@@ -1,4 +1,5 @@
-<!DOCTYPE html><html lang="en"><head><meta charset="utf-8"><meta name="viewport" content="width=device-width, initial-scale=1.0"><meta name="generator" content="rustdoc"><meta name="description" content="Source of the Rust file `casper-name-contracts/src/contracts/marketplace.rs`."><title>marketplace.rs - source</title><script>if(window.location.protocol!=="file:")document.head.insertAdjacentHTML("beforeend","SourceSerif4-Regular-46f98efaafac5295.ttf.woff2,FiraSans-Regular-018c141bf0843ffd.woff2,FiraSans-Medium-8f9a781e4970d388.woff2,SourceCodePro-Regular-562dcc5011b6de7d.ttf.woff2,SourceCodePro-Semibold-d899c5a5c4aeb14a.ttf.woff2".split(",").map(f=>`<link rel="preload" as="font" type="font/woff2" crossorigin href="../../../static.files/${f}">`).join(""))</script><link rel="stylesheet" href="../../../static.files/normalize-76eba96aa4d2e634.css"><link rel="stylesheet" href="../../../static.files/rustdoc-081576b923113409.css"><meta name="rustdoc-vars" data-root-path="../../../" data-static-root-path="../../../static.files/" data-current-crate="casper_name_contracts" data-themes="" data-resource-suffix="" data-rustdoc-version="1.79.0-nightly (3a36386dc 2024-04-25)" data-channel="nightly" data-search-js="search-bf21c90c8c1d92b1.js" data-settings-js="settings-4313503d2e1961c2.js" ><script src="../../../static.files/storage-e32f0c247825364d.js"></script><script defer src="../../../static.files/src-script-e66d777a5a92e9b2.js"></script><script defer src="../../../src-files.js"></script><script defer src="../../../static.files/main-20a3ad099b048cf2.js"></script><noscript><link rel="stylesheet" href="../../../static.files/noscript-09095024cf37855e.css"></noscript><link rel="alternate icon" type="image/png" href="../../../static.files/favicon-32x32-422f7d1d52889060.png"><link rel="icon" type="image/svg+xml" href="../../../static.files/favicon-2c020d218678b618.svg"></head><body class="rustdoc src"><!--[if lte IE 11]><div class="warning">This old browser is unsupported and will most likely display funky things.</div><![endif]--><nav class="sidebar"><div class="src-sidebar-title"><h2>Files</h2></div></nav><div class="sidebar-resizer"></div><main><nav class="sub"><form class="search-form"><span></span><div id="sidebar-button" tabindex="-1"><a href="../../../casper_name_contracts/all.html" title="show sidebar"></a></div><input class="search-input" name="search" aria-label="Run search in the documentation" autocomplete="off" spellcheck="false" placeholder="Type ‘S’ or ‘/’ to search, ‘?’ for more options…" type="search"><div id="help-button" tabindex="-1"><a href="../../../help.html" title="help">?</a></div><div id="settings-menu" tabindex="-1"><a href="../../../settings.html" title="settings">Settings</a></div></form></nav><section id="main-content" class="content"><div class="example-wrap"><div data-nosnippet><pre class="src-line-numbers"><a href="#1" id="1">1</a>
+<!DOCTYPE html><html lang="en"><head><meta charset="utf-8"><meta name="viewport" content="width=device-width, initial-scale=1.0"><meta name="generator" content="rustdoc"><meta name="description" content="Source of the Rust file `casper-name-contracts/src/contracts/marketplace.rs`."><title>marketplace.rs - source</title><script>if(window.location.protocol!=="file:")document.head.insertAdjacentHTML("beforeend","SourceSerif4-Regular-6b053e98.ttf.woff2,FiraSans-Regular-0fe48ade.woff2,FiraSans-Medium-e1aa3f0a.woff2,SourceCodePro-Regular-8badfe75.ttf.woff2,SourceCodePro-Semibold-aa29a496.ttf.woff2".split(",").map(f=>`<link rel="preload" as="font" type="font/woff2" crossorigin href="../../../static.files/${f}">`).join(""))</script><link rel="stylesheet" href="../../../static.files/normalize-9960930a.css"><link rel="stylesheet" href="../../../static.files/rustdoc-46132b98.css"><meta name="rustdoc-vars" data-root-path="../../../" data-static-root-path="../../../static.files/" data-current-crate="casper_name_contracts" data-themes="" data-resource-suffix="" data-rustdoc-version="1.85.0-nightly (d117b7f21 2024-12-31)" data-channel="nightly" data-search-js="search-036cda7a.js" data-settings-js="settings-0f613d39.js" ><script src="../../../static.files/storage-59e33391.js"></script><script defer src="../../../static.files/src-script-56102188.js"></script><script defer src="../../../src-files.js"></script><script defer src="../../../static.files/main-5f194d8c.js"></script><noscript><link rel="stylesheet" href="../../../static.files/noscript-893ab5e7.css"></noscript><link rel="alternate icon" type="image/png" href="../../../static.files/favicon-32x32-6580c154.png"><link rel="icon" type="image/svg+xml" href="../../../static.files/favicon-044be391.svg"></head><body class="rustdoc src"><!--[if lte IE 11]><div class="warning">This old browser is unsupported and will most likely display funky things.</div><![endif]--><nav class="sidebar"><div class="src-sidebar-title"><h2>Files</h2></div></nav><div class="sidebar-resizer"></div><main><rustdoc-search></rustdoc-search><section id="main-content" class="content"><div class="main-heading"><h1><div class="sub-heading">casper_name_contracts/contracts/</div>marketplace.rs</h1><rustdoc-toolbar></rustdoc-toolbar></div><div class="example-wrap"><div data-nosnippet><pre class="src-line-numbers">
+<a href="#1" id="1">1</a>
 <a href="#2" id="2">2</a>
 <a href="#3" id="3">3</a>
 <a href="#4" id="4">4</a>
@@ -55,17 +56,41 @@
 <a href="#55" id="55">55</a>
 <a href="#56" id="56">56</a>
 <a href="#57" id="57">57</a>
-</pre></div><pre class="rust"><code><span class="kw">use </span>odra::{
-    args::Maybe,
+<a href="#58" id="58">58</a>
+<a href="#59" id="59">59</a>
+<a href="#60" id="60">60</a>
+<a href="#61" id="61">61</a>
+<a href="#62" id="62">62</a>
+<a href="#63" id="63">63</a>
+<a href="#64" id="64">64</a>
+<a href="#65" id="65">65</a>
+<a href="#66" id="66">66</a>
+<a href="#67" id="67">67</a>
+<a href="#68" id="68">68</a>
+<a href="#69" id="69">69</a>
+<a href="#70" id="70">70</a>
+<a href="#71" id="71">71</a>
+<a href="#72" id="72">72</a>
+<a href="#73" id="73">73</a>
+<a href="#74" id="74">74</a>
+<a href="#75" id="75">75</a>
+<a href="#76" id="76">76</a>
+<a href="#77" id="77">77</a>
+<a href="#78" id="78">78</a>
+<a href="#79" id="79">79</a>
+<a href="#80" id="80">80</a>
+<a href="#81" id="81">81</a></pre></div><pre class="rust"><code><span class="kw">use </span>odra::{
     casper_types::{bytesrepr::Bytes, PublicKey},
     prelude::<span class="kw-2">*</span>,
-    Address, External, SubModule, UnwrapOrRevert,
 };
 <span class="kw">use </span>odra_modules::access::Role;
 
-<span class="kw">use </span><span class="kw">crate</span>::data_structures::SecondarySaleVoucher;
+<span class="kw">use crate</span>::{
+    contracts::{controller::ControllerError, token_id::ToTokenId},
+    data_structures::SecondarySaleVoucher,
+};
 
-<span class="kw">use super</span>::{controller::BaseController, name_token::NameTokenContractRef, utils};
+<span class="kw">use super</span>::{controller::BaseController, name_token::NameTokenContractRef};
 
 <span class="doccomment">/// Secondary market smart contract. It handles the secondary market operations.
 </span><span class="attr">#[odra::module]
@@ -84,12 +109,18 @@
             <span class="kw">fn </span>set_signer_public_key(<span class="kw-2">&amp;mut </span><span class="self">self</span>, signer: PublicKey);
             <span class="kw">fn </span>set_treasury(<span class="kw-2">&amp;mut </span><span class="self">self</span>, treasury: Address);
             <span class="kw">fn </span>signer_public_key(<span class="kw-2">&amp;</span><span class="self">self</span>) -&gt; PublicKey;
+            <span class="kw">fn </span>pause(<span class="kw-2">&amp;mut </span><span class="self">self</span>);
+            <span class="kw">fn </span>unpause(<span class="kw-2">&amp;mut </span><span class="self">self</span>);
+            <span class="kw">fn </span>is_paused(<span class="kw-2">&amp;</span><span class="self">self</span>) -&gt; bool;
         }
     }
 
     <span class="doccomment">/// Initializes the secondary market with the signer public key, the treasury
     /// address and the name token contract address.
     </span><span class="kw">pub fn </span>init(<span class="kw-2">&amp;mut </span><span class="self">self</span>, signer: PublicKey, treasury: Address, name_token: Address) {
+        <span class="kw">if </span>!name_token.is_contract() {
+            <span class="self">self</span>.revert(ControllerError::ContractAddressExpected);
+        }
         <span class="self">self</span>.controller.init(signer, treasury);
         <span class="self">self</span>.name_token.set(name_token);
     }
@@ -97,19 +128,36 @@
     <span class="doccomment">/// Payable. Buys name tokens from the secondary market.
     </span><span class="attr">#[odra(payable)]
     </span><span class="kw">pub fn </span>buy(<span class="kw-2">&amp;mut </span><span class="self">self</span>, voucher: SecondarySaleVoucher, signature: Bytes) {
+        <span class="self">self</span>.controller.require_not_paused();
         <span class="self">self</span>.controller.process_payment_voucher(<span class="kw-2">&amp;</span>voucher, signature);
         <span class="kw">for </span>name <span class="kw">in </span>voucher.names {
-            <span class="kw">let </span>token_hash = <span class="self">self</span>.compute_namehash(<span class="kw-2">&amp;</span>name.label);
-            <span class="kw">let </span>target_key = <span class="self">self</span>.env().caller();
-            <span class="kw">let </span>source_key = name.owner;
-            <span class="self">self</span>.name_token
-                .transfer(Maybe::None, Maybe::Some(token_hash), source_key, target_key);
+            <span class="kw">let </span>token_id = <span class="self">self</span>.token_id(name.label);
+            <span class="kw">let </span>to = <span class="self">self</span>.env().caller();
+            <span class="kw">let </span>from = name.owner;
+            <span class="self">self</span>.name_token.transfer_from(from, to, token_id);
         }
     }
+}
 
-    <span class="kw">fn </span>compute_namehash(<span class="kw-2">&amp;</span><span class="self">self</span>, label: <span class="kw-2">&amp;</span>String) -&gt; String {
-        <span class="kw">let </span>hash = <span class="self">self</span>.env().hash(label);
-        utils::to_utf8_string(<span class="kw-2">&amp;</span>hash).unwrap_or_revert(<span class="self">self</span>)
+<span class="attr">#[cfg(test)]
+</span><span class="kw">mod </span>tests {
+    <span class="kw">use </span><span class="kw">crate</span>::contracts::marketplace::{SecondaryMarket, SecondaryMarketInitArgs};
+    <span class="kw">use </span>odra::host::Deployer;
+
+    <span class="attr">#[test]
+    </span><span class="kw">fn </span>deploy_fails_if_account_set_as_name_token() {
+        <span class="kw">let </span>env = odra_test::env();
+        <span class="kw">let </span>signer = env.get_account(<span class="number">10</span>);
+        <span class="kw">let </span>treasury = env.get_account(<span class="number">11</span>);
+        <span class="kw">let </span>result = SecondaryMarket::try_deploy(
+            <span class="kw-2">&amp;</span>env,
+            SecondaryMarketInitArgs {
+                signer: env.public_key(<span class="kw-2">&amp;</span>signer),
+                treasury,
+                name_token: env.get_account(<span class="number">12</span>), <span class="comment">// Using an account instead of a contract address
+            </span>},
+        );
+        <span class="macro">assert!</span>(result.is_err());
     }
 }
 </code></pre></div></section></main></body></html>

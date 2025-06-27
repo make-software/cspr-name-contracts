@@ -1,4 +1,5 @@
-<!DOCTYPE html><html lang="en"><head><meta charset="utf-8"><meta name="viewport" content="width=device-width, initial-scale=1.0"><meta name="generator" content="rustdoc"><meta name="description" content="Source of the Rust file `casper-name-contracts/src/contracts/registrar.rs`."><title>registrar.rs - source</title><script>if(window.location.protocol!=="file:")document.head.insertAdjacentHTML("beforeend","SourceSerif4-Regular-46f98efaafac5295.ttf.woff2,FiraSans-Regular-018c141bf0843ffd.woff2,FiraSans-Medium-8f9a781e4970d388.woff2,SourceCodePro-Regular-562dcc5011b6de7d.ttf.woff2,SourceCodePro-Semibold-d899c5a5c4aeb14a.ttf.woff2".split(",").map(f=>`<link rel="preload" as="font" type="font/woff2" crossorigin href="../../../static.files/${f}">`).join(""))</script><link rel="stylesheet" href="../../../static.files/normalize-76eba96aa4d2e634.css"><link rel="stylesheet" href="../../../static.files/rustdoc-081576b923113409.css"><meta name="rustdoc-vars" data-root-path="../../../" data-static-root-path="../../../static.files/" data-current-crate="casper_name_contracts" data-themes="" data-resource-suffix="" data-rustdoc-version="1.79.0-nightly (3a36386dc 2024-04-25)" data-channel="nightly" data-search-js="search-bf21c90c8c1d92b1.js" data-settings-js="settings-4313503d2e1961c2.js" ><script src="../../../static.files/storage-e32f0c247825364d.js"></script><script defer src="../../../static.files/src-script-e66d777a5a92e9b2.js"></script><script defer src="../../../src-files.js"></script><script defer src="../../../static.files/main-20a3ad099b048cf2.js"></script><noscript><link rel="stylesheet" href="../../../static.files/noscript-09095024cf37855e.css"></noscript><link rel="alternate icon" type="image/png" href="../../../static.files/favicon-32x32-422f7d1d52889060.png"><link rel="icon" type="image/svg+xml" href="../../../static.files/favicon-2c020d218678b618.svg"></head><body class="rustdoc src"><!--[if lte IE 11]><div class="warning">This old browser is unsupported and will most likely display funky things.</div><![endif]--><nav class="sidebar"><div class="src-sidebar-title"><h2>Files</h2></div></nav><div class="sidebar-resizer"></div><main><nav class="sub"><form class="search-form"><span></span><div id="sidebar-button" tabindex="-1"><a href="../../../casper_name_contracts/all.html" title="show sidebar"></a></div><input class="search-input" name="search" aria-label="Run search in the documentation" autocomplete="off" spellcheck="false" placeholder="Type ‘S’ or ‘/’ to search, ‘?’ for more options…" type="search"><div id="help-button" tabindex="-1"><a href="../../../help.html" title="help">?</a></div><div id="settings-menu" tabindex="-1"><a href="../../../settings.html" title="settings">Settings</a></div></form></nav><section id="main-content" class="content"><div class="example-wrap"><div data-nosnippet><pre class="src-line-numbers"><a href="#1" id="1">1</a>
+<!DOCTYPE html><html lang="en"><head><meta charset="utf-8"><meta name="viewport" content="width=device-width, initial-scale=1.0"><meta name="generator" content="rustdoc"><meta name="description" content="Source of the Rust file `casper-name-contracts/src/contracts/registrar.rs`."><title>registrar.rs - source</title><script>if(window.location.protocol!=="file:")document.head.insertAdjacentHTML("beforeend","SourceSerif4-Regular-6b053e98.ttf.woff2,FiraSans-Regular-0fe48ade.woff2,FiraSans-Medium-e1aa3f0a.woff2,SourceCodePro-Regular-8badfe75.ttf.woff2,SourceCodePro-Semibold-aa29a496.ttf.woff2".split(",").map(f=>`<link rel="preload" as="font" type="font/woff2" crossorigin href="../../../static.files/${f}">`).join(""))</script><link rel="stylesheet" href="../../../static.files/normalize-9960930a.css"><link rel="stylesheet" href="../../../static.files/rustdoc-46132b98.css"><meta name="rustdoc-vars" data-root-path="../../../" data-static-root-path="../../../static.files/" data-current-crate="casper_name_contracts" data-themes="" data-resource-suffix="" data-rustdoc-version="1.85.0-nightly (d117b7f21 2024-12-31)" data-channel="nightly" data-search-js="search-036cda7a.js" data-settings-js="settings-0f613d39.js" ><script src="../../../static.files/storage-59e33391.js"></script><script defer src="../../../static.files/src-script-56102188.js"></script><script defer src="../../../src-files.js"></script><script defer src="../../../static.files/main-5f194d8c.js"></script><noscript><link rel="stylesheet" href="../../../static.files/noscript-893ab5e7.css"></noscript><link rel="alternate icon" type="image/png" href="../../../static.files/favicon-32x32-6580c154.png"><link rel="icon" type="image/svg+xml" href="../../../static.files/favicon-044be391.svg"></head><body class="rustdoc src"><!--[if lte IE 11]><div class="warning">This old browser is unsupported and will most likely display funky things.</div><![endif]--><nav class="sidebar"><div class="src-sidebar-title"><h2>Files</h2></div></nav><div class="sidebar-resizer"></div><main><rustdoc-search></rustdoc-search><section id="main-content" class="content"><div class="main-heading"><h1><div class="sub-heading">casper_name_contracts/contracts/</div>registrar.rs</h1><rustdoc-toolbar></rustdoc-toolbar></div><div class="example-wrap"><div data-nosnippet><pre class="src-line-numbers">
+<a href="#1" id="1">1</a>
 <a href="#2" id="2">2</a>
 <a href="#3" id="3">3</a>
 <a href="#4" id="4">4</a>
@@ -820,17 +821,194 @@
 <a href="#820" id="820">820</a>
 <a href="#821" id="821">821</a>
 <a href="#822" id="822">822</a>
-</pre></div><pre class="rust"><code><span class="kw">use </span>core::ops::DerefMut;
-
+<a href="#823" id="823">823</a>
+<a href="#824" id="824">824</a>
+<a href="#825" id="825">825</a>
+<a href="#826" id="826">826</a>
+<a href="#827" id="827">827</a>
+<a href="#828" id="828">828</a>
+<a href="#829" id="829">829</a>
+<a href="#830" id="830">830</a>
+<a href="#831" id="831">831</a>
+<a href="#832" id="832">832</a>
+<a href="#833" id="833">833</a>
+<a href="#834" id="834">834</a>
+<a href="#835" id="835">835</a>
+<a href="#836" id="836">836</a>
+<a href="#837" id="837">837</a>
+<a href="#838" id="838">838</a>
+<a href="#839" id="839">839</a>
+<a href="#840" id="840">840</a>
+<a href="#841" id="841">841</a>
+<a href="#842" id="842">842</a>
+<a href="#843" id="843">843</a>
+<a href="#844" id="844">844</a>
+<a href="#845" id="845">845</a>
+<a href="#846" id="846">846</a>
+<a href="#847" id="847">847</a>
+<a href="#848" id="848">848</a>
+<a href="#849" id="849">849</a>
+<a href="#850" id="850">850</a>
+<a href="#851" id="851">851</a>
+<a href="#852" id="852">852</a>
+<a href="#853" id="853">853</a>
+<a href="#854" id="854">854</a>
+<a href="#855" id="855">855</a>
+<a href="#856" id="856">856</a>
+<a href="#857" id="857">857</a>
+<a href="#858" id="858">858</a>
+<a href="#859" id="859">859</a>
+<a href="#860" id="860">860</a>
+<a href="#861" id="861">861</a>
+<a href="#862" id="862">862</a>
+<a href="#863" id="863">863</a>
+<a href="#864" id="864">864</a>
+<a href="#865" id="865">865</a>
+<a href="#866" id="866">866</a>
+<a href="#867" id="867">867</a>
+<a href="#868" id="868">868</a>
+<a href="#869" id="869">869</a>
+<a href="#870" id="870">870</a>
+<a href="#871" id="871">871</a>
+<a href="#872" id="872">872</a>
+<a href="#873" id="873">873</a>
+<a href="#874" id="874">874</a>
+<a href="#875" id="875">875</a>
+<a href="#876" id="876">876</a>
+<a href="#877" id="877">877</a>
+<a href="#878" id="878">878</a>
+<a href="#879" id="879">879</a>
+<a href="#880" id="880">880</a>
+<a href="#881" id="881">881</a>
+<a href="#882" id="882">882</a>
+<a href="#883" id="883">883</a>
+<a href="#884" id="884">884</a>
+<a href="#885" id="885">885</a>
+<a href="#886" id="886">886</a>
+<a href="#887" id="887">887</a>
+<a href="#888" id="888">888</a>
+<a href="#889" id="889">889</a>
+<a href="#890" id="890">890</a>
+<a href="#891" id="891">891</a>
+<a href="#892" id="892">892</a>
+<a href="#893" id="893">893</a>
+<a href="#894" id="894">894</a>
+<a href="#895" id="895">895</a>
+<a href="#896" id="896">896</a>
+<a href="#897" id="897">897</a>
+<a href="#898" id="898">898</a>
+<a href="#899" id="899">899</a>
+<a href="#900" id="900">900</a>
+<a href="#901" id="901">901</a>
+<a href="#902" id="902">902</a>
+<a href="#903" id="903">903</a>
+<a href="#904" id="904">904</a>
+<a href="#905" id="905">905</a>
+<a href="#906" id="906">906</a>
+<a href="#907" id="907">907</a>
+<a href="#908" id="908">908</a>
+<a href="#909" id="909">909</a>
+<a href="#910" id="910">910</a>
+<a href="#911" id="911">911</a>
+<a href="#912" id="912">912</a>
+<a href="#913" id="913">913</a>
+<a href="#914" id="914">914</a>
+<a href="#915" id="915">915</a>
+<a href="#916" id="916">916</a>
+<a href="#917" id="917">917</a>
+<a href="#918" id="918">918</a>
+<a href="#919" id="919">919</a>
+<a href="#920" id="920">920</a>
+<a href="#921" id="921">921</a>
+<a href="#922" id="922">922</a>
+<a href="#923" id="923">923</a>
+<a href="#924" id="924">924</a>
+<a href="#925" id="925">925</a>
+<a href="#926" id="926">926</a>
+<a href="#927" id="927">927</a>
+<a href="#928" id="928">928</a>
+<a href="#929" id="929">929</a>
+<a href="#930" id="930">930</a>
+<a href="#931" id="931">931</a>
+<a href="#932" id="932">932</a>
+<a href="#933" id="933">933</a>
+<a href="#934" id="934">934</a>
+<a href="#935" id="935">935</a>
+<a href="#936" id="936">936</a>
+<a href="#937" id="937">937</a>
+<a href="#938" id="938">938</a>
+<a href="#939" id="939">939</a>
+<a href="#940" id="940">940</a>
+<a href="#941" id="941">941</a>
+<a href="#942" id="942">942</a>
+<a href="#943" id="943">943</a>
+<a href="#944" id="944">944</a>
+<a href="#945" id="945">945</a>
+<a href="#946" id="946">946</a>
+<a href="#947" id="947">947</a>
+<a href="#948" id="948">948</a>
+<a href="#949" id="949">949</a>
+<a href="#950" id="950">950</a>
+<a href="#951" id="951">951</a>
+<a href="#952" id="952">952</a>
+<a href="#953" id="953">953</a>
+<a href="#954" id="954">954</a>
+<a href="#955" id="955">955</a>
+<a href="#956" id="956">956</a>
+<a href="#957" id="957">957</a>
+<a href="#958" id="958">958</a>
+<a href="#959" id="959">959</a>
+<a href="#960" id="960">960</a>
+<a href="#961" id="961">961</a>
+<a href="#962" id="962">962</a>
+<a href="#963" id="963">963</a>
+<a href="#964" id="964">964</a>
+<a href="#965" id="965">965</a>
+<a href="#966" id="966">966</a>
+<a href="#967" id="967">967</a>
+<a href="#968" id="968">968</a>
+<a href="#969" id="969">969</a>
+<a href="#970" id="970">970</a>
+<a href="#971" id="971">971</a>
+<a href="#972" id="972">972</a>
+<a href="#973" id="973">973</a>
+<a href="#974" id="974">974</a>
+<a href="#975" id="975">975</a>
+<a href="#976" id="976">976</a>
+<a href="#977" id="977">977</a>
+<a href="#978" id="978">978</a>
+<a href="#979" id="979">979</a>
+<a href="#980" id="980">980</a>
+<a href="#981" id="981">981</a>
+<a href="#982" id="982">982</a>
+<a href="#983" id="983">983</a>
+<a href="#984" id="984">984</a>
+<a href="#985" id="985">985</a>
+<a href="#986" id="986">986</a>
+<a href="#987" id="987">987</a>
+<a href="#988" id="988">988</a>
+<a href="#989" id="989">989</a>
+<a href="#990" id="990">990</a>
+<a href="#991" id="991">991</a>
+<a href="#992" id="992">992</a>
+<a href="#993" id="993">993</a>
+<a href="#994" id="994">994</a>
+<a href="#995" id="995">995</a>
+<a href="#996" id="996">996</a>
+<a href="#997" id="997">997</a></pre></div><pre class="rust"><code><span class="kw">use </span>core::ops::DerefMut;
+<span class="kw">use </span>odra::casper_types::U256;
 <span class="kw">use </span>odra::module::Revertible;
-<span class="kw">use </span>odra::{args::Maybe, module::Module, Address, SubModule, UnwrapOrRevert, Var};
-<span class="kw">use </span>odra::{prelude::<span class="kw-2">*</span>, External};
+<span class="kw">use </span>odra::prelude::<span class="kw-2">*</span>;
+<span class="kw">use </span>odra::ContractRef;
 <span class="kw">use </span>odra_modules::access::{AccessControl, Role, DEFAULT_ADMIN_ROLE};
+<span class="kw">use </span>odra_modules::security::Pauseable;
 
-<span class="kw">use </span><span class="kw">crate</span>::data_structures::{ExpirableVoucher, NameMintInfo, RenewalVoucher, TokenRenewalInfo};
 <span class="kw">use crate</span>::{
-    contracts::name_token::NameTokenContractRef,
-    data_structures::{NameTokenMetadata, TokenizationVoucher},
+    contracts::{name_token::NameTokenContractRef, token_id::ToTokenId},
+    data_structures::{
+        ExpirableVoucher, NameMintInfo, NameTokenMetadata, RenewalVoucher, TokenRenewalInfo,
+        TokenizationVoucher,
+    },
 };
 
 <span class="kw">use </span><span class="kw">super</span>::resolver::ResolverContractRef;
@@ -838,14 +1016,22 @@
 
 <span class="kw">pub const </span>CONTROLLER_ROLE: Role = [<span class="number">2u8</span>; <span class="number">32</span>];
 <span class="comment">// Reminting should be possible after 5 days.
-</span><span class="kw">const </span>PENDING_DELETE_PERIOD: u64 = <span class="number">5 </span>* <span class="number">24 </span>* <span class="number">60 </span>* <span class="number">60 </span>* <span class="number">1000</span>;
+</span><span class="kw">const </span>PENDING_DELETE_PERIOD: u64 = <span class="number">5 </span>* <span class="number">24 </span>* <span class="number">60 </span>* <span class="number">60 </span>* <span class="number">1000</span>; <span class="comment">// 5 days
+</span><span class="kw">const </span>MAX_GRACE_PERIOD: u64 = <span class="number">365 </span>* <span class="number">24 </span>* <span class="number">60 </span>* <span class="number">60 </span>* <span class="number">1000</span>; <span class="comment">// 365 days
+
+</span><span class="doccomment">/// Event emitted when the grace period is changed.
+</span><span class="attr">#[odra::event]
+</span><span class="kw">pub struct </span>GracePeriodChanged {
+    new_grace_period: u64,
+}
 
 <span class="doccomment">/// Registrar smart contract. It handles the registration and expiration of name tokens.
-</span><span class="attr">#[odra::module]
-</span><span class="kw">pub struct </span>Registrar {
+</span><span class="attr">#[odra::module(errors = RegistrarError, events = [GracePeriodChanged]</span>)]
+<span class="kw">pub struct </span>Registrar {
     name_token: External&lt;NameTokenContractRef&gt;,
     access_control: SubModule&lt;AccessControl&gt;,
     grace_period: Var&lt;u64&gt;,
+    pauseable: SubModule&lt;Pauseable&gt;,
 }
 
 <span class="attr">#[odra::module]
@@ -856,10 +1042,17 @@
             <span class="kw">fn </span>grant_role(<span class="kw-2">&amp;mut </span><span class="self">self</span>, role: <span class="kw-2">&amp;</span>Role, address: <span class="kw-2">&amp;</span>Address);
             <span class="kw">fn </span>revoke_role(<span class="kw-2">&amp;mut </span><span class="self">self</span>, role: <span class="kw-2">&amp;</span>Role, address: <span class="kw-2">&amp;</span>Address);
         }
+
+        to <span class="self">self</span>.pauseable {
+            <span class="kw">fn </span>is_paused(<span class="kw-2">&amp;</span><span class="self">self</span>) -&gt; bool;
+        }
     }
 
     <span class="doccomment">/// Initializes the registrar with the name token contract address.
     </span><span class="kw">pub fn </span>init(<span class="kw-2">&amp;mut </span><span class="self">self</span>, name_token: Address) {
+        <span class="kw">if </span>!name_token.is_contract() {
+            <span class="self">self</span>.revert(RegistrarError::NameTokenIsNotValid);
+        }
         <span class="kw">let </span>caller = <span class="self">self</span>.env().caller();
 
         <span class="comment">// Set NameToken address.
@@ -872,11 +1065,19 @@
         </span><span class="self">self</span>.access_control
             .unchecked_grant_role(<span class="kw-2">&amp;</span>DEFAULT_ADMIN_ROLE, <span class="kw-2">&amp;</span>caller);
         <span class="self">self</span>.access_control
-            .set_admin_role(<span class="kw-2">&amp;</span>CONTROLLER_ROLE, <span class="kw-2">&amp;</span>DEFAULT_ADMIN_ROLE);
-
-        <span class="comment">// Consider removing this line.
-        </span><span class="self">self</span>.access_control
             .unchecked_grant_role(<span class="kw-2">&amp;</span>CONTROLLER_ROLE, <span class="kw-2">&amp;</span>caller);
+    }
+
+    <span class="doccomment">/// Temporarily stops the contract.
+    </span><span class="kw">pub fn </span>pause(<span class="kw-2">&amp;mut </span><span class="self">self</span>) {
+        <span class="self">self</span>.assert_caller_is_admin();
+        <span class="self">self</span>.pauseable.pause();
+    }
+
+    <span class="doccomment">/// Returns to normal operation.
+    </span><span class="kw">pub fn </span>unpause(<span class="kw-2">&amp;mut </span><span class="self">self</span>) {
+        <span class="self">self</span>.assert_caller_is_admin();
+        <span class="self">self</span>.pauseable.unpause();
     }
 
     <span class="doccomment">/// Returns the grace period.
@@ -887,8 +1088,8 @@
     <span class="doccomment">/// Try to resolve a full domain name to an address.
     </span><span class="kw">pub fn </span>resolve(<span class="kw-2">&amp;</span><span class="self">self</span>, full_domain: String) -&gt; <span class="prelude-ty">Option</span>&lt;Address&gt; {
         <span class="kw">let </span>token_name = utils::extract_token_name(<span class="kw-2">&amp;</span>full_domain)<span class="question-mark">?</span>;
-        <span class="kw">let </span>token_hash = <span class="self">self</span>.compute_namehash(<span class="kw-2">&amp;</span>token_name);
-        <span class="kw">if </span>!<span class="self">self</span>.name_token.is_token_valid(<span class="kw-2">&amp;</span>token_hash) {
+        <span class="kw">let </span>token_hash = <span class="self">self</span>.token_id(token_name);
+        <span class="kw">if </span>!<span class="self">self</span>.name_token.is_token_valid(token_hash) {
             <span class="kw">return </span><span class="prelude-val">None</span>;
         }
 
@@ -898,33 +1099,42 @@
         }
     }
 
-    <span class="doccomment">/// Expire a list of tokens if they are expired.
-    </span><span class="kw">pub fn </span>expire(<span class="kw-2">&amp;mut </span><span class="self">self</span>, token_hashes: Vec&lt;String&gt;) {
+    <span class="comment">// Public functions.
+
+    </span><span class="doccomment">/// Expire a list of tokens if they are expired.
+    </span><span class="kw">pub fn </span>expire(<span class="kw-2">&amp;mut </span><span class="self">self</span>, token_ids: Vec&lt;U256&gt;) {
+        <span class="self">self</span>.pauseable.require_not_paused();
         <span class="kw">let </span>block_time = <span class="self">self</span>.env().get_block_time();
         <span class="kw">let </span>grace_period = <span class="self">self</span>.grace_period();
-        <span class="kw">for </span>token_hash <span class="kw">in </span>token_hashes {
-            <span class="self">self</span>.expire_single(<span class="kw-2">&amp;</span>token_hash, block_time, grace_period);
+        <span class="kw">for </span>token_id <span class="kw">in </span>token_ids {
+            <span class="self">self</span>.expire_single(token_id, block_time, grace_period);
         }
     }
 
     <span class="doccomment">/// Admin only. Sets the grace period.
     </span><span class="kw">pub fn </span>set_grace_period(<span class="kw-2">&amp;mut </span><span class="self">self</span>, period: u64) {
         <span class="self">self</span>.assert_caller_is_admin();
+        <span class="kw">if </span>period &gt; MAX_GRACE_PERIOD {
+            <span class="self">self</span>.revert(RegistrarError::GracePeriodTooLong);
+        }
         <span class="self">self</span>.grace_period.set(period);
+        <span class="self">self</span>.env().emit_event(GracePeriodChanged {
+            new_grace_period: period,
+        });
     }
 
     <span class="doccomment">/// Admin only. Transfer ownership of a list of tokens.
-    </span><span class="kw">pub fn </span>admin_transfer(<span class="kw-2">&amp;mut </span><span class="self">self</span>, new_owner: Address, token_hashes: Vec&lt;String&gt;) {
+    </span><span class="kw">pub fn </span>admin_transfer(<span class="kw-2">&amp;mut </span><span class="self">self</span>, new_owner: Address, token_ids: Vec&lt;U256&gt;) {
         <span class="self">self</span>.assert_caller_is_admin();
-        <span class="self">self</span>.name_token.admin_transfer(new_owner, token_hashes);
+        <span class="self">self</span>.name_token.admin_transfer(new_owner, token_ids);
     }
 
     <span class="doccomment">/// Admin only. Burn a list of tokens.
-    </span><span class="kw">pub fn </span>admin_burn(<span class="kw-2">&amp;mut </span><span class="self">self</span>, token_hashes: Vec&lt;String&gt;) {
+    </span><span class="kw">pub fn </span>admin_burn(<span class="kw-2">&amp;mut </span><span class="self">self</span>, token_ids: Vec&lt;U256&gt;) {
         <span class="self">self</span>.assert_caller_is_admin();
         <span class="kw">let </span>name_token = <span class="self">self</span>.name_token.deref_mut();
-        <span class="kw">for </span>token_hash <span class="kw">in </span>token_hashes {
-            burn(name_token, token_hash);
+        <span class="kw">for </span>id <span class="kw">in </span>token_ids {
+            name_token.burn(id);
         }
     }
 
@@ -953,6 +1163,7 @@
 
     <span class="doccomment">/// Controller only. Prolong the expiration date of a list of tokens.
     </span><span class="kw">pub fn </span>controller_prolong(<span class="kw-2">&amp;mut </span><span class="self">self</span>, voucher: RenewalVoucher) {
+        <span class="self">self</span>.pauseable.require_not_paused();
         <span class="self">self</span>.assert_caller_is_controller();
         <span class="self">self</span>.assert_voucher_not_expired(<span class="kw-2">&amp;</span>voucher);
         <span class="self">self</span>.prolong(voucher.tokens);
@@ -960,6 +1171,7 @@
 
     <span class="doccomment">/// Controller only. Register a list of tokens.
     </span><span class="kw">pub fn </span>controller_register(<span class="kw-2">&amp;mut </span><span class="self">self</span>, voucher: TokenizationVoucher) {
+        <span class="self">self</span>.pauseable.require_not_paused();
         <span class="self">self</span>.assert_voucher_not_expired(<span class="kw-2">&amp;</span>voucher);
         <span class="self">self</span>.assert_caller_is_controller();
         <span class="self">self</span>.register(voucher.names);
@@ -971,6 +1183,7 @@
         renewal_voucher: RenewalVoucher,
         tokenization_voucher: TokenizationVoucher,
     ) {
+        <span class="self">self</span>.pauseable.require_not_paused();
         <span class="self">self</span>.assert_caller_is_controller();
         <span class="self">self</span>.assert_voucher_not_expired(<span class="kw-2">&amp;</span>renewal_voucher);
         <span class="self">self</span>.assert_voucher_not_expired(<span class="kw-2">&amp;</span>tokenization_voucher);
@@ -1004,17 +1217,12 @@
         }
     }
 
-    <span class="kw">fn </span>expire_single(<span class="kw-2">&amp;mut </span><span class="self">self</span>, token_hash: <span class="kw-2">&amp;</span>str, block_time: u64, grace_period: u64) {
-        <span class="kw">let </span>metadata = <span class="self">self</span>.wrapped_metadata(token_hash);
-        <span class="kw">let </span>token_expiration = metadata.expiration().unwrap_or_revert(<span class="self">self</span>);
+    <span class="kw">fn </span>expire_single(<span class="kw-2">&amp;mut </span><span class="self">self</span>, token_id: U256, block_time: u64, grace_period: u64) {
+        <span class="kw">let </span>metadata = <span class="self">self</span>.wrapped_metadata(token_id);
+        <span class="kw">let </span>token_expiration = metadata.expiration();
         <span class="kw">if </span><span class="self">self</span>.is_token_expired(token_expiration, grace_period, block_time) {
-            burn(<span class="self">self</span>.name_token.deref_mut(), token_hash.to_owned());
+            <span class="self">self</span>.name_token.burn(token_id);
         }
-    }
-
-    <span class="kw">fn </span>compute_namehash(<span class="kw-2">&amp;</span><span class="self">self</span>, label: <span class="kw-2">&amp;</span>String) -&gt; String {
-        <span class="kw">let </span>hash = <span class="self">self</span>.env().hash(label);
-        utils::to_utf8_string(<span class="kw-2">&amp;</span>hash).unwrap_or_revert(<span class="self">self</span>)
     }
 
     <span class="attr">#[inline]
@@ -1039,9 +1247,9 @@
     }
 
     <span class="attr">#[inline]
-    </span><span class="kw">fn </span>wrapped_metadata(<span class="kw-2">&amp;</span><span class="self">self</span>, token_hash: <span class="kw-2">&amp;</span>str) -&gt; NameTokenMetadata {
+    </span><span class="kw">fn </span>wrapped_metadata(<span class="kw-2">&amp;</span><span class="self">self</span>, token_id: U256) -&gt; NameTokenMetadata {
         <span class="self">self</span>.name_token
-            .metadata_by_hash(token_hash.to_owned())
+            .token_metadata(token_id)
             .try_into()
             .unwrap_or_revert(<span class="self">self</span>)
     }
@@ -1057,19 +1265,16 @@
             <span class="comment">// verify the new expiration date is in the future
             </span><span class="self">self</span>.assert_token_expires_in_future(token.token_expiration, block_time);
             <span class="comment">// Compute token hash.
-            </span><span class="kw">let </span>token_hash = <span class="self">self</span>.compute_namehash(<span class="kw-2">&amp;</span>token.token_id);
+            </span><span class="kw">let </span>token_id = token.token_id;
             <span class="comment">// get the token metadata
-            </span><span class="kw">let </span><span class="kw-2">mut </span>metadata = <span class="self">self</span>.wrapped_metadata(<span class="kw-2">&amp;</span>token_hash);
+            </span><span class="kw">let </span><span class="kw-2">mut </span>metadata = <span class="self">self</span>.wrapped_metadata(token_id);
             <span class="comment">// check if the time for the renewal does not elapsed
-            </span><span class="kw">let </span>expiration = metadata.expiration().unwrap_or_revert(<span class="self">self</span>);
+            </span><span class="kw">let </span>expiration = metadata.expiration();
             <span class="self">self</span>.assert_in_renewal_period(expiration);
             metadata.set_expiration(token.token_expiration);
 
-            set_token_metadata(
-                <span class="self">self</span>.name_token.deref_mut(),
-                token_hash,
-                metadata.json().to_string(),
-            );
+            <span class="self">self</span>.name_token
+                .set_token_metadata(token_id, metadata.to_vec());
         }
     }
 
@@ -1077,59 +1282,33 @@
         <span class="kw">let </span>block_time = <span class="self">self</span>.env().get_block_time();
         <span class="kw">for </span>info <span class="kw">in </span>names {
             <span class="self">self</span>.assert_token_expires_in_future(info.token_expiration, block_time);
-
+            <span class="kw">if </span>!utils::is_label_valid(<span class="kw-2">&amp;</span>info.label) {
+                <span class="self">self</span>.revert(RegistrarError::TokenNameIsNotValid);
+            }
+            <span class="kw">let </span>metadata = NameTokenMetadata::with_resolver(
+                <span class="kw-2">&amp;</span>info.label,
+                info.token_expiration,
+                <span class="kw-2">&amp;</span>info.asset_uri,
+                <span class="self">self</span>.name_token.get_default_resolver(),
+            );
             <span class="comment">// Compute token hash.
-            </span><span class="kw">let </span>token_hash = <span class="self">self</span>.compute_namehash(<span class="kw-2">&amp;</span>info.label);
+            </span><span class="kw">let </span>token_id = <span class="self">self</span>.token_id(info.label);
 
             <span class="comment">// Check if token already exists.
-            </span><span class="kw">let </span>token_exists = <span class="self">self</span>.name_token.token_exists(<span class="kw-2">&amp;</span>token_hash);
+            </span><span class="kw">let </span>token_exists = <span class="self">self</span>.name_token.token_exists(token_id);
 
             <span class="comment">// If token exists and is expired and grace period is over, burn it.
             </span><span class="kw">if </span>token_exists {
-                <span class="kw">let </span>metadata = <span class="self">self</span>.wrapped_metadata(<span class="kw-2">&amp;</span>token_hash);
-                <span class="self">self</span>.assert_token_expired(metadata.expiration().unwrap_or_revert(<span class="self">self</span>), block_time);
-                burn(<span class="self">self</span>.name_token.deref_mut(), token_hash.clone());
+                <span class="kw">let </span>metadata = <span class="self">self</span>.wrapped_metadata(token_id);
+                <span class="self">self</span>.assert_token_expired(metadata.expiration(), block_time);
+                <span class="self">self</span>.name_token.burn(token_id);
             }
 
             <span class="comment">// Mint token.
-            </span><span class="kw">let </span>metadata = NameTokenMetadata::with_resolver(
-                <span class="kw-2">&amp;</span>info.label,
-                info.token_expiration,
-                <span class="self">self</span>.name_token.get_default_resolver(),
-            );
-            <span class="kw">let </span>metadata = metadata.json();
-            mint(
-                <span class="self">self</span>.name_token.deref_mut(),
-                info.owner,
-                metadata,
-                token_hash,
-            );
+            </span><span class="self">self</span>.name_token
+                .mint(info.owner, token_id, metadata.to_vec());
         }
     }
-}
-
-<span class="attr">#[inline]
-</span><span class="kw">fn </span>mint(
-    name_token: <span class="kw-2">&amp;mut </span>NameTokenContractRef,
-    buyer: Address,
-    metadata: String,
-    token_hash: String,
-) {
-    name_token.mint(buyer, metadata, Maybe::Some(token_hash));
-}
-
-<span class="attr">#[inline]
-</span><span class="kw">fn </span>set_token_metadata(
-    name_token: <span class="kw-2">&amp;mut </span>NameTokenContractRef,
-    token_hash: String,
-    token_meta_data: String,
-) {
-    name_token.set_token_metadata(Maybe::None, Maybe::Some(token_hash), token_meta_data);
-}
-
-<span class="attr">#[inline]
-</span><span class="kw">fn </span>burn(name_token: <span class="kw-2">&amp;mut </span>NameTokenContractRef, token_hash: String) {
-    name_token.burn(Maybe::None, Maybe::Some(token_hash));
 }
 
 <span class="attr">#[odra::odra_error]
@@ -1139,6 +1318,9 @@
     GracePeriodExpired = <span class="number">1203</span>,
     VoucherExpired = <span class="number">1204</span>,
     TokenDoesNotExist = <span class="number">1205</span>,
+    GracePeriodTooLong = <span class="number">1206</span>,
+    NameTokenIsNotValid = <span class="number">1207</span>,
+    TokenNameIsNotValid = <span class="number">1208</span>,
 }
 
 <span class="attr">#[cfg(test)]
@@ -1147,11 +1329,26 @@
     <span class="kw">use crate</span>::{
         data_structures::TokenRenewalInfo,
         test_context::{
-            blake2b, TestContext, GRACE_PERIOD, INIT_TIME, TOKEN_EXPIRATION, TOKEN_NAME,
+            generate_token_id, TestContext, GRACE_PERIOD, INIT_TIME, TOKEN_EXPIRATION, TOKEN_NAME,
         },
     };
-    <span class="kw">use </span>odra::{casper_types::ContractPackageHash, host::HostRef};
-    <span class="kw">use </span>odra_modules::{access::errors::Error <span class="kw">as </span>AccessControlError, cep78::events::Burn};
+    <span class="kw">use </span>odra::{
+        casper_event_standard::EventInstance,
+        host::{Deployer, HostRef},
+    };
+    <span class="kw">use </span>odra_modules::{access::errors::Error <span class="kw">as </span>AccessControlError, cep95::Burn};
+
+    <span class="attr">#[test]
+    </span><span class="kw">fn </span>deploy_fails_if_account_set_as_name_token() {
+        <span class="kw">let </span>env = odra_test::env();
+        <span class="kw">let </span>result = Registrar::try_deploy(
+            <span class="kw-2">&amp;</span>env,
+            RegistrarInitArgs {
+                name_token: env.get_account(<span class="number">1</span>),
+            },
+        );
+        <span class="macro">assert!</span>(result.is_err());
+    }
 
     <span class="attr">#[test]
     </span><span class="kw">fn </span>test_admin_can_manage_controller_role() {
@@ -1209,6 +1406,34 @@
     }
 
     <span class="attr">#[test]
+    </span><span class="kw">fn </span>test_grace_period_too_long() {
+        <span class="kw">let </span><span class="kw-2">mut </span>ctx = TestContext::install_raw();
+        <span class="kw">let </span>(env, reg) = (ctx.env, <span class="kw-2">&amp;mut </span>ctx.registrar);
+        <span class="kw">let </span>admin = ctx.admin;
+
+        <span class="comment">// When Admin sets too long grace period.
+        </span>env.set_caller(admin);
+        <span class="kw">let </span>result = reg.try_set_grace_period(MAX_GRACE_PERIOD + <span class="number">1</span>);
+
+        <span class="comment">// Then it fails with error.
+        </span><span class="macro">assert_eq!</span>(result, <span class="prelude-val">Err</span>(RegistrarError::GracePeriodTooLong.into()));
+    }
+
+    <span class="attr">#[test]
+    </span><span class="kw">fn </span>test_set_grace_period_emits_event() {
+        <span class="kw">let </span><span class="kw-2">mut </span>ctx = TestContext::install_raw();
+        <span class="kw">let </span>(env, reg) = (ctx.env, <span class="kw-2">&amp;mut </span>ctx.registrar);
+        <span class="kw">let </span>admin = ctx.admin;
+
+        <span class="comment">// When Admin sets grace period.
+        </span>env.set_caller(admin);
+        reg.set_grace_period(MAX_GRACE_PERIOD);
+
+        <span class="comment">// Then the contract emits GracePeriodChanged event.
+        </span><span class="macro">assert!</span>(env.emitted(reg, GracePeriodChanged::name()));
+    }
+
+    <span class="attr">#[test]
     </span><span class="kw">fn </span>register_with_past_expiration_time_fails() {
         <span class="kw">let </span><span class="kw-2">mut </span>ctx = TestContext::install_and_setup();
         <span class="kw">let </span>(admin, alice) = (ctx.admin, ctx.alice);
@@ -1246,6 +1471,28 @@
 
         <span class="comment">// Then registration fails.
         </span><span class="macro">assert_eq!</span>(result, <span class="prelude-val">Err</span>(RegistrarError::VoucherExpired.into()));
+    }
+
+    <span class="attr">#[test]
+    </span><span class="kw">fn </span>register_invalid_label_fails() {
+        <span class="kw">let </span><span class="kw-2">mut </span>ctx = TestContext::install_and_setup();
+        <span class="kw">let </span>(admin, alice) = (ctx.admin, ctx.alice);
+        <span class="kw">let </span>invalid_name = <span class="string">"invalid-label-"</span>;
+
+        <span class="comment">// When Admin tries to register an invalid label.
+        </span><span class="kw">let </span>result = ctx.try_name_register(
+            admin,
+            alice,
+            invalid_name,
+            ctx.token_expiration_time(),
+            ctx.voucher_expiration_time(),
+        );
+
+        <span class="comment">// Then registration fails.
+        </span><span class="macro">assert_eq!</span>(
+            result.unwrap_err(),
+            OdraError::from(RegistrarError::TokenNameIsNotValid)
+        );
     }
 
     <span class="attr">#[test]
@@ -1312,7 +1559,6 @@
     </span><span class="kw">fn </span>register_the_same_name_after_grace_period() {
         <span class="kw">let </span><span class="kw-2">mut </span>ctx = TestContext::install_and_setup();
         <span class="kw">let </span>(admin, alice, bob) = (ctx.admin, ctx.alice, ctx.bob);
-        <span class="kw">let </span>registrar_address = <span class="kw-2">*</span>ctx.registrar.address();
         <span class="comment">// Given Alice has a token.
         </span>ctx.with_name_registered(admin, alice, TOKEN_NAME);
 
@@ -1323,8 +1569,11 @@
         </span>ctx.with_name_registered(admin, bob, TOKEN_NAME);
 
         <span class="comment">// Then Alice's token is burned.
-        </span><span class="kw">let </span>event: Burn = ctx.token.get_event(-<span class="number">2</span>).unwrap();
-        <span class="kw">let </span>expected = Burn::new(alice, blake2b(TOKEN_NAME), registrar_address);
+        </span><span class="kw">let </span>event: Burn = ctx.token.get_event(-<span class="number">4</span>).unwrap();
+        <span class="kw">let </span>expected = Burn {
+            from: alice,
+            token_id: generate_token_id(TOKEN_NAME),
+        };
         <span class="macro">assert_eq!</span>(event, expected);
 
         <span class="comment">// And Bob's token is minted.
@@ -1346,11 +1595,11 @@
         </span>ctx.with_name_expired(TOKEN_NAME);
 
         <span class="comment">// Then token is burned.
-        </span><span class="macro">assert_eq!</span>(ctx.token.balance_of(alice), <span class="number">0</span>);
+        </span><span class="macro">assert_eq!</span>(ctx.token.balance_of(alice), U256::zero());
     }
 
     <span class="attr">#[test]
-    </span><span class="kw">fn </span>on_expiration_default_resolver_is_cleanup() {
+    </span><span class="kw">fn </span>on_expiration_default_resolver_is_invalidated() {
         <span class="kw">let </span><span class="kw-2">mut </span>ctx = TestContext::install_and_setup();
         <span class="kw">let </span>(admin, alice) = (ctx.admin, ctx.alice);
 
@@ -1367,8 +1616,8 @@
             <span class="prelude-val">Some</span>(alice)
         );
         <span class="macro">assert_eq!</span>(
-            ctx.token.resolver(blake2b(TOKEN_NAME)),
-            <span class="prelude-val">Some</span>(<span class="kw-2">*</span>ctx.default_resolver.address())
+            ctx.token.resolver(generate_token_id(TOKEN_NAME)),
+            <span class="prelude-val">Some</span>(ctx.default_resolver.address())
         );
 
         <span class="comment">// And is after grace period.
@@ -1389,7 +1638,7 @@
 
         <span class="comment">// Given Alice has 5 tokens.
         </span>ctx.with_multi_names_registered(admin, alice, tokens.clone());
-        <span class="macro">assert_eq!</span>(ctx.token.balance_of(alice), <span class="number">5</span>);
+        <span class="macro">assert_eq!</span>(ctx.token.balance_of(alice), U256::from(<span class="number">5</span>));
         <span class="comment">// And is after grace period.
         </span>ctx.advance_block_time(TOKEN_EXPIRATION + GRACE_PERIOD + PENDING_DELETE_PERIOD + <span class="number">1</span>);
 
@@ -1397,7 +1646,7 @@
         </span>ctx.with_names_expired(tokens);
 
         <span class="comment">// Then all the tokens are burned.
-        </span><span class="macro">assert_eq!</span>(ctx.token.balance_of(alice), <span class="number">0</span>);
+        </span><span class="macro">assert_eq!</span>(ctx.token.balance_of(alice), U256::from(<span class="number">0</span>));
     }
 
     <span class="attr">#[test]
@@ -1411,8 +1660,8 @@
         ctx.admin_transfer(bob, <span class="macro">vec!</span>[TOKEN_NAME]);
 
         <span class="comment">// Then Alice's token is transferred to Bob.
-        </span><span class="macro">assert_eq!</span>(ctx.token.balance_of(alice), <span class="number">0</span>);
-        <span class="macro">assert_eq!</span>(ctx.token.balance_of(bob), <span class="number">1</span>);
+        </span><span class="macro">assert_eq!</span>(ctx.token.balance_of(alice), U256::from(<span class="number">0</span>));
+        <span class="macro">assert_eq!</span>(ctx.token.balance_of(bob), U256::from(<span class="number">1</span>));
     }
 
     <span class="attr">#[test]
@@ -1433,8 +1682,8 @@
             <span class="prelude-val">Some</span>(alice)
         );
         <span class="macro">assert_eq!</span>(
-            ctx.token.resolver(blake2b(TOKEN_NAME)),
-            <span class="prelude-val">Some</span>(<span class="kw-2">*</span>ctx.default_resolver.address())
+            ctx.token.resolver(generate_token_id(TOKEN_NAME)),
+            <span class="prelude-val">Some</span>(ctx.default_resolver.address())
         );
 
         ctx.admin_transfer(bob, <span class="macro">vec!</span>[TOKEN_NAME]);
@@ -1452,11 +1701,14 @@
         </span>ctx.with_name_registered(admin, alice, TOKEN_NAME);
 
         <span class="comment">// And change the resolver
-        </span><span class="kw">let </span>resolver = Address::Contract(ContractPackageHash::new([<span class="number">1u8</span>; <span class="number">32</span>]));
+        </span><span class="kw">let </span>resolver =
+            Address::new(<span class="string">"hash-7ba9daac84bebee8111c186588f21ebca35550b6cf1244e71768bd871938be6a"</span>)
+                .unwrap();
         ctx.set_caller(alice);
-        ctx.token.set_resolver(blake2b(TOKEN_NAME), resolver);
+        ctx.token
+            .set_resolver(generate_token_id(TOKEN_NAME), resolver);
 
-        <span class="kw">let </span>json = ctx.token.metadata_by_hash(blake2b(TOKEN_NAME));
+        <span class="kw">let </span>json = ctx.token.token_metadata(generate_token_id(TOKEN_NAME));
         <span class="kw">let </span>actual_resolver = NameTokenMetadata::try_from(json)
             .unwrap()
             .resolver()
@@ -1466,7 +1718,7 @@
         ctx.admin_transfer(bob, <span class="macro">vec!</span>[TOKEN_NAME]);
 
         <span class="comment">// Then the resolution is cleared.
-        </span><span class="kw">let </span>json = ctx.token.metadata_by_hash(blake2b(TOKEN_NAME));
+        </span><span class="kw">let </span>json = ctx.token.token_metadata(generate_token_id(TOKEN_NAME));
         <span class="kw">let </span>actual_resolver = NameTokenMetadata::try_from(json)
             .unwrap()
             .resolver()
@@ -1485,7 +1737,7 @@
         ctx.admin_burn(<span class="macro">vec!</span>[TOKEN_NAME]);
 
         <span class="comment">// Then Alice's token is burned.
-        </span><span class="macro">assert_eq!</span>(ctx.token.balance_of(alice), <span class="number">0</span>);
+        </span><span class="macro">assert_eq!</span>(ctx.token.balance_of(alice), U256::from(<span class="number">0</span>));
     }
 
     <span class="attr">#[test]
@@ -1506,8 +1758,8 @@
             <span class="prelude-val">Some</span>(alice)
         );
         <span class="macro">assert_eq!</span>(
-            ctx.token.resolver(blake2b(TOKEN_NAME)),
-            <span class="prelude-val">Some</span>(<span class="kw-2">*</span>ctx.default_resolver.address())
+            ctx.token.resolver(generate_token_id(TOKEN_NAME)),
+            <span class="prelude-val">Some</span>(ctx.default_resolver.address())
         );
 
         ctx.admin_burn(<span class="macro">vec!</span>[TOKEN_NAME]);
@@ -1529,13 +1781,43 @@
 
         <span class="kw">let </span>token_expiration = INIT_TIME + <span class="number">2 </span>* TOKEN_EXPIRATION;
         <span class="kw">let </span>voucher_expiration = INIT_TIME + TOKEN_EXPIRATION;
-        <span class="kw">let </span>tokens = <span class="macro">vec!</span>[TokenRenewalInfo::new(blake2b(TOKEN_NAME), token_expiration)];
+        <span class="kw">let </span>tokens = <span class="macro">vec!</span>[TokenRenewalInfo::new(
+            generate_token_id(TOKEN_NAME),
+            token_expiration,
+        )];
         <span class="kw">let </span>voucher = RenewalVoucher::new(tokens, voucher_expiration);
         ctx.advance_block_time(TOKEN_EXPIRATION + GRACE_PERIOD - <span class="number">1</span>);
         <span class="kw">let </span>result = ctx.registrar.try_controller_prolong(voucher);
 
         <span class="comment">// Then registration fails.
         </span><span class="macro">assert_eq!</span>(result, <span class="prelude-val">Err</span>(RegistrarError::VoucherExpired.into()));
+    }
+
+    <span class="attr">#[test]
+    </span><span class="kw">fn </span>renew_when_paused_fails() {
+        <span class="kw">let </span><span class="kw-2">mut </span>ctx = TestContext::install_and_setup();
+        <span class="kw">let </span>(admin, alice) = (ctx.admin, ctx.alice);
+
+        <span class="comment">// Given Alice has a token.
+        </span>ctx.with_name_registered(admin, alice, TOKEN_NAME);
+        ctx.set_caller(admin);
+        ctx.registrar.pause();
+
+        <span class="comment">// When Admin tries to renew the token.
+        </span><span class="kw">let </span>token_expiration = INIT_TIME + <span class="number">2 </span>* TOKEN_EXPIRATION;
+        <span class="kw">let </span>voucher_expiration = INIT_TIME + TOKEN_EXPIRATION;
+        <span class="kw">let </span>tokens = <span class="macro">vec!</span>[TokenRenewalInfo::new(
+            generate_token_id(TOKEN_NAME),
+            token_expiration,
+        )];
+        <span class="kw">let </span>voucher = RenewalVoucher::new(tokens, voucher_expiration);
+        <span class="kw">let </span>result = ctx.registrar.try_controller_prolong(voucher);
+
+        <span class="comment">// Then registration fails.
+        </span><span class="macro">assert_eq!</span>(
+            result,
+            <span class="prelude-val">Err</span>(odra_modules::security::errors::Error::UnpausedRequired.into())
+        );
     }
 
     <span class="attr">#[test]
@@ -1552,7 +1834,7 @@
         <span class="kw">let </span>token_expiration = INIT_TIME + <span class="number">2 </span>* TOKEN_EXPIRATION;
         <span class="kw">let </span>voucher_expiration = INIT_TIME + TOKEN_EXPIRATION + GRACE_PERIOD;
         <span class="kw">let </span>tokens = <span class="macro">vec!</span>[TokenRenewalInfo::new(
-            test_token_name.to_owned(),
+            generate_token_id(test_token_name),
             token_expiration,
         )];
         <span class="kw">let </span>voucher = RenewalVoucher::new(tokens, voucher_expiration);
@@ -1560,13 +1842,14 @@
         ctx.registrar.controller_prolong(voucher);
 
         <span class="comment">// Then token expiration is updated.
-        </span><span class="kw">let </span>metadata = ctx.token.metadata_by_hash(blake2b(test_token_name));
+        </span><span class="kw">let </span>metadata = ctx.token.token_metadata(generate_token_id(test_token_name));
         <span class="kw">let </span>expected = NameTokenMetadata::with_resolver(
             TOKEN_NAME,
             INIT_TIME + <span class="number">2 </span>* TOKEN_EXPIRATION,
-            <span class="kw-2">*</span>ctx.default_resolver.address(),
+            <span class="string">""</span>,
+            ctx.default_resolver.address(),
         );
-        <span class="macro">assert_eq!</span>(metadata, expected.json());
+        <span class="macro">assert_eq!</span>(metadata, expected.to_vec());
     }
 
     <span class="attr">#[test]
@@ -1583,7 +1866,7 @@
         <span class="kw">let </span>token_expiration = INIT_TIME + <span class="number">2 </span>* TOKEN_EXPIRATION;
         <span class="kw">let </span>voucher_expiration = INIT_TIME + TOKEN_EXPIRATION + GRACE_PERIOD + <span class="number">1</span>;
         <span class="kw">let </span>tokens = <span class="macro">vec!</span>[TokenRenewalInfo::new(
-            test_token_name.to_string(),
+            generate_token_id(test_token_name),
             token_expiration,
         )];
         <span class="kw">let </span>voucher = RenewalVoucher::new(tokens, voucher_expiration);
@@ -1640,6 +1923,73 @@
 
         <span class="comment">// Then the result is the token owner.
         </span><span class="macro">assert_eq!</span>(result, <span class="prelude-val">Some</span>(alice));
+    }
+
+    <span class="attr">#[test]
+    </span><span class="kw">fn </span>test_controller_register_fails_when_paused() {
+        <span class="kw">let </span><span class="kw-2">mut </span>ctx = TestContext::install_and_setup();
+        <span class="kw">let </span>(admin, alice) = (ctx.admin, ctx.alice);
+
+        <span class="comment">// Given Alice has a token.
+        </span>ctx.with_name_registered(admin, alice, TOKEN_NAME);
+        ctx.set_caller(admin);
+        ctx.registrar.pause();
+
+        <span class="comment">// When Admin tries to register the token.
+        </span><span class="kw">let </span>token_expiration = INIT_TIME + <span class="number">2 </span>* TOKEN_EXPIRATION;
+        <span class="kw">let </span>voucher_expiration = INIT_TIME + TOKEN_EXPIRATION;
+        <span class="kw">let </span>asset_uri = <span class="string">"https://example.com/asset"</span>;
+        <span class="kw">let </span>names = <span class="macro">vec!</span>[NameMintInfo::new(
+            TOKEN_NAME,
+            alice,
+            token_expiration,
+            asset_uri,
+        )];
+        <span class="kw">let </span>voucher = TokenizationVoucher::new(names, voucher_expiration);
+        <span class="kw">let </span>result = ctx.registrar.try_controller_register(voucher);
+
+        <span class="comment">// Then registration fails.
+        </span><span class="macro">assert_eq!</span>(
+            result,
+            <span class="prelude-val">Err</span>(odra_modules::security::errors::Error::UnpausedRequired.into())
+        );
+    }
+
+    <span class="attr">#[test]
+    </span><span class="kw">fn </span>test_controller_register_and_prolong_fails_when_paused() {
+        <span class="kw">let </span><span class="kw-2">mut </span>ctx = TestContext::install_and_setup();
+        <span class="kw">let </span>(admin, alice) = (ctx.admin, ctx.alice);
+
+        <span class="comment">// Given Alice has a token.
+        </span>ctx.with_name_registered(admin, alice, TOKEN_NAME);
+        ctx.set_caller(admin);
+        ctx.registrar.pause();
+
+        <span class="comment">// When Admin tries to register the token.
+        </span><span class="kw">let </span>token_expiration = INIT_TIME + <span class="number">2 </span>* TOKEN_EXPIRATION;
+        <span class="kw">let </span>voucher_expiration = INIT_TIME + TOKEN_EXPIRATION;
+        <span class="kw">let </span>asset_uri = <span class="string">"https://example.com/asset"</span>;
+        <span class="kw">let </span>names = <span class="macro">vec!</span>[NameMintInfo::new(
+            TOKEN_NAME,
+            alice,
+            token_expiration,
+            asset_uri,
+        )];
+        <span class="kw">let </span>tokens = <span class="macro">vec!</span>[TokenRenewalInfo::new(
+            generate_token_id(TOKEN_NAME),
+            token_expiration,
+        )];
+        <span class="kw">let </span>renewal_voucher = RenewalVoucher::new(tokens, voucher_expiration);
+        <span class="kw">let </span>voucher = TokenizationVoucher::new(names, voucher_expiration);
+        <span class="kw">let </span>result = ctx
+            .registrar
+            .try_controller_prolong_and_register(renewal_voucher, voucher);
+
+        <span class="comment">// Then registration fails.
+        </span><span class="macro">assert_eq!</span>(
+            result,
+            <span class="prelude-val">Err</span>(odra_modules::security::errors::Error::UnpausedRequired.into())
+        );
     }
 }
 </code></pre></div></section></main></body></html>

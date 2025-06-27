@@ -1,4 +1,5 @@
-<!DOCTYPE html><html lang="en"><head><meta charset="utf-8"><meta name="viewport" content="width=device-width, initial-scale=1.0"><meta name="generator" content="rustdoc"><meta name="description" content="Source of the Rust file `casper-name-contracts/src/contracts/name_token.rs`."><title>name_token.rs - source</title><script>if(window.location.protocol!=="file:")document.head.insertAdjacentHTML("beforeend","SourceSerif4-Regular-46f98efaafac5295.ttf.woff2,FiraSans-Regular-018c141bf0843ffd.woff2,FiraSans-Medium-8f9a781e4970d388.woff2,SourceCodePro-Regular-562dcc5011b6de7d.ttf.woff2,SourceCodePro-Semibold-d899c5a5c4aeb14a.ttf.woff2".split(",").map(f=>`<link rel="preload" as="font" type="font/woff2" crossorigin href="../../../static.files/${f}">`).join(""))</script><link rel="stylesheet" href="../../../static.files/normalize-76eba96aa4d2e634.css"><link rel="stylesheet" href="../../../static.files/rustdoc-081576b923113409.css"><meta name="rustdoc-vars" data-root-path="../../../" data-static-root-path="../../../static.files/" data-current-crate="casper_name_contracts" data-themes="" data-resource-suffix="" data-rustdoc-version="1.79.0-nightly (3a36386dc 2024-04-25)" data-channel="nightly" data-search-js="search-bf21c90c8c1d92b1.js" data-settings-js="settings-4313503d2e1961c2.js" ><script src="../../../static.files/storage-e32f0c247825364d.js"></script><script defer src="../../../static.files/src-script-e66d777a5a92e9b2.js"></script><script defer src="../../../src-files.js"></script><script defer src="../../../static.files/main-20a3ad099b048cf2.js"></script><noscript><link rel="stylesheet" href="../../../static.files/noscript-09095024cf37855e.css"></noscript><link rel="alternate icon" type="image/png" href="../../../static.files/favicon-32x32-422f7d1d52889060.png"><link rel="icon" type="image/svg+xml" href="../../../static.files/favicon-2c020d218678b618.svg"></head><body class="rustdoc src"><!--[if lte IE 11]><div class="warning">This old browser is unsupported and will most likely display funky things.</div><![endif]--><nav class="sidebar"><div class="src-sidebar-title"><h2>Files</h2></div></nav><div class="sidebar-resizer"></div><main><nav class="sub"><form class="search-form"><span></span><div id="sidebar-button" tabindex="-1"><a href="../../../casper_name_contracts/all.html" title="show sidebar"></a></div><input class="search-input" name="search" aria-label="Run search in the documentation" autocomplete="off" spellcheck="false" placeholder="Type ‘S’ or ‘/’ to search, ‘?’ for more options…" type="search"><div id="help-button" tabindex="-1"><a href="../../../help.html" title="help">?</a></div><div id="settings-menu" tabindex="-1"><a href="../../../settings.html" title="settings">Settings</a></div></form></nav><section id="main-content" class="content"><div class="example-wrap"><div data-nosnippet><pre class="src-line-numbers"><a href="#1" id="1">1</a>
+<!DOCTYPE html><html lang="en"><head><meta charset="utf-8"><meta name="viewport" content="width=device-width, initial-scale=1.0"><meta name="generator" content="rustdoc"><meta name="description" content="Source of the Rust file `casper-name-contracts/src/contracts/name_token.rs`."><title>name_token.rs - source</title><script>if(window.location.protocol!=="file:")document.head.insertAdjacentHTML("beforeend","SourceSerif4-Regular-6b053e98.ttf.woff2,FiraSans-Regular-0fe48ade.woff2,FiraSans-Medium-e1aa3f0a.woff2,SourceCodePro-Regular-8badfe75.ttf.woff2,SourceCodePro-Semibold-aa29a496.ttf.woff2".split(",").map(f=>`<link rel="preload" as="font" type="font/woff2" crossorigin href="../../../static.files/${f}">`).join(""))</script><link rel="stylesheet" href="../../../static.files/normalize-9960930a.css"><link rel="stylesheet" href="../../../static.files/rustdoc-46132b98.css"><meta name="rustdoc-vars" data-root-path="../../../" data-static-root-path="../../../static.files/" data-current-crate="casper_name_contracts" data-themes="" data-resource-suffix="" data-rustdoc-version="1.85.0-nightly (d117b7f21 2024-12-31)" data-channel="nightly" data-search-js="search-036cda7a.js" data-settings-js="settings-0f613d39.js" ><script src="../../../static.files/storage-59e33391.js"></script><script defer src="../../../static.files/src-script-56102188.js"></script><script defer src="../../../src-files.js"></script><script defer src="../../../static.files/main-5f194d8c.js"></script><noscript><link rel="stylesheet" href="../../../static.files/noscript-893ab5e7.css"></noscript><link rel="alternate icon" type="image/png" href="../../../static.files/favicon-32x32-6580c154.png"><link rel="icon" type="image/svg+xml" href="../../../static.files/favicon-044be391.svg"></head><body class="rustdoc src"><!--[if lte IE 11]><div class="warning">This old browser is unsupported and will most likely display funky things.</div><![endif]--><nav class="sidebar"><div class="src-sidebar-title"><h2>Files</h2></div></nav><div class="sidebar-resizer"></div><main><rustdoc-search></rustdoc-search><section id="main-content" class="content"><div class="main-heading"><h1><div class="sub-heading">casper_name_contracts/contracts/</div>name_token.rs</h1><rustdoc-toolbar></rustdoc-toolbar></div><div class="example-wrap"><div data-nosnippet><pre class="src-line-numbers">
+<a href="#1" id="1">1</a>
 <a href="#2" id="2">2</a>
 <a href="#3" id="3">3</a>
 <a href="#4" id="4">4</a>
@@ -605,263 +606,231 @@
 <a href="#605" id="605">605</a>
 <a href="#606" id="606">606</a>
 <a href="#607" id="607">607</a>
-</pre></div><pre class="rust"><code><span class="attr">#![allow(unused_variables)]
+<a href="#608" id="608">608</a>
+<a href="#609" id="609">609</a>
+<a href="#610" id="610">610</a>
+<a href="#611" id="611">611</a>
+<a href="#612" id="612">612</a>
+<a href="#613" id="613">613</a>
+<a href="#614" id="614">614</a>
+<a href="#615" id="615">615</a>
+<a href="#616" id="616">616</a>
+<a href="#617" id="617">617</a>
+<a href="#618" id="618">618</a>
+<a href="#619" id="619">619</a>
+<a href="#620" id="620">620</a>
+<a href="#621" id="621">621</a>
+<a href="#622" id="622">622</a>
+<a href="#623" id="623">623</a>
+<a href="#624" id="624">624</a>
+<a href="#625" id="625">625</a>
+<a href="#626" id="626">626</a>
+<a href="#627" id="627">627</a>
+<a href="#628" id="628">628</a>
+<a href="#629" id="629">629</a>
+<a href="#630" id="630">630</a>
+<a href="#631" id="631">631</a>
+<a href="#632" id="632">632</a>
+<a href="#633" id="633">633</a>
+<a href="#634" id="634">634</a>
+<a href="#635" id="635">635</a>
+<a href="#636" id="636">636</a>
+<a href="#637" id="637">637</a>
+<a href="#638" id="638">638</a>
+<a href="#639" id="639">639</a>
+<a href="#640" id="640">640</a>
+<a href="#641" id="641">641</a>
+<a href="#642" id="642">642</a>
+<a href="#643" id="643">643</a>
+<a href="#644" id="644">644</a>
+<a href="#645" id="645">645</a>
+<a href="#646" id="646">646</a>
+<a href="#647" id="647">647</a>
+<a href="#648" id="648">648</a>
+<a href="#649" id="649">649</a>
+<a href="#650" id="650">650</a>
+<a href="#651" id="651">651</a>
+<a href="#652" id="652">652</a>
+<a href="#653" id="653">653</a>
+<a href="#654" id="654">654</a>
+<a href="#655" id="655">655</a>
+<a href="#656" id="656">656</a>
+<a href="#657" id="657">657</a>
+<a href="#658" id="658">658</a></pre></div><pre class="rust"><code><span class="attr">#![allow(unused_variables)]
 </span><span class="kw">use </span><span class="kw">crate</span>::data_structures::NameTokenMetadata;
-<span class="kw">use </span>odra::args::Maybe;
+<span class="kw">use </span>odra::casper_types::bytesrepr::Bytes;
+<span class="kw">use </span>odra::casper_types::U256;
 <span class="kw">use </span>odra::module::Revertible;
-<span class="kw">use </span>odra::{prelude::<span class="kw-2">*</span>, External, UnwrapOrRevert};
-<span class="kw">use </span>odra::{Address, SubModule};
-<span class="kw">use </span>odra_modules::cep78::modalities::{
-    BurnMode, EventsMode, MetadataMutability, MintingMode, NFTHolderMode, NFTIdentifierMode,
-    NFTKind, NFTMetadataKind, OwnershipMode, WhitelistMode,
-};
-<span class="kw">use </span>odra_modules::cep78::token::Cep78;
+<span class="kw">use </span>odra::{prelude::<span class="kw-2">*</span>, ContractRef};
+<span class="kw">use </span>odra_modules::access::Ownable2Step;
+<span class="kw">use </span>odra_modules::cep95::{CEP95Interface, Cep95, Error <span class="kw">as </span>Cep95Error};
 
 <span class="kw">use </span><span class="kw">super</span>::resolver::ResolverContractRef;
 
-<span class="doccomment">/// NameToken contract. It is a CEP78 token with additional functionalities.
-</span><span class="attr">#[odra::module]
+<span class="doccomment">/// NameToken contract. It is a CEP95 token with additional functionalities.
+</span><span class="attr">#[odra::module(errors = NameTokenError)]
 </span><span class="kw">pub struct </span>NameToken {
-    token: SubModule&lt;Cep78&gt;,
+    token: SubModule&lt;Cep95&gt;,
+    ownable: SubModule&lt;Ownable2Step&gt;,
     default_resolver: External&lt;ResolverContractRef&gt;,
+    max_supply: Var&lt;u64&gt;,
+    minted_tokens_count: Var&lt;u64&gt;,
+    whitelist: Mapping&lt;Address, bool&gt;,
 }
 
 <span class="attr">#[odra::module]
 </span><span class="kw">impl </span>NameToken {
     <span class="macro">delegate!</span> {
         to <span class="self">self</span>.token {
-            <span class="kw">fn </span>get_collection_name(<span class="kw-2">&amp;</span><span class="self">self</span>) -&gt; String;
-            <span class="kw">fn </span>get_collection_symbol(<span class="kw-2">&amp;</span><span class="self">self</span>) -&gt; String;
-            <span class="kw">fn </span>set_variables(
-                <span class="kw-2">&amp;mut </span><span class="self">self</span>,
-                allow_minting: Maybe&lt;bool&gt;,
-                acl_whitelist: Maybe&lt;Vec&lt;Address&gt;&gt;,
-                operator_burn_mode: Maybe&lt;bool&gt;
-            );
-            <span class="kw">fn </span>mint(
-                <span class="kw-2">&amp;mut </span><span class="self">self</span>,
-                token_owner: Address,
-                token_meta_data: String,
-                token_hash: Maybe&lt;String&gt;
-            );
-            <span class="comment">// fn burn(&amp;mut self, token_id: Maybe&lt;u64&gt;, token_hash: Maybe&lt;String&gt;);
-            // fn transfer(
-            //     &amp;mut self,
-            //     token_id: Maybe&lt;u64&gt;,
-            //     token_hash: Maybe&lt;String&gt;,
-            //     source_key: Address,
-            //     target_key: Address
-            // );
-            </span><span class="kw">fn </span>approve(<span class="kw-2">&amp;mut </span><span class="self">self</span>, spender: Address, token_id: Maybe&lt;u64&gt;, token_hash: Maybe&lt;String&gt;);
-            <span class="kw">fn </span>revoke(<span class="kw-2">&amp;mut </span><span class="self">self</span>, token_id: Maybe&lt;u64&gt;, token_hash: Maybe&lt;String&gt;);
-            <span class="kw">fn </span>set_approval_for_all(<span class="kw-2">&amp;mut </span><span class="self">self</span>, approve_all: bool, operator: Address);
-            <span class="kw">fn </span>is_approved_for_all(<span class="kw-2">&amp;mut </span><span class="self">self</span>, token_owner: Address, operator: Address) -&gt; bool;
-            <span class="kw">fn </span>owner_of(<span class="kw-2">&amp;</span><span class="self">self</span>, token_id: Maybe&lt;u64&gt;, token_hash: Maybe&lt;String&gt;) -&gt; Address;
-            <span class="kw">fn </span>get_approved(
-                <span class="kw-2">&amp;mut </span><span class="self">self</span>,
-                token_id: Maybe&lt;u64&gt;,
-                token_hash: Maybe&lt;String&gt;
-            ) -&gt; <span class="prelude-ty">Option</span>&lt;Address&gt;;
-            <span class="kw">fn </span>metadata(<span class="kw-2">&amp;</span><span class="self">self</span>, token_id: Maybe&lt;u64&gt;, token_hash: Maybe&lt;String&gt;) -&gt; String;
-            <span class="comment">// fn set_token_metadata(
-            //     &amp;mut self,
-            //     token_id: Maybe&lt;u64&gt;,
-            //     token_hash: Maybe&lt;String&gt;,
-            //     token_meta_data: String
-            // );
-            </span><span class="kw">fn </span>balance_of(<span class="kw-2">&amp;mut </span><span class="self">self</span>, token_owner: Address) -&gt; u64;
-            <span class="kw">fn </span>register_owner(<span class="kw-2">&amp;mut </span><span class="self">self</span>, token_owner: Maybe&lt;Address&gt;) -&gt; String;
+            <span class="kw">fn </span>name(<span class="kw-2">&amp;</span><span class="self">self</span>) -&gt; String;
+            <span class="kw">fn </span>symbol(<span class="kw-2">&amp;</span><span class="self">self</span>) -&gt; String;
+            <span class="kw">fn </span>balance_of(<span class="kw-2">&amp;</span><span class="self">self</span>, owner: Address) -&gt; U256;
+            <span class="kw">fn </span>owner_of(<span class="kw-2">&amp;</span><span class="self">self</span>, token_id: U256) -&gt; <span class="prelude-ty">Option</span>&lt;Address&gt;;
+            <span class="kw">fn </span>safe_transfer_from(<span class="kw-2">&amp;mut </span><span class="self">self</span>, from: Address, to: Address, token_id: U256, data: <span class="prelude-ty">Option</span>&lt;Bytes&gt;);
+            <span class="kw">fn </span>approve(<span class="kw-2">&amp;mut </span><span class="self">self</span>, spender: Address, token_id: U256);
+            <span class="kw">fn </span>revoke_approval(<span class="kw-2">&amp;mut </span><span class="self">self</span>, token_id: U256);
+            <span class="kw">fn </span>approved_for(<span class="kw-2">&amp;</span><span class="self">self</span>, token_id: U256) -&gt; <span class="prelude-ty">Option</span>&lt;Address&gt;;
+            <span class="kw">fn </span>approve_for_all(<span class="kw-2">&amp;mut </span><span class="self">self</span>, operator: Address);
+            <span class="kw">fn </span>revoke_approval_for_all(<span class="kw-2">&amp;mut </span><span class="self">self</span>, operator: Address);
+            <span class="kw">fn </span>is_approved_for_all(<span class="kw-2">&amp;</span><span class="self">self</span>, owner: Address, operator: Address) -&gt; bool;
+            <span class="kw">fn </span>token_metadata(<span class="kw-2">&amp;</span><span class="self">self</span>, token_id: U256) -&gt; Vec&lt;(String, String)&gt;;
+        }
+
+        to <span class="self">self</span>.ownable {
+            <span class="kw">fn </span>get_owner(<span class="kw-2">&amp;</span><span class="self">self</span>) -&gt; Address;
+            <span class="kw">fn </span>get_pending_owner(<span class="kw-2">&amp;</span><span class="self">self</span>) -&gt; <span class="prelude-ty">Option</span>&lt;Address&gt;;
+            <span class="kw">fn </span>transfer_ownership(<span class="kw-2">&amp;mut </span><span class="self">self</span>, new_owner: <span class="kw-2">&amp;</span>Address);
+            <span class="kw">fn </span>accept_ownership(<span class="kw-2">&amp;mut </span><span class="self">self</span>);
+            <span class="kw">fn </span>renounce_ownership(<span class="kw-2">&amp;mut </span><span class="self">self</span>);
         }
     }
 
-    <span class="doccomment">/// Initializes CEP78 with the given name and symbol.
-    </span><span class="kw">pub fn </span>init(<span class="kw-2">&amp;mut </span><span class="self">self</span>, name: String, symbol: String) {
-        <span class="comment">// Setup CEP78 token.
-        </span><span class="kw">let </span>max_total_supply = <span class="number">1_000_000u64</span>;
-        <span class="kw">let </span>ownership_mode = OwnershipMode::Transferable;
-        <span class="kw">let </span>nft_kind = NFTKind::Digital;
-        <span class="kw">let </span>identifier_mode = NFTIdentifierMode::Hash;
-        <span class="kw">let </span>nft_metadata_kind = NFTMetadataKind::Raw;
-        <span class="kw">let </span>metadata_mutability = MetadataMutability::Mutable;
-        <span class="kw">let </span>receipt_name = String::new();
-        <span class="kw">let </span>allow_minting = Maybe::Some(<span class="bool-val">true</span>);
-        <span class="kw">let </span>minting_mode = Maybe::Some(MintingMode::Acl);
-        <span class="kw">let </span>holder_mode = Maybe::Some(NFTHolderMode::Mixed);
-        <span class="kw">let </span>whitelist_mode = Maybe::Some(WhitelistMode::Unlocked);
-        <span class="kw">let </span>acl_white_list = Maybe::None;
-        <span class="kw">let </span>json_schema = Maybe::None;
-        <span class="kw">let </span>burn_mode = Maybe::Some(BurnMode::Burnable);
-        <span class="kw">let </span>operator_burn_mode = Maybe::None; <span class="comment">// ?
-        </span><span class="kw">let </span>owner_reverse_lookup_mode = Maybe::None; <span class="comment">// ?
-        </span><span class="kw">let </span>events_mode = Maybe::Some(EventsMode::CES);
-        <span class="kw">let </span>transfer_filter_contract_contract = Maybe::None; <span class="comment">// ?
-        </span><span class="kw">let </span>additional_required_metadata = Maybe::None; <span class="comment">// ?
-        </span><span class="kw">let </span>optional_metadata = Maybe::Some(<span class="macro">vec!</span>[]); <span class="comment">// ?
-        </span><span class="self">self</span>.token.init(
-            name,
-            symbol,
-            max_total_supply,
-            ownership_mode,
-            nft_kind,
-            identifier_mode,
-            nft_metadata_kind,
-            metadata_mutability,
-            receipt_name,
-            allow_minting,
-            minting_mode,
-            holder_mode,
-            whitelist_mode,
-            acl_white_list,
-            json_schema,
-            burn_mode,
-            operator_burn_mode,
-            owner_reverse_lookup_mode,
-            events_mode,
-            transfer_filter_contract_contract,
-            additional_required_metadata,
-            optional_metadata,
-        );
+    <span class="doccomment">/// Initializes CEP95 with the given name and symbol.
+    </span><span class="kw">pub fn </span>init(<span class="kw-2">&amp;mut </span><span class="self">self</span>, name: String, symbol: String, max_supply: u64) {
+        <span class="kw">let </span>caller = <span class="self">self</span>.env().caller();
+
+        <span class="self">self</span>.token.symbol.set(symbol);
+        <span class="self">self</span>.token.name.set(name);
+        <span class="self">self</span>.max_supply.set(max_supply);
+        <span class="self">self</span>.ownable.init(caller);
     }
 
-    <span class="doccomment">/// Checks if a token with the given hash exists.
-    </span><span class="kw">pub fn </span>token_exists(<span class="kw-2">&amp;</span><span class="self">self</span>, token_hash: <span class="kw-2">&amp;</span>String) -&gt; bool {
-        <span class="self">self</span>.token.token_exists_by_hash(token_hash)
+    <span class="kw">pub fn </span>token_exists(<span class="kw-2">&amp;</span><span class="self">self</span>, token_id: U256) -&gt; bool {
+        <span class="self">self</span>.token.exists(<span class="kw-2">&amp;</span>token_id)
     }
 
-    <span class="doccomment">/// Only admin. Burns the token with the given hash.
-    </span><span class="kw">pub fn </span>burn(<span class="kw-2">&amp;mut </span><span class="self">self</span>, token_id: Maybe&lt;u64&gt;, token_hash: Maybe&lt;String&gt;) {
-        <span class="kw">if let </span>Maybe::Some(token_hash) = token_hash {
-            <span class="kw">let </span>caller = <span class="self">self</span>.env().caller();
-            <span class="kw">if </span>!<span class="self">self</span>.token.is_whitelisted(<span class="kw-2">&amp;</span>caller) {
-                <span class="self">self</span>.revert(NameTokenError::NotWhitelisted);
-            }
+    <span class="kw">pub fn </span>mint(
+        <span class="kw-2">&amp;mut </span><span class="self">self</span>,
+        recipient: Address,
+        token_id: U256,
+        token_metadata: Vec&lt;(String, String)&gt;,
+    ) {
+        <span class="kw">let </span>caller = <span class="self">self</span>.env().caller();
+        <span class="self">self</span>.assert_whitelisted(<span class="kw-2">&amp;</span>caller);
 
-            <span class="comment">// cleanup the resolver is the default resolver and update metadata
-            </span><span class="kw">let </span><span class="kw-2">mut </span>metadata = <span class="self">self</span>.wrapped_metadata(<span class="kw-2">&amp;</span>token_hash);
-            <span class="kw">if let </span><span class="prelude-val">Some</span>(resolver) = metadata.resolver().unwrap_or_revert(<span class="self">self</span>) {
-                <span class="kw">if </span><span class="kw-2">&amp;</span>resolver == <span class="self">self</span>.default_resolver.address() {
-                    <span class="self">self</span>.default_resolver.cleanup(token_hash.clone());
-                }
-            }
-            metadata.clear_resolver();
-            <span class="self">self</span>._set_token_metadata(token_hash.clone(), metadata.json());
-
-            <span class="comment">// burn the token
-            </span><span class="self">self</span>.token.burn_token_unchecked(token_hash, caller);
-        } <span class="kw">else </span>{
+        <span class="kw">let </span>minted_tokens_count = <span class="self">self</span>.minted_tokens_count.get_or_default();
+        <span class="kw">if </span>minted_tokens_count &gt;= <span class="self">self</span>.max_supply.get_or_default() {
+            <span class="self">self</span>.revert(NameTokenError::TokenSupplyDepleted);
+        }
+        <span class="kw">if </span><span class="self">self</span>.token.exists(<span class="kw-2">&amp;</span>token_id) {
             <span class="self">self</span>.revert(NameTokenError::InvalidTokenIdentifier);
         }
+        <span class="comment">// mint the token
+        </span><span class="self">self</span>.token.mint(recipient, token_id, token_metadata);
+        <span class="comment">// increment the minted tokens count
+        </span><span class="self">self</span>.minted_tokens_count.set(minted_tokens_count + <span class="number">1</span>);
     }
 
-    <span class="doccomment">/// Only admin. Transfer tokens to the given recipient.
-    </span><span class="kw">pub fn </span>admin_transfer(<span class="kw-2">&amp;mut </span><span class="self">self</span>, recipient: Address, token_hashes: Vec&lt;String&gt;) {
+    <span class="kw">pub fn </span>burn(<span class="kw-2">&amp;mut </span><span class="self">self</span>, token_id: U256) {
         <span class="kw">let </span>caller = <span class="self">self</span>.env().caller();
-        <span class="self">self</span>.assert_is_whitelisted(<span class="kw-2">&amp;</span>caller);
+        <span class="self">self</span>.assert_whitelisted(<span class="kw-2">&amp;</span>caller);
 
-        <span class="kw">for </span>token_hash <span class="kw">in </span>token_hashes {
-            <span class="kw">let </span>owner = <span class="self">self</span>.token.owner_of_by_id(<span class="kw-2">&amp;</span>token_hash);
-            <span class="kw">if </span>!<span class="self">self</span>.is_token_valid(<span class="kw-2">&amp;</span>token_hash) {
+        <span class="comment">// invalidate resolutions if the resolver is the default resolver and update metadata
+        </span><span class="kw">let </span><span class="kw-2">mut </span>metadata = <span class="self">self</span>.wrapped_metadata(token_id);
+        <span class="kw">if let </span><span class="prelude-val">Some</span>(resolver) = metadata.resolver().unwrap_or_revert(<span class="self">self</span>) {
+            <span class="kw">if </span><span class="kw-2">&amp;</span>resolver == <span class="self">self</span>.default_resolver.address() {
+                <span class="self">self</span>.default_resolver.invalidate_resolutions(token_id);
+            }
+        }
+        metadata.clear_resolver();
+        <span class="self">self</span>.set_token_metadata(token_id, metadata.to_vec());
+
+        <span class="comment">// burn the token
+        </span><span class="self">self</span>.token.burn(token_id);
+    }
+
+    <span class="kw">pub fn </span>admin_transfer(<span class="kw-2">&amp;mut </span><span class="self">self</span>, recipient: Address, token_ids: Vec&lt;U256&gt;) {
+        <span class="kw">let </span>caller = <span class="self">self</span>.env().caller();
+        <span class="self">self</span>.assert_whitelisted(<span class="kw-2">&amp;</span>caller);
+
+        <span class="kw">for </span>token_id <span class="kw">in </span>token_ids {
+            <span class="kw">if </span>!<span class="self">self</span>.is_token_valid(token_id) {
                 <span class="self">self</span>.revert(NameTokenError::ExpiredTokenTransfer);
             }
+
+            <span class="kw">let </span>owner = <span class="self">self
+                </span>.token
+                .owner_of(token_id)
+                .unwrap_or_revert_with(<span class="self">self</span>, Cep95Error::ValueNotSet);
+            <span class="self">self</span>.token.raw_transfer_from(owner, recipient, token_id);
             <span class="comment">// if called by an operator
             </span><span class="kw">if </span>caller != owner {
-                <span class="self">self</span>.cleanup(token_hash.clone());
-                <span class="self">self</span>.token
-                    .transfer_unchecked(token_hash.clone(), owner, <span class="prelude-val">Some</span>(caller), recipient);
-                <span class="comment">// make sure there were no previous records for the new owner
-                </span><span class="self">self</span>.default_resolver.cleanup(token_hash);
-            } <span class="kw">else </span>{
-                <span class="self">self</span>.token
-                    .transfer_unchecked(token_hash.clone(), owner, <span class="prelude-val">Some</span>(caller), recipient);
+                <span class="self">self</span>.cleanup(token_id);
             }
         }
     }
 
-    <span class="doccomment">/// Transfer token.
-    </span><span class="kw">pub fn </span>transfer(
-        <span class="kw-2">&amp;mut </span><span class="self">self</span>,
-        token_id: Maybe&lt;u64&gt;,
-        token_hash: Maybe&lt;String&gt;,
-        source_key: Address,
-        target_key: Address,
-    ) {
-        <span class="kw">match </span>token_hash.clone() {
-            Maybe::Some(token_hash_value) =&gt; {
-                <span class="kw">if </span>!<span class="self">self</span>.is_token_valid(<span class="kw-2">&amp;</span>token_hash_value) {
-                    <span class="self">self</span>.revert(NameTokenError::ExpiredTokenTransfer);
-                }
-                <span class="kw">let </span>caller = <span class="self">self</span>.env().caller();
-                <span class="kw">let </span>owner = <span class="self">self</span>.token.owner_of_by_id(<span class="kw-2">&amp;</span>token_hash_value);
-                <span class="comment">// if called by an operator cleanup the resolver if it is the default resolver.
-                </span><span class="kw">if </span>caller != owner {
-                    <span class="self">self</span>.cleanup(token_hash_value.clone());
-                    <span class="self">self</span>.token
-                        .transfer(token_id, token_hash, source_key, target_key);
-                    <span class="self">self</span>.default_resolver.cleanup(token_hash_value);
-                } <span class="kw">else </span>{
-                    <span class="self">self</span>.token
-                        .transfer(token_id, token_hash, source_key, target_key);
-                }
-            }
-            Maybe::None =&gt; <span class="self">self</span>.revert(NameTokenError::InvalidTokenIdentifier),
+    <span class="kw">pub fn </span>transfer_from(<span class="kw-2">&amp;mut </span><span class="self">self</span>, from: Address, to: Address, token_id: U256) {
+        <span class="kw">if </span>!<span class="self">self</span>.is_token_valid(token_id) {
+            <span class="self">self</span>.revert(NameTokenError::ExpiredTokenTransfer);
         }
-    }
 
-    <span class="doccomment">/// Only admin. Set token's metadata.
-    </span><span class="kw">pub fn </span>set_token_metadata(
-        <span class="kw-2">&amp;mut </span><span class="self">self</span>,
-        token_id: Maybe&lt;u64&gt;,
-        token_hash: Maybe&lt;String&gt;,
-        token_meta_data: String,
-    ) {
         <span class="kw">let </span>caller = <span class="self">self</span>.env().caller();
-        <span class="self">self</span>.assert_is_whitelisted(<span class="kw-2">&amp;</span>caller);
-        <span class="kw">let </span>token_id = <span class="self">self
+        <span class="kw">let </span>owner = <span class="self">self
             </span>.token
-            .token_identifier(token_id, token_hash)
-            .to_string();
-        <span class="self">self</span>.token
-            .set_token_metadata_unchecked(<span class="kw-2">&amp;</span>token_id, token_meta_data);
+            .owner_of(token_id)
+            .unwrap_or_revert_with(<span class="self">self</span>, Cep95Error::ValueNotSet);
+        <span class="comment">// if called by an operator
+        </span><span class="self">self</span>.token.transfer_from(from, to, token_id);
+        <span class="kw">if </span>caller != owner {
+            <span class="self">self</span>.cleanup(token_id);
+        }
     }
 
-    <span class="doccomment">/// Return the metadata of the token with the given hash.
-    </span><span class="kw">pub fn </span>metadata_by_hash(<span class="kw-2">&amp;</span><span class="self">self</span>, token_hash: String) -&gt; String {
-        <span class="self">self</span>.metadata(Maybe::None, Maybe::Some(token_hash))
+    <span class="kw">pub fn </span>set_token_metadata(<span class="kw-2">&amp;mut </span><span class="self">self</span>, token_id: U256, token_metadata: Vec&lt;(String, String)&gt;) {
+        <span class="kw">let </span>caller = <span class="self">self</span>.env().caller();
+        <span class="self">self</span>.assert_whitelisted(<span class="kw-2">&amp;</span>caller);
+        <span class="self">self</span>.token.set_metadata(token_id, token_metadata);
     }
 
-    <span class="doccomment">/// Return the resolver of the token with the given hash.
-    </span><span class="kw">pub fn </span>resolver(<span class="kw-2">&amp;</span><span class="self">self</span>, token_hash: String) -&gt; <span class="prelude-ty">Option</span>&lt;Address&gt; {
-        <span class="kw">let </span>metadata: NameTokenMetadata = <span class="self">self</span>.wrapped_metadata(<span class="kw-2">&amp;</span>token_hash);
+    <span class="kw">pub fn </span>resolver(<span class="kw-2">&amp;</span><span class="self">self</span>, token_id: U256) -&gt; <span class="prelude-ty">Option</span>&lt;Address&gt; {
+        <span class="kw">let </span>metadata: NameTokenMetadata = <span class="self">self</span>.wrapped_metadata(token_id);
         metadata.resolver().unwrap_or_revert(<span class="self">self</span>)
     }
 
-    <span class="doccomment">/// Token owner only. Set the resolver of the token with the given hash.
-    </span><span class="kw">pub fn </span>set_resolver(<span class="kw-2">&amp;mut </span><span class="self">self</span>, token_hash: String, resolver: Address) {
-        <span class="kw">if </span><span class="self">self</span>.token.owner_of_by_id(<span class="kw-2">&amp;</span>token_hash) != <span class="self">self</span>.env().caller() {
+    <span class="kw">pub fn </span>set_resolver(<span class="kw-2">&amp;mut </span><span class="self">self</span>, token_id: U256, resolver: Address) {
+        <span class="kw">if </span><span class="self">self</span>.token.owner_of(token_id) != <span class="prelude-val">Some</span>(<span class="self">self</span>.env().caller()) {
             <span class="self">self</span>.revert(NameTokenError::InvalidTokenOwner);
         }
-        <span class="kw">let </span><span class="kw-2">mut </span>metadata: NameTokenMetadata = <span class="self">self</span>.wrapped_metadata(<span class="kw-2">&amp;</span>token_hash);
+        <span class="kw">let </span><span class="kw-2">mut </span>metadata: NameTokenMetadata = <span class="self">self</span>.wrapped_metadata(token_id);
         metadata.set_resolver(resolver);
-        <span class="self">self</span>.token
-            .set_token_metadata_unchecked(<span class="kw-2">&amp;</span>token_hash, metadata.json());
+        <span class="self">self</span>.token.set_metadata(token_id, metadata.to_vec());
     }
 
-    <span class="doccomment">/// Check if the address is the owner of the token with the given hash.
-    </span><span class="kw">pub fn </span>assert_is_owner(<span class="kw-2">&amp;</span><span class="self">self</span>, token_hash: <span class="kw-2">&amp;</span>String, address: Address) {
-        <span class="kw">let </span>owner = <span class="self">self</span>.token.owner_of_by_id(token_hash);
-        <span class="kw">if </span>owner != address {
+    <span class="kw">pub fn </span>assert_is_owner(<span class="kw-2">&amp;</span><span class="self">self</span>, token_id: U256, address: Address) {
+        <span class="kw">let </span>owner = <span class="self">self</span>.token.owner_of(token_id);
+        <span class="kw">if </span>owner != <span class="prelude-val">Some</span>(address) {
             <span class="self">self</span>.revert(NameTokenError::InvalidTokenOwner);
         }
     }
 
-    <span class="doccomment">/// Check if the token with the given hash is expired.
-    </span><span class="kw">pub fn </span>is_token_valid(<span class="kw-2">&amp;</span><span class="self">self</span>, token_hash: <span class="kw-2">&amp;</span>String) -&gt; bool {
-        <span class="kw">if </span>!<span class="self">self</span>.token.token_exists_by_hash(token_hash) {
+    <span class="kw">pub fn </span>is_token_valid(<span class="kw-2">&amp;</span><span class="self">self</span>, token_id: U256) -&gt; bool {
+        <span class="kw">if </span>!<span class="self">self</span>.token.exists(<span class="kw-2">&amp;</span>token_id) {
             <span class="kw">return </span><span class="bool-val">false</span>;
         }
 
-        <span class="kw">let </span>metadata: NameTokenMetadata = <span class="self">self</span>.wrapped_metadata(token_hash);
-        <span class="kw">if </span>metadata.expiration().unwrap_or_revert(<span class="self">self</span>) &lt; <span class="self">self</span>.env().get_block_time() {
+        <span class="kw">let </span>metadata: NameTokenMetadata = <span class="self">self</span>.wrapped_metadata(token_id);
+        <span class="kw">if </span>metadata.expiration() &lt; <span class="self">self</span>.env().get_block_time() {
             <span class="kw">return </span><span class="bool-val">false</span>;
         }
         <span class="bool-val">true
@@ -870,7 +839,7 @@
     <span class="doccomment">/// Only admin. Set the default resolver.
     </span><span class="kw">pub fn </span>set_default_resolver(<span class="kw-2">&amp;mut </span><span class="self">self</span>, resolver: Address) {
         <span class="kw">let </span>caller = <span class="self">self</span>.env().caller();
-        <span class="self">self</span>.assert_is_whitelisted(<span class="kw-2">&amp;</span>caller);
+        <span class="self">self</span>.assert_whitelisted(<span class="kw-2">&amp;</span>caller);
         <span class="kw">if </span>!resolver.is_contract() {
             <span class="self">self</span>.revert(NameTokenError::InvalidResolver);
         }
@@ -881,37 +850,54 @@
     </span><span class="kw">pub fn </span>get_default_resolver(<span class="kw-2">&amp;</span><span class="self">self</span>) -&gt; Address {
         <span class="kw-2">*</span><span class="self">self</span>.default_resolver.address()
     }
+
+    <span class="kw">pub fn </span>whitelist(<span class="kw-2">&amp;mut </span><span class="self">self</span>, address: Address) {
+        <span class="kw">let </span>caller = <span class="self">self</span>.env().caller();
+        <span class="self">self</span>.ownable.assert_owner(<span class="kw-2">&amp;</span>caller);
+        <span class="kw">if </span><span class="self">self</span>.is_whitelisted(<span class="kw-2">&amp;</span>address) {
+            <span class="self">self</span>.revert(NameTokenError::WhitelistedAlready);
+        }
+        <span class="self">self</span>.whitelist.set(<span class="kw-2">&amp;</span>address, <span class="bool-val">true</span>);
+    }
+
+    <span class="kw">pub fn </span>revoke_whitelist(<span class="kw-2">&amp;mut </span><span class="self">self</span>, address: Address) {
+        <span class="kw">let </span>caller = <span class="self">self</span>.env().caller();
+        <span class="self">self</span>.ownable.assert_owner(<span class="kw-2">&amp;</span>caller);
+        <span class="kw">if </span>!<span class="self">self</span>.is_whitelisted(<span class="kw-2">&amp;</span>address) {
+            <span class="self">self</span>.revert(NameTokenError::NotWhitelisted);
+        }
+        <span class="self">self</span>.whitelist.set(<span class="kw-2">&amp;</span>address, <span class="bool-val">false</span>);
+    }
 }
 
 <span class="kw">impl </span>NameToken {
     <span class="attr">#[inline]
-    </span><span class="kw">pub fn </span>wrapped_metadata(<span class="kw-2">&amp;</span><span class="self">self</span>, token_hash: <span class="kw-2">&amp;</span>str) -&gt; NameTokenMetadata {
-        <span class="self">self</span>.metadata_by_hash(token_hash.to_owned())
-            .try_into()
-            .unwrap_or_revert(<span class="self">self</span>)
+    </span><span class="kw">pub fn </span>wrapped_metadata(<span class="kw-2">&amp;</span><span class="self">self</span>, token_id: U256) -&gt; NameTokenMetadata {
+        <span class="kw">let </span>metadata = <span class="self">self</span>.token.token_metadata(token_id);
+        NameTokenMetadata::try_from(metadata).unwrap_or_revert(<span class="self">self</span>)
     }
 
     <span class="attr">#[inline]
-    </span><span class="kw">fn </span>assert_is_whitelisted(<span class="kw-2">&amp;</span><span class="self">self</span>, address: <span class="kw-2">&amp;</span>Address) {
-        <span class="kw">if </span>!<span class="self">self</span>.token.is_whitelisted(address) {
+    </span><span class="kw">fn </span>is_whitelisted(<span class="kw-2">&amp;</span><span class="self">self</span>, address: <span class="kw-2">&amp;</span>Address) -&gt; bool {
+        <span class="self">self</span>.whitelist.get(address).unwrap_or_default()
+    }
+
+    <span class="attr">#[inline]
+    </span><span class="kw">fn </span>assert_whitelisted(<span class="kw-2">&amp;</span><span class="self">self</span>, address: <span class="kw-2">&amp;</span>Address) {
+        <span class="kw">if </span>!<span class="self">self</span>.is_whitelisted(address) {
             <span class="self">self</span>.revert(NameTokenError::NotWhitelisted);
         }
     }
 
-    <span class="kw">fn </span>_set_token_metadata(<span class="kw-2">&amp;mut </span><span class="self">self</span>, token_hash: String, json: String) {
-        <span class="self">self</span>.set_token_metadata(Maybe::None, Maybe::Some(token_hash), json);
-    }
-
-    <span class="kw">fn </span>cleanup(<span class="kw-2">&amp;mut </span><span class="self">self</span>, token_hash: String) {
-        <span class="kw">let </span><span class="kw-2">mut </span>metadata = <span class="self">self</span>.wrapped_metadata(<span class="kw-2">&amp;</span>token_hash);
+    <span class="kw">fn </span>cleanup(<span class="kw-2">&amp;mut </span><span class="self">self</span>, token_id: U256) {
+        <span class="kw">let </span><span class="kw-2">mut </span>metadata = <span class="self">self</span>.wrapped_metadata(token_id);
         <span class="kw">let </span>resolver = metadata.resolver().unwrap_or_revert(<span class="self">self</span>);
-        <span class="kw">if </span>resolver == <span class="prelude-val">Some</span>(<span class="kw-2">*</span><span class="self">self</span>.default_resolver.address()) {
-            <span class="self">self</span>.default_resolver.cleanup(token_hash);
-        } <span class="kw">else </span>{
-            <span class="kw">let </span>default_resolver = <span class="kw-2">*</span><span class="self">self</span>.default_resolver.address();
-            metadata.set_resolver(default_resolver);
-            <span class="self">self</span>._set_token_metadata(token_hash.clone(), metadata.json());
+        <span class="kw">let </span>default_resolver_address = <span class="kw-2">*</span><span class="self">self</span>.default_resolver.address();
+        <span class="kw">if </span>resolver != <span class="prelude-val">Some</span>(default_resolver_address) {
+            metadata.set_resolver(default_resolver_address);
+            <span class="self">self</span>.token.set_metadata(token_id, metadata.to_vec());
         }
+        <span class="self">self</span>.default_resolver.invalidate_resolutions(token_id);
     }
 }
 
@@ -922,35 +908,57 @@
     ExpiredTokenTransfer = <span class="number">1303</span>,
     InvalidTokenIdentifier = <span class="number">1304</span>,
     InvalidResolver = <span class="number">1305</span>,
+    TokenSupplyDepleted = <span class="number">1306</span>,
+    WhitelistedAlready = <span class="number">1307</span>,
 }
 
 <span class="attr">#[cfg(test)]
 </span><span class="kw">mod </span>tests {
-    <span class="kw">use </span>odra::{casper_types::ContractPackageHash, OdraResult};
-
     <span class="kw">use super</span>::<span class="kw-2">*</span>;
-    <span class="kw">use </span><span class="kw">crate</span>::test_context::{TestContext, INIT_TIME, TOKEN_EXPIRATION};
+    <span class="kw">use </span><span class="kw">crate</span>::test_context::{generate_token_id, TestContext, INIT_TIME, TOKEN_EXPIRATION};
+
+    <span class="attr">#[test]
+    </span><span class="kw">fn </span>test_supply_depletion() {
+        <span class="comment">// Given a token with max supply of 10
+        </span><span class="kw">let </span>max_supply = <span class="number">10u64</span>;
+        <span class="kw">let </span><span class="kw-2">mut </span>ctx = TestContext::install_raw_with_supply(max_supply);
+        ctx.whitelist_admin_in_name_token();
+        <span class="kw">let </span>token_hash = <span class="string">"token_hash"</span>;
+
+        <span class="kw">for </span>i <span class="kw">in </span><span class="number">0</span>..max_supply {
+            <span class="comment">// When minting a token
+            </span>ctx.token.mint(ctx.alice, i.into(), <span class="macro">vec!</span>[]);
+        }
+        <span class="comment">// When trying to mint a new token
+        </span><span class="kw">let </span>result = ctx.token.try_mint(ctx.alice, max_supply.into(), <span class="macro">vec!</span>[]);
+        <span class="comment">// Then it should fail with TokenSupplyDepleted error
+        </span><span class="macro">assert_eq!</span>(
+            result.unwrap_err(),
+            NameTokenError::TokenSupplyDepleted.into()
+        );
+    }
 
     <span class="attr">#[test]
     </span><span class="kw">fn </span>test_token_exists() {
         <span class="kw">let </span><span class="kw-2">mut </span>ctx = TestContext::install_raw();
         ctx.whitelist_admin_in_name_token();
         <span class="kw">let </span>token_hash = <span class="string">"token_hash"</span>;
+        <span class="kw">let </span>token_id = generate_token_id(token_hash);
         <span class="comment">// Token should not exist
-        </span><span class="macro">assert_eq!</span>(ctx.token.token_exists(<span class="kw-2">&amp;</span>token_hash.to_string()), <span class="bool-val">false</span>);
+        </span><span class="macro">assert_eq!</span>(ctx.token.token_exists(token_id), <span class="bool-val">false</span>);
 
         <span class="comment">// Mint a token
         </span><span class="kw">let </span>token_owner = ctx.alice;
         mint_for(<span class="kw-2">&amp;mut </span>ctx, token_owner, token_hash);
         <span class="comment">// Then the token should exist
-        </span><span class="macro">assert_eq!</span>(ctx.token.token_exists(<span class="kw-2">&amp;</span>token_hash.to_string()), <span class="bool-val">true</span>);
+        </span><span class="macro">assert_eq!</span>(ctx.token.token_exists(token_id), <span class="bool-val">true</span>);
 
         <span class="comment">// Burn the token
         </span>whitelist_accounts(<span class="kw-2">&amp;mut </span>ctx, <span class="macro">vec!</span>[token_owner]);
         ctx.set_caller(token_owner);
         <span class="macro">assert!</span>(try_burn(<span class="kw-2">&amp;mut </span>ctx, token_hash).is_ok());
         <span class="comment">// Then the token should not exist anymore
-        </span><span class="macro">assert_eq!</span>(ctx.token.token_exists(<span class="kw-2">&amp;</span>token_hash.to_string()), <span class="bool-val">false</span>);
+        </span><span class="macro">assert_eq!</span>(ctx.token.token_exists(token_id), <span class="bool-val">false</span>);
     }
 
     <span class="attr">#[test]
@@ -959,6 +967,7 @@
         ctx.whitelist_admin_in_name_token();
         <span class="comment">// Given a token owned by alice
         </span><span class="kw">let </span>token_hash = <span class="string">"token_hash"</span>;
+        <span class="kw">let </span>token_id = generate_token_id(token_hash);
         <span class="kw">let </span>token_owner = ctx.alice;
         mint_for(<span class="kw-2">&amp;mut </span>ctx, token_owner, token_hash);
 
@@ -1004,10 +1013,11 @@
         <span class="comment">// Given a token owned by alice
         </span><span class="kw">let </span>alice = ctx.alice;
         <span class="kw">let </span>token_hash = <span class="string">"token hash"</span>;
+        <span class="kw">let </span>token_id = generate_token_id(token_hash);
         mint_for(<span class="kw-2">&amp;mut </span>ctx, alice, token_hash);
         <span class="comment">// When whitelist the token owner
         </span>whitelist_accounts(<span class="kw-2">&amp;mut </span>ctx, <span class="macro">vec!</span>[alice]);
-        <span class="macro">assert!</span>(ctx.token.token_exists(<span class="kw-2">&amp;</span>token_hash.to_string()));
+        <span class="macro">assert!</span>(ctx.token.token_exists(token_id));
         ctx.set_caller(alice);
         <span class="comment">// Then the token owner should be able to burn the token
         </span><span class="macro">assert!</span>(try_burn(<span class="kw-2">&amp;mut </span>ctx, token_hash).is_ok());
@@ -1021,7 +1031,8 @@
         <span class="kw">let </span>alice = ctx.alice;
         <span class="comment">// Given a non existent token
         </span><span class="kw">let </span>token_hash = <span class="string">"token hash"</span>;
-        <span class="macro">assert!</span>(!ctx.token.token_exists(<span class="kw-2">&amp;</span>token_hash.to_string()));
+        <span class="kw">let </span>token_id = generate_token_id(token_hash);
+        <span class="macro">assert!</span>(!ctx.token.token_exists(token_id));
 
         <span class="comment">// Then burning the token should fail
         </span>whitelist_accounts(<span class="kw-2">&amp;mut </span>ctx, <span class="macro">vec!</span>[alice]);
@@ -1036,16 +1047,20 @@
         <span class="kw">let </span>(alice, bob) = (ctx.alice, ctx.bob);
         <span class="comment">// Given two tokens owned by alice
         </span><span class="kw">let </span>token_hashes = <span class="macro">vec!</span>[<span class="string">"token_hash1"</span>.to_string(), <span class="string">"token_hash2"</span>.to_string()];
+        <span class="kw">let </span>token_ids = token_hashes
+            .iter()
+            .map(|token_hash| generate_token_id(token_hash))
+            .collect::&lt;Vec&lt;<span class="kw">_</span>&gt;&gt;();
         mint_for(<span class="kw-2">&amp;mut </span>ctx, alice, <span class="kw-2">&amp;</span>token_hashes[<span class="number">0</span>]);
         mint_for(<span class="kw-2">&amp;mut </span>ctx, alice, <span class="kw-2">&amp;</span>token_hashes[<span class="number">1</span>]);
 
         <span class="comment">// When admin transfer the tokens to bob
         </span>whitelist_accounts(<span class="kw-2">&amp;mut </span>ctx, <span class="macro">vec!</span>[alice]);
         ctx.set_caller(alice);
-        ctx.token.admin_transfer(bob, token_hashes.clone());
+        ctx.token.admin_transfer(bob, token_ids.clone());
         <span class="comment">// Then bob should be the owner of the tokens
-        </span><span class="macro">assert!</span>(ctx.token.try_assert_is_owner(<span class="kw-2">&amp;</span>token_hashes[<span class="number">0</span>], bob).is_ok());
-        <span class="macro">assert!</span>(ctx.token.try_assert_is_owner(<span class="kw-2">&amp;</span>token_hashes[<span class="number">1</span>], bob).is_ok());
+        </span><span class="macro">assert!</span>(ctx.token.try_assert_is_owner(token_ids[<span class="number">0</span>], bob).is_ok());
+        <span class="macro">assert!</span>(ctx.token.try_assert_is_owner(token_ids[<span class="number">1</span>], bob).is_ok());
     }
 
     <span class="attr">#[test]
@@ -1055,25 +1070,23 @@
         <span class="kw">let </span>(alice, bob) = (ctx.alice, ctx.bob);
         <span class="comment">// Given two tokens owned by alice
         </span><span class="kw">let </span>token_hashes = <span class="macro">vec!</span>[<span class="string">"token_hash1"</span>.to_string(), <span class="string">"token_hash2"</span>.to_string()];
+        <span class="kw">let </span>token_ids = token_hashes
+            .iter()
+            .map(|token_hash| generate_token_id(token_hash))
+            .collect::&lt;Vec&lt;<span class="kw">_</span>&gt;&gt;();
         mint_for(<span class="kw-2">&amp;mut </span>ctx, alice, <span class="kw-2">&amp;</span>token_hashes[<span class="number">0</span>]);
         mint_for(<span class="kw-2">&amp;mut </span>ctx, alice, <span class="kw-2">&amp;</span>token_hashes[<span class="number">1</span>]);
 
         <span class="comment">// When non whitelisted account tries to transfer the tokens
         </span>ctx.set_caller(alice);
         <span class="macro">assert_eq!</span>(
-            ctx.token.try_admin_transfer(bob, token_hashes.clone()),
+            ctx.token.try_admin_transfer(bob, token_ids.clone()),
             <span class="prelude-val">Err</span>(NameTokenError::NotWhitelisted.into())
         );
 
         <span class="comment">// Then bob should not be the owner of the tokens
-        </span><span class="macro">assert!</span>(ctx
-            .token
-            .try_assert_is_owner(<span class="kw-2">&amp;</span>token_hashes[<span class="number">0</span>], bob)
-            .is_err());
-        <span class="macro">assert!</span>(ctx
-            .token
-            .try_assert_is_owner(<span class="kw-2">&amp;</span>token_hashes[<span class="number">1</span>], bob)
-            .is_err());
+        </span><span class="macro">assert!</span>(ctx.token.try_assert_is_owner(token_ids[<span class="number">0</span>], bob).is_err());
+        <span class="macro">assert!</span>(ctx.token.try_assert_is_owner(token_ids[<span class="number">1</span>], bob).is_err());
     }
 
     <span class="attr">#[test]
@@ -1087,6 +1100,10 @@
             <span class="string">"token_hash2"</span>.to_string(),
             <span class="string">"token_hash3"</span>.to_string(),
         ];
+        <span class="kw">let </span>token_ids = token_hashes
+            .iter()
+            .map(|token_hash| generate_token_id(token_hash))
+            .collect::&lt;Vec&lt;<span class="kw">_</span>&gt;&gt;();
         mint_for(<span class="kw-2">&amp;mut </span>ctx, alice, <span class="kw-2">&amp;</span>token_hashes[<span class="number">0</span>]);
         mint_for(<span class="kw-2">&amp;mut </span>ctx, alice, <span class="kw-2">&amp;</span>token_hashes[<span class="number">1</span>]);
 
@@ -1096,17 +1113,11 @@
         <span class="comment">// Then the transfer fails
         </span><span class="macro">assert!</span>(ctx
             .token
-            .try_admin_transfer(bob, token_hashes.clone())
+            .try_admin_transfer(bob, token_ids.clone())
             .is_err());
         <span class="comment">// Then the existing tokens should not be transferred
-        </span><span class="macro">assert!</span>(ctx
-            .token
-            .try_assert_is_owner(<span class="kw-2">&amp;</span>token_hashes[<span class="number">0</span>], bob)
-            .is_err());
-        <span class="macro">assert!</span>(ctx
-            .token
-            .try_assert_is_owner(<span class="kw-2">&amp;</span>token_hashes[<span class="number">1</span>], bob)
-            .is_err());
+        </span><span class="macro">assert!</span>(ctx.token.try_assert_is_owner(token_ids[<span class="number">0</span>], bob).is_err());
+        <span class="macro">assert!</span>(ctx.token.try_assert_is_owner(token_ids[<span class="number">1</span>], bob).is_err());
     }
 
     <span class="attr">#[test]
@@ -1116,23 +1127,24 @@
         <span class="kw">let </span>(alice, bob) = (ctx.alice, ctx.bob);
         <span class="comment">// Given a token owned by alice
         </span><span class="kw">let </span>token_hash = <span class="string">"token_hash"</span>;
+        <span class="kw">let </span>token_id = generate_token_id(token_hash);
         mint_for(<span class="kw-2">&amp;mut </span>ctx, alice, token_hash);
         <span class="comment">// Then the token has no resolver
-        </span><span class="macro">assert_eq!</span>(ctx.token.resolver(token_hash.to_owned()), <span class="prelude-val">None</span>);
+        </span><span class="macro">assert_eq!</span>(ctx.token.resolver(token_id), <span class="prelude-val">None</span>);
 
         <span class="comment">// When bob tries to set the resolver
         </span><span class="kw">let </span>resolver = bob;
         ctx.set_caller(bob);
         <span class="comment">// Then the operation should fail
         </span><span class="macro">assert_eq!</span>(
-            ctx.token.try_set_resolver(token_hash.to_owned(), resolver),
+            ctx.token.try_set_resolver(token_id, resolver),
             <span class="prelude-val">Err</span>(NameTokenError::InvalidTokenOwner.into())
         );
         <span class="comment">// When alice sets the resolver
         </span>ctx.set_caller(alice);
-        ctx.token.set_resolver(token_hash.to_owned(), resolver);
+        ctx.token.set_resolver(token_id, resolver);
         <span class="comment">// Then the resolver should be set
-        </span><span class="macro">assert_eq!</span>(ctx.token.resolver(token_hash.to_owned()), <span class="prelude-val">Some</span>(resolver));
+        </span><span class="macro">assert_eq!</span>(ctx.token.resolver(token_id), <span class="prelude-val">Some</span>(resolver));
     }
 
     <span class="attr">#[test]
@@ -1142,18 +1154,20 @@
         <span class="kw">let </span>alice = ctx.alice;
 
         <span class="comment">// Given a token with expiration time in furure
-        </span><span class="kw">let </span>name = <span class="string">"token hash"</span>;
+        </span><span class="kw">let </span>token_hash = <span class="string">"token_hash"</span>;
+        <span class="kw">let </span>token_id = generate_token_id(token_hash);
         <span class="kw">let </span>expiration = INIT_TIME + <span class="number">100</span>;
+        <span class="kw">let </span>asset_uri = <span class="string">"https://example.com/asset"</span>;
         ctx.set_caller(ctx.admin);
-        <span class="kw">let </span>token_meta_data = NameTokenMetadata::with_no_resolver(name, expiration);
-        ctx.token
-            .mint(alice, token_meta_data.json(), Maybe::Some(name.to_owned()));
+        <span class="kw">let </span>token_meta_data =
+            NameTokenMetadata::with_no_resolver(token_hash, expiration, asset_uri);
+        ctx.token.mint(alice, token_id, token_meta_data.to_vec());
         <span class="comment">// Then the token should be valid
-        </span><span class="macro">assert!</span>(ctx.token.is_token_valid(<span class="kw-2">&amp;</span>name.to_string()));
+        </span><span class="macro">assert!</span>(ctx.token.is_token_valid(token_id));
         <span class="comment">// When the expiration time is passed
         </span>ctx.advance_block_time(expiration + <span class="number">1</span>);
         <span class="comment">// Then the token should not be valid
-        </span><span class="macro">assert!</span>(!ctx.token.is_token_valid(<span class="kw-2">&amp;</span>name.to_string()));
+        </span><span class="macro">assert!</span>(!ctx.token.is_token_valid(token_id));
     }
 
     <span class="attr">#[test]
@@ -1164,27 +1178,30 @@
 
         <span class="comment">// Given a token with expiration time in furure
         </span><span class="kw">let </span>name = <span class="string">"token hash"</span>;
+        <span class="kw">let </span>token_id = generate_token_id(name);
         <span class="kw">let </span>expiration = INIT_TIME + <span class="number">100</span>;
+        <span class="kw">let </span>asset_uri = <span class="string">"https://example.com/asset"</span>;
         ctx.set_caller(ctx.admin);
-        <span class="kw">let </span>token_meta_data = NameTokenMetadata::with_no_resolver(name, expiration);
-        ctx.token
-            .mint(alice, token_meta_data.json(), Maybe::Some(name.to_owned()));
+        <span class="kw">let </span>token_meta_data = NameTokenMetadata::with_no_resolver(name, expiration, asset_uri);
+        ctx.token.mint(alice, token_id, token_meta_data.to_vec());
         <span class="comment">// Then the token should be valid
-        </span><span class="macro">assert!</span>(ctx.token.is_token_valid(<span class="kw-2">&amp;</span>name.to_string()));
+        </span><span class="macro">assert!</span>(ctx.token.is_token_valid(token_id));
 
         <span class="comment">// When the token is burnt
         </span>whitelist_accounts(<span class="kw-2">&amp;mut </span>ctx, <span class="macro">vec!</span>[alice]);
         ctx.set_caller(alice);
         <span class="macro">assert!</span>(try_burn(<span class="kw-2">&amp;mut </span>ctx, name).is_ok());
         <span class="comment">// Then the token should not be valid
-        </span><span class="macro">assert!</span>(!ctx.token.is_token_valid(<span class="kw-2">&amp;</span>name.to_string()));
+        </span><span class="macro">assert!</span>(!ctx.token.is_token_valid(token_id));
     }
 
     <span class="attr">#[test]
     </span><span class="kw">fn </span>only_whitelisted_user_can_set_default_resolver() {
         <span class="kw">let </span><span class="kw-2">mut </span>ctx = TestContext::install_raw();
 
-        <span class="kw">let </span>resolver = Address::Contract(ContractPackageHash::new([<span class="number">0u8</span>; <span class="number">32</span>]));
+        <span class="kw">let </span>resolver =
+            Address::new(<span class="string">"hash-7ba9daac84bebee8111c186588f21ebca35550b6cf1244e71768bd871938be6a"</span>)
+                .unwrap();
         <span class="macro">assert!</span>(ctx.token.try_set_default_resolver(resolver).is_err());
 
         ctx.whitelist_admin_in_name_token();
@@ -1193,23 +1210,108 @@
         <span class="macro">assert_eq!</span>(ctx.token.get_default_resolver(), resolver);
     }
 
-    <span class="kw">fn </span>mint_for(ctx: <span class="kw-2">&amp;mut </span>TestContext, owner: Address, name: <span class="kw-2">&amp;</span>str) {
+    <span class="attr">#[test]
+    </span><span class="kw">fn </span>transfer_from_operator_resets_resolver() {
+        <span class="kw">let </span><span class="kw-2">mut </span>ctx = TestContext::install_and_setup();
+        <span class="kw">let </span>(alice, bob, anyone) = (ctx.alice, ctx.bob, ctx.anyone);
+        <span class="kw">let </span>token_label = <span class="string">"token-label"</span>;
+        <span class="kw">let </span>full_domain = <span class="macro">format!</span>(<span class="string">"{}.cspr"</span>, token_label);
+
+        <span class="comment">// Given Alice has a token.
+        </span>mint_for(<span class="kw-2">&amp;mut </span>ctx, alice, token_label);
+
+        <span class="comment">// Alice sets the resolver.
+        </span>ctx.set_caller(alice);
+        ctx.default_resolver
+            .set_resolution(full_domain.clone(), <span class="prelude-val">Some</span>(anyone));
+
+        <span class="comment">// Then the resolver points at some address.
+        </span><span class="macro">assert_eq!</span>(
+            ctx.default_resolver.resolve(full_domain.clone()),
+            <span class="prelude-val">Some</span>(anyone)
+        );
+
+        <span class="comment">// Given Alice sets Bob as an operator.
+        </span>ctx.token.approve_for_all(bob);
+
+        <span class="comment">// Then Bob is an operator for Alice.
+        </span><span class="macro">assert!</span>(ctx.token.is_approved_for_all(alice, bob));
+
+        <span class="comment">// When Bob transfers the token to himself.
+        </span><span class="kw">let </span>token_id = generate_token_id(token_label);
+        ctx.set_caller(bob);
+        ctx.token.transfer_from(alice, bob, token_id);
+        <span class="macro">assert!</span>(ctx.token.try_assert_is_owner(token_id, bob).is_ok());
+
+        <span class="comment">// Then the resolver is reset.
+        </span><span class="macro">assert_eq!</span>(
+            ctx.default_resolver.resolve(full_domain),
+            <span class="prelude-val">None</span>,
+            <span class="string">"Resolver should be reset after transfer from operator"
+        </span>);
+    }
+
+    <span class="attr">#[test]
+    </span><span class="kw">fn </span>test_revoke_whitelist() {
+        <span class="kw">let </span><span class="kw-2">mut </span>ctx = TestContext::install_raw();
+        ctx.whitelist_admin_in_name_token();
+        <span class="kw">let </span>alice = ctx.alice;
+
+        <span class="comment">// Given Alice is whitelisted
+        </span>whitelist_accounts(<span class="kw-2">&amp;mut </span>ctx, <span class="macro">vec!</span>[alice]);
+
+        <span class="comment">// When admin revokes Alice's whitelist
+        </span>ctx.set_caller(ctx.admin);
+        <span class="kw">let </span>result = ctx.token.try_revoke_whitelist(alice);
+        <span class="comment">// Then it should succeed
+        </span><span class="macro">assert!</span>(result.is_ok());
+
+        <span class="comment">// When admin tries to revoke Alice's whitelist again
+        </span><span class="kw">let </span>result = ctx.token.try_revoke_whitelist(alice);
+        <span class="comment">// Then it should fail with NotWhitelisted error
+        </span><span class="macro">assert_eq!</span>(result.err(), <span class="prelude-val">Some</span>(NameTokenError::NotWhitelisted.into()));
+    }
+
+    <span class="attr">#[test]
+    </span><span class="kw">fn </span>test_whitelist() {
+        <span class="kw">let </span><span class="kw-2">mut </span>ctx = TestContext::install_raw();
+        ctx.whitelist_admin_in_name_token();
+        <span class="kw">let </span>alice = ctx.alice;
+
+        <span class="comment">// When admin tries to whitelist Alice
+        </span>ctx.set_caller(ctx.admin);
+        <span class="kw">let </span>result = ctx.token.try_whitelist(alice);
+        <span class="comment">// Then it should succeed
+        </span><span class="macro">assert!</span>(result.is_ok());
+
+        <span class="comment">// When admin tries to whitelist Alice again
+        </span><span class="kw">let </span>result = ctx.token.try_whitelist(alice);
+        <span class="comment">// Then it should fail with WhitelistedAlready error
+        </span><span class="macro">assert_eq!</span>(
+            result.err(),
+            <span class="prelude-val">Some</span>(NameTokenError::WhitelistedAlready.into())
+        );
+    }
+
+    <span class="kw">fn </span>mint_for(ctx: <span class="kw-2">&amp;mut </span>TestContext, owner: Address, name: <span class="kw-2">&amp;</span>str) -&gt; U256 {
         ctx.set_caller(ctx.admin);
-        <span class="kw">let </span>token_meta_data =
-            NameTokenMetadata::with_no_resolver(name, INIT_TIME + TOKEN_EXPIRATION);
-        ctx.token
-            .mint(owner, token_meta_data.json(), Maybe::Some(name.to_owned()));
+        <span class="kw">let </span>token_metadata =
+            NameTokenMetadata::with_no_resolver(name, INIT_TIME + TOKEN_EXPIRATION, <span class="string">""</span>);
+        <span class="kw">let </span>token_id = generate_token_id(name);
+        ctx.token.mint(owner, token_id, token_metadata.to_vec());
+        token_id
     }
 
     <span class="kw">fn </span>whitelist_accounts(ctx: <span class="kw-2">&amp;mut </span>TestContext, accounts: Vec&lt;Address&gt;) {
         ctx.set_caller(ctx.admin);
-        ctx.token
-            .set_variables(Maybe::None, Maybe::Some(accounts), Maybe::None);
+        <span class="kw">for </span>account <span class="kw">in </span>accounts {
+            ctx.token.whitelist(account);
+        }
     }
 
     <span class="kw">fn </span>try_burn(ctx: <span class="kw-2">&amp;mut </span>TestContext, token_hash: <span class="kw-2">&amp;</span>str) -&gt; OdraResult&lt;()&gt; {
-        ctx.token
-            .try_burn(Maybe::None, Maybe::Some(token_hash.to_owned()))
+        <span class="kw">let </span>token_id = generate_token_id(token_hash);
+        ctx.token.try_burn(token_id)
     }
 }
 </code></pre></div></section></main></body></html>

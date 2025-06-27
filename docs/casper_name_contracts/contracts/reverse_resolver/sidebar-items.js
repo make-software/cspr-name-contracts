@@ -1,1 +1,1 @@
-window.SIDEBAR_ITEMS = {"struct":["PrimaryNameChanged","ReverseResolver","ReverseResolverContractRef","ReverseResolverHostRef"]};
+window.SIDEBAR_ITEMS = {"struct":["PrimaryNameChanged","ReverseResolver","ReverseResolverContractRef","ReverseResolverHostRef","ReverseResolverInitArgs"]};

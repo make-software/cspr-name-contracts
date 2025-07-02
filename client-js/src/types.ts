@@ -1,7 +1,8 @@
 /* eslint-disable eslint-comments/disable-enable-pair */
 /* eslint-disable max-classes-per-file */
 
-import { CLValue, Key, toBytesU32, toBytesU512, toBytesU64 } from 'casper-js-sdk';
+import { bytesToHex } from '@noble/hashes/utils';
+import { CLValue, Key, toBytesU32, toBytesU64,toBytesU512 } from 'casper-js-sdk';
 
 export class PaymentInfo {
   constructor(
@@ -28,16 +29,19 @@ export class NameMintInfo {
     public label: string,
     public owner: string,
     public tokenExpiration: Date,
+    public assetURI: string,
   ) {}
 
   toBytes(): Uint8Array {
     const labelBytes = CLValue.newCLString(this.label).bytes()
     const ownerBytes = CLValue.newCLKey(Key.newKey(this.owner)).bytes()
     const tokenExpirationBytes = toBytesU64(this.tokenExpiration.getTime()*1000)
+    const assetURIBytes = CLValue.newCLString(this.assetURI).bytes()
 
     const bytes = Array.from(labelBytes)
       .concat(Array.from(ownerBytes))
-      .concat(Array.from(tokenExpirationBytes));
+      .concat(Array.from(tokenExpirationBytes))
+      .concat(Array.from(assetURIBytes));
 
     return Uint8Array.from(bytes);
   }

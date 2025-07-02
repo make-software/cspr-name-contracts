@@ -53,7 +53,7 @@ const run = async () => {
 
   const voucher = new PaymentVoucher(
     new PaymentInfo(createVoucherResponseData.voucher.payment_info.buyer, createVoucherResponseData.voucher.payment_info.payment_id, createVoucherResponseData.voucher.payment_info.amount),
-    createVoucherResponseData.voucher.names.map(name => new NameMintInfo(name.label, name.owner, new Date(name.token_expiration))),
+    createVoucherResponseData.voucher.names.map(name => new NameMintInfo(name.label, name.owner, new Date(name.token_expiration), config.nameTokenURL)),
     new Date(createVoucherResponseData.voucher.voucher_expiration),
   );
 

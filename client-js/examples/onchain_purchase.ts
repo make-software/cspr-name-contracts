@@ -1,7 +1,6 @@
+import { HttpHandler, KeyAlgorithm, PrivateKey, RpcClient } from "casper-js-sdk";
 import fs from "fs";
 import { join } from "path";
-
-import { HttpHandler, KeyAlgorithm, PrivateKey, RpcClient } from "casper-js-sdk";
 
 import { Controller } from "../src/controller";
 import { NameMintInfo, PaymentInfo, PaymentVoucher } from "../src/types";
@@ -28,7 +27,7 @@ const run = async () => {
   
   const voucher = new PaymentVoucher(
     new PaymentInfo(buyerKeypair.publicKey.accountHash().toPrefixedString(), "payment:1", 5000000000),
-    [new NameMintInfo(config.mintingName, buyerKeypair.publicKey.accountHash().toPrefixedString(), expiration)],
+    [new NameMintInfo(config.mintingName, buyerKeypair.publicKey.accountHash().toPrefixedString(), expiration, config.nameTokenURL)],
     expiration,
   );
 

@@ -22,11 +22,10 @@ const run = async () => {
   );
 
   const expiration = new Date();
-  expiration.setFullYear(expiration.getFullYear() + 1, expiration.getMonth(), expiration.getDate());
-  console.log(expiration.toISOString())
+  expiration.setFullYear(expiration.getFullYear() + 1, expiration.getMonth(), expiration.getDate() + 1);
 
   const nameMintInfos = [
-    new NameMintInfo(config.mintingName, buyerKeypair.publicKey.accountHash().toHex(), expiration),
+    new NameMintInfo(config.mintingName, buyerKeypair.publicKey.accountHash().toPrefixedString(), expiration, config.nameTokenURL),
   ];
 
   const registrarContract = new Registrar(

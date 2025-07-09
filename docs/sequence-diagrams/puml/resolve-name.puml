@@ -1,0 +1,33 @@
+@startuml
+'https://plantuml.com/sequence-diagram
+
+'autonumber
+actor User
+participant "Resolution API"
+box Casper Node
+participant "NameToken state"
+participant "Resolver state"
+end box
+== Resolve name ==
+
+User -> "Resolution API": /resolve full_domain
+activate "Resolution API"
+"Resolution API" -> "NameToken state": [RPC call] get token_hash metadata
+"NameToken state" -> "Resolution API"
+
+"Resolution API" -> "Resolution API": check expiry date
+
+group blocktime < expiry date
+"Resolution API" -> "Resolution API": extract resolver address
+"Resolution API" -> "Resolver state": [RPC call] get full_domain account address
+"Resolver state" -> "Resolution API"
+alt no resolution found
+    "Resolution API" -> User: 404 record not found
+end
+"Resolution API" -> User: 200 address
+else "blocktime > expiry date"
+"Resolution API" -> User: 404 token expired
+end
+deactivate "Resolution API"
+
+@enduml

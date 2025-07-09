@@ -1,0 +1,38 @@
+@startuml
+'https://plantuml.com/sequence-diagram
+
+'autonumber
+actor User
+participant "d3.app" as d3 #lightblue
+participant "Controller"
+participant "Registrar"
+participant "NameToken"
+boundary "Events"
+
+== Buy and renew multiple *cspr names with CSPR token ==
+
+User -> d3: Renew N *cspr names\nand buy M *cspr names
+activate d3
+d3 -> User: signed PaymentVoucher\nand RenewalPaymentVoucher
+deactivate d3
+
+User -> Controller: buy_and_renew(PaymentVoucher, sig1,\n    RenewalPaymentVoucher, sig2)
+activate Controller
+Controller -> Controller: verify voucher\nexpirations
+Controller -> Controller: verify voucher\nsignatures
+Controller -> Controller: process CSPR payment
+Controller -> "Events": PaymentFulfilled event
+Controller -> Registrar: controller_prolong_and_register(\nVec<TokenRenewalInfo>, Vec<NameMintInfo>)
+activate Registrar
+    loop N times
+        note over Registrar: Same flow as for controller_prolong().
+    end loop
+    loop M times
+        note over Registrar: Same flow as for controller_register().
+    end loop
+Registrar -> Controller
+deactivate Registrar
+Controller -> User
+deactivate Controller
+
+@enduml

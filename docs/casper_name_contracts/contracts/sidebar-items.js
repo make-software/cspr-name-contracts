@@ -1,0 +1,1 @@
+window.SIDEBAR_ITEMS = {"mod":["controller","marketplace","name_token","registrar","resolver","reverse_resolver","token_id"]};

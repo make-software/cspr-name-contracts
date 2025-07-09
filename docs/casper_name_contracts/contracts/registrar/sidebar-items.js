@@ -1,0 +1,1 @@
+window.SIDEBAR_ITEMS = {"constant":["CONTROLLER_ROLE"],"enum":["RegistrarError"],"struct":["GracePeriodChanged","Registrar","RegistrarContractRef","RegistrarHostRef","RegistrarInitArgs"]};

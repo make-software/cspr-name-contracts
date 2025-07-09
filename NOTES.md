@@ -1,1 +1,0 @@
-- No `tokenURI`, as it is not part of the CEP78 standard. In Solidity version it comes from ERC721.

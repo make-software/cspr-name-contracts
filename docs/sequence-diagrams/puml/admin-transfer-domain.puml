@@ -1,0 +1,41 @@
+@startuml
+'https://plantuml.com/sequence-diagram
+
+'autonumber
+actor "D3 admin"
+participant "Registrar"
+participant "NameToken"
+participant "Resolver"
+boundary "Events"
+
+== [Admin] Transfer a domain ==
+
+"D3 admin" -> "Registrar": admin_transfer(new_owner, name_hashes[])
+activate Registrar
+loop N times
+    Registrar -> NameToken: admin_transfer(new_oner, name_hash)
+    activate NameToken
+    NameToken -> NameToken: check expiration date
+    alt expiration < blocktime
+        NameToken ->X "D3 admin": Revert with cannot_transfer error
+    end
+    alt Resolver is default resolver
+        NameToken -> Resolver: cleanup(name_hash)
+        Resolver -> NameToken:
+    else
+        NameToken -> NameToken : set default resolver
+        NameToken -> "Events": MetadataUpdated event
+    end
+    NameToken -> NameToken: clear operator
+    NameToken -> NameToken : set new owner
+    NameToken -> Resolver: cleanup(name_hash)
+    Resolver -> NameToken:
+    NameToken -> "Events": Transfer event
+    NameToken -> Registrar
+    deactivate NameToken
+end
+deactivate NameToken
+Registrar -> "D3 admin"
+deactivate Registrar
+
+@enduml

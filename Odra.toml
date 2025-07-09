@@ -1,2 +1,17 @@
 [[contracts]]
-fqn = "casper_name::register::Register"
+fqn = "casper_name_contracts::contracts::registrar::Registrar"
+
+[[contracts]]
+fqn = "casper_name_contracts::contracts::name_token::NameToken"
+
+[[contracts]]
+fqn = "casper_name_contracts::contracts::controller::Controller"
+
+[[contracts]]
+fqn = "casper_name_contracts::contracts::resolver::DefaultResolver"
+
+[[contracts]]
+fqn = "casper_name_contracts::contracts::marketplace::SecondaryMarket"
+
+[[contracts]]
+fqn = "casper_name_contracts::contracts::reverse_resolver::ReverseResolver"

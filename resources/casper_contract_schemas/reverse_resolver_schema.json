@@ -1,0 +1,127 @@
+{
+  "casper_contract_schema_version": 1,
+  "toolchain": "rustc 1.85.0-nightly (d117b7f21 2024-12-31)",
+  "authors": [],
+  "repository": null,
+  "homepage": null,
+  "contract_name": "ReverseResolver",
+  "contract_version": "0.1.0",
+  "types": [
+    {
+      "struct": {
+        "name": "PrimaryNameChanged",
+        "description": null,
+        "members": [
+          {
+            "name": "address",
+            "description": null,
+            "ty": "Key"
+          },
+          {
+            "name": "old_primary_name",
+            "description": null,
+            "ty": {
+              "Option": "String"
+            }
+          },
+          {
+            "name": "new_primary_name",
+            "description": null,
+            "ty": {
+              "Option": "String"
+            }
+          }
+        ]
+      }
+    }
+  ],
+  "errors": [
+    {
+      "name": "InvalidResolutionAddress",
+      "description": "",
+      "discriminant": 1502
+    },
+    {
+      "name": "InvalidTokenName",
+      "description": "",
+      "discriminant": 1500
+    },
+    {
+      "name": "ResolutionForPrimaryNameNotFound",
+      "description": "",
+      "discriminant": 1501
+    }
+  ],
+  "entry_points": [
+    {
+      "name": "set_primary_name",
+      "description": "Sets the primary preferred reverse resolution address for the caller.",
+      "is_mutable": true,
+      "arguments": [
+        {
+          "name": "primary_name",
+          "description": null,
+          "ty": "String",
+          "optional": false
+        }
+      ],
+      "return_ty": "Unit",
+      "is_contract_context": true,
+      "access": "public"
+    },
+    {
+      "name": "get_primary_name",
+      "description": "Returns the primary name for the address.",
+      "is_mutable": false,
+      "arguments": [
+        {
+          "name": "address",
+          "description": null,
+          "ty": "Key",
+          "optional": false
+        }
+      ],
+      "return_ty": {
+        "Option": "String"
+      },
+      "is_contract_context": true,
+      "access": "public"
+    }
+  ],
+  "events": [
+    {
+      "name": "PrimaryNameChanged",
+      "ty": "PrimaryNameChanged"
+    }
+  ],
+  "call": {
+    "wasm_file_name": "ReverseResolver.wasm",
+    "description": "",
+    "arguments": [
+      {
+        "name": "odra_cfg_package_hash_key_name",
+        "description": "The arg name for the package hash key name.",
+        "ty": "String",
+        "optional": false
+      },
+      {
+        "name": "odra_cfg_allow_key_override",
+        "description": "If true and the key specified in odra_cfg_package_hash_key_name already exists, it will be overwritten.",
+        "ty": "Bool",
+        "optional": false
+      },
+      {
+        "name": "odra_cfg_is_upgradable",
+        "description": "The arg name for the contract upgradeability setting.",
+        "ty": "Bool",
+        "optional": false
+      },
+      {
+        "name": "name_token",
+        "description": null,
+        "ty": "Key",
+        "optional": false
+      }
+    ]
+  }
+}

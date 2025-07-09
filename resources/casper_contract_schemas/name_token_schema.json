@@ -1,0 +1,952 @@
+{
+  "casper_contract_schema_version": 1,
+  "toolchain": "rustc 1.85.0-nightly (d117b7f21 2024-12-31)",
+  "authors": [],
+  "repository": null,
+  "homepage": null,
+  "contract_name": "NameToken",
+  "contract_version": "0.1.0",
+  "types": [
+    {
+      "struct": {
+        "name": "Approval",
+        "description": null,
+        "members": [
+          {
+            "name": "owner",
+            "description": null,
+            "ty": "Key"
+          },
+          {
+            "name": "spender",
+            "description": null,
+            "ty": "Key"
+          },
+          {
+            "name": "token_id",
+            "description": null,
+            "ty": "U256"
+          }
+        ]
+      }
+    },
+    {
+      "struct": {
+        "name": "ApprovalForAll",
+        "description": null,
+        "members": [
+          {
+            "name": "owner",
+            "description": null,
+            "ty": "Key"
+          },
+          {
+            "name": "operator",
+            "description": null,
+            "ty": "Key"
+          }
+        ]
+      }
+    },
+    {
+      "struct": {
+        "name": "Burn",
+        "description": null,
+        "members": [
+          {
+            "name": "from",
+            "description": null,
+            "ty": "Key"
+          },
+          {
+            "name": "token_id",
+            "description": null,
+            "ty": "U256"
+          }
+        ]
+      }
+    },
+    {
+      "struct": {
+        "name": "MetadataUpdate",
+        "description": null,
+        "members": [
+          {
+            "name": "token_id",
+            "description": null,
+            "ty": "U256"
+          }
+        ]
+      }
+    },
+    {
+      "struct": {
+        "name": "Mint",
+        "description": null,
+        "members": [
+          {
+            "name": "to",
+            "description": null,
+            "ty": "Key"
+          },
+          {
+            "name": "token_id",
+            "description": null,
+            "ty": "U256"
+          }
+        ]
+      }
+    },
+    {
+      "struct": {
+        "name": "OwnershipTransferStarted",
+        "description": null,
+        "members": [
+          {
+            "name": "previous_owner",
+            "description": null,
+            "ty": {
+              "Option": "Key"
+            }
+          },
+          {
+            "name": "new_owner",
+            "description": null,
+            "ty": {
+              "Option": "Key"
+            }
+          }
+        ]
+      }
+    },
+    {
+      "struct": {
+        "name": "OwnershipTransferred",
+        "description": null,
+        "members": [
+          {
+            "name": "previous_owner",
+            "description": null,
+            "ty": {
+              "Option": "Key"
+            }
+          },
+          {
+            "name": "new_owner",
+            "description": null,
+            "ty": {
+              "Option": "Key"
+            }
+          }
+        ]
+      }
+    },
+    {
+      "struct": {
+        "name": "RevokeApproval",
+        "description": null,
+        "members": [
+          {
+            "name": "owner",
+            "description": null,
+            "ty": "Key"
+          },
+          {
+            "name": "spender",
+            "description": null,
+            "ty": "Key"
+          },
+          {
+            "name": "token_id",
+            "description": null,
+            "ty": "U256"
+          }
+        ]
+      }
+    },
+    {
+      "struct": {
+        "name": "RevokeApprovalForAll",
+        "description": null,
+        "members": [
+          {
+            "name": "owner",
+            "description": null,
+            "ty": "Key"
+          },
+          {
+            "name": "operator",
+            "description": null,
+            "ty": "Key"
+          }
+        ]
+      }
+    },
+    {
+      "struct": {
+        "name": "Transfer",
+        "description": null,
+        "members": [
+          {
+            "name": "from",
+            "description": null,
+            "ty": "Key"
+          },
+          {
+            "name": "to",
+            "description": null,
+            "ty": "Key"
+          },
+          {
+            "name": "token_id",
+            "description": null,
+            "ty": "U256"
+          }
+        ]
+      }
+    }
+  ],
+  "errors": [
+    {
+      "name": "ApprovalToCurrentOwner",
+      "description": "The approval is set to the current owner.",
+      "discriminant": 40003
+    },
+    {
+      "name": "ApproveToCaller",
+      "description": "The caller is the same as the operator.",
+      "discriminant": 40004
+    },
+    {
+      "name": "CallerNotTheNewOwner",
+      "description": "The caller is not the new owner.",
+      "discriminant": 20002
+    },
+    {
+      "name": "CallerNotTheOwner",
+      "description": "The caller is not the owner.",
+      "discriminant": 20001
+    },
+    {
+      "name": "ExpiredTokenTransfer",
+      "description": "",
+      "discriminant": 1303
+    },
+    {
+      "name": "InvalidResolver",
+      "description": "",
+      "discriminant": 1305
+    },
+    {
+      "name": "InvalidTokenId",
+      "description": "The token ID is invalid.",
+      "discriminant": 40005
+    },
+    {
+      "name": "InvalidTokenIdentifier",
+      "description": "",
+      "discriminant": 1304
+    },
+    {
+      "name": "InvalidTokenOwner",
+      "description": "",
+      "discriminant": 1302
+    },
+    {
+      "name": "MissingRole",
+      "description": "The role is missing.",
+      "discriminant": 20003
+    },
+    {
+      "name": "NotAnOwnerOrApproved",
+      "description": "The token ID is invalid.",
+      "discriminant": 40002
+    },
+    {
+      "name": "NotWhitelisted",
+      "description": "",
+      "discriminant": 1301
+    },
+    {
+      "name": "OwnerNotSet",
+      "description": "The owner is not set.",
+      "discriminant": 20000
+    },
+    {
+      "name": "RoleRenounceForAnotherAddress",
+      "description": "The role cannot be renounced for another address.",
+      "discriminant": 20004
+    },
+    {
+      "name": "TokenAlreadyExists",
+      "description": "The token with the given ID already exists.",
+      "discriminant": 40006
+    },
+    {
+      "name": "TokenSupplyDepleted",
+      "description": "",
+      "discriminant": 1306
+    },
+    {
+      "name": "TransferFailed",
+      "description": "The transfer failed.",
+      "discriminant": 40001
+    },
+    {
+      "name": "ValueNotSet",
+      "description": "The value is not set.",
+      "discriminant": 40000
+    },
+    {
+      "name": "WhitelistedAlready",
+      "description": "",
+      "discriminant": 1307
+    }
+  ],
+  "entry_points": [
+    {
+      "name": "token_exists",
+      "description": "",
+      "is_mutable": false,
+      "arguments": [
+        {
+          "name": "token_id",
+          "description": null,
+          "ty": "U256",
+          "optional": false
+        }
+      ],
+      "return_ty": "Bool",
+      "is_contract_context": true,
+      "access": "public"
+    },
+    {
+      "name": "mint",
+      "description": "",
+      "is_mutable": true,
+      "arguments": [
+        {
+          "name": "recipient",
+          "description": null,
+          "ty": "Key",
+          "optional": false
+        },
+        {
+          "name": "token_id",
+          "description": null,
+          "ty": "U256",
+          "optional": false
+        },
+        {
+          "name": "token_metadata",
+          "description": null,
+          "ty": {
+            "List": {
+              "Tuple2": [
+                "String",
+                "String"
+              ]
+            }
+          },
+          "optional": false
+        }
+      ],
+      "return_ty": "Unit",
+      "is_contract_context": true,
+      "access": "public"
+    },
+    {
+      "name": "burn",
+      "description": "",
+      "is_mutable": true,
+      "arguments": [
+        {
+          "name": "token_id",
+          "description": null,
+          "ty": "U256",
+          "optional": false
+        }
+      ],
+      "return_ty": "Unit",
+      "is_contract_context": true,
+      "access": "public"
+    },
+    {
+      "name": "admin_transfer",
+      "description": "",
+      "is_mutable": true,
+      "arguments": [
+        {
+          "name": "recipient",
+          "description": null,
+          "ty": "Key",
+          "optional": false
+        },
+        {
+          "name": "token_ids",
+          "description": null,
+          "ty": {
+            "List": "U256"
+          },
+          "optional": false
+        }
+      ],
+      "return_ty": "Unit",
+      "is_contract_context": true,
+      "access": "public"
+    },
+    {
+      "name": "transfer_from",
+      "description": "",
+      "is_mutable": true,
+      "arguments": [
+        {
+          "name": "from",
+          "description": null,
+          "ty": "Key",
+          "optional": false
+        },
+        {
+          "name": "to",
+          "description": null,
+          "ty": "Key",
+          "optional": false
+        },
+        {
+          "name": "token_id",
+          "description": null,
+          "ty": "U256",
+          "optional": false
+        }
+      ],
+      "return_ty": "Unit",
+      "is_contract_context": true,
+      "access": "public"
+    },
+    {
+      "name": "set_token_metadata",
+      "description": "",
+      "is_mutable": true,
+      "arguments": [
+        {
+          "name": "token_id",
+          "description": null,
+          "ty": "U256",
+          "optional": false
+        },
+        {
+          "name": "token_metadata",
+          "description": null,
+          "ty": {
+            "List": {
+              "Tuple2": [
+                "String",
+                "String"
+              ]
+            }
+          },
+          "optional": false
+        }
+      ],
+      "return_ty": "Unit",
+      "is_contract_context": true,
+      "access": "public"
+    },
+    {
+      "name": "resolver",
+      "description": "",
+      "is_mutable": false,
+      "arguments": [
+        {
+          "name": "token_id",
+          "description": null,
+          "ty": "U256",
+          "optional": false
+        }
+      ],
+      "return_ty": {
+        "Option": "Key"
+      },
+      "is_contract_context": true,
+      "access": "public"
+    },
+    {
+      "name": "set_resolver",
+      "description": "",
+      "is_mutable": true,
+      "arguments": [
+        {
+          "name": "token_id",
+          "description": null,
+          "ty": "U256",
+          "optional": false
+        },
+        {
+          "name": "resolver",
+          "description": null,
+          "ty": "Key",
+          "optional": false
+        }
+      ],
+      "return_ty": "Unit",
+      "is_contract_context": true,
+      "access": "public"
+    },
+    {
+      "name": "assert_is_owner",
+      "description": "",
+      "is_mutable": false,
+      "arguments": [
+        {
+          "name": "token_id",
+          "description": null,
+          "ty": "U256",
+          "optional": false
+        },
+        {
+          "name": "address",
+          "description": null,
+          "ty": "Key",
+          "optional": false
+        }
+      ],
+      "return_ty": "Unit",
+      "is_contract_context": true,
+      "access": "public"
+    },
+    {
+      "name": "is_token_valid",
+      "description": "",
+      "is_mutable": false,
+      "arguments": [
+        {
+          "name": "token_id",
+          "description": null,
+          "ty": "U256",
+          "optional": false
+        }
+      ],
+      "return_ty": "Bool",
+      "is_contract_context": true,
+      "access": "public"
+    },
+    {
+      "name": "set_default_resolver",
+      "description": "Only admin. Set the default resolver.",
+      "is_mutable": true,
+      "arguments": [
+        {
+          "name": "resolver",
+          "description": null,
+          "ty": "Key",
+          "optional": false
+        }
+      ],
+      "return_ty": "Unit",
+      "is_contract_context": true,
+      "access": "public"
+    },
+    {
+      "name": "get_default_resolver",
+      "description": "Get the default resolver.",
+      "is_mutable": false,
+      "arguments": [],
+      "return_ty": "Key",
+      "is_contract_context": true,
+      "access": "public"
+    },
+    {
+      "name": "whitelist",
+      "description": "",
+      "is_mutable": true,
+      "arguments": [
+        {
+          "name": "address",
+          "description": null,
+          "ty": "Key",
+          "optional": false
+        }
+      ],
+      "return_ty": "Unit",
+      "is_contract_context": true,
+      "access": "public"
+    },
+    {
+      "name": "revoke_whitelist",
+      "description": "",
+      "is_mutable": true,
+      "arguments": [
+        {
+          "name": "address",
+          "description": null,
+          "ty": "Key",
+          "optional": false
+        }
+      ],
+      "return_ty": "Unit",
+      "is_contract_context": true,
+      "access": "public"
+    },
+    {
+      "name": "name",
+      "description": "Delegated. See `self.token.name()` for details.",
+      "is_mutable": false,
+      "arguments": [],
+      "return_ty": "String",
+      "is_contract_context": true,
+      "access": "public"
+    },
+    {
+      "name": "symbol",
+      "description": "Delegated. See `self.token.symbol()` for details.",
+      "is_mutable": false,
+      "arguments": [],
+      "return_ty": "String",
+      "is_contract_context": true,
+      "access": "public"
+    },
+    {
+      "name": "balance_of",
+      "description": "Delegated. See `self.token.balance_of()` for details.",
+      "is_mutable": false,
+      "arguments": [
+        {
+          "name": "owner",
+          "description": null,
+          "ty": "Key",
+          "optional": false
+        }
+      ],
+      "return_ty": "U256",
+      "is_contract_context": true,
+      "access": "public"
+    },
+    {
+      "name": "owner_of",
+      "description": "Delegated. See `self.token.owner_of()` for details.",
+      "is_mutable": false,
+      "arguments": [
+        {
+          "name": "token_id",
+          "description": null,
+          "ty": "U256",
+          "optional": false
+        }
+      ],
+      "return_ty": {
+        "Option": "Key"
+      },
+      "is_contract_context": true,
+      "access": "public"
+    },
+    {
+      "name": "safe_transfer_from",
+      "description": "Delegated. See `self.token.safe_transfer_from()` for details.",
+      "is_mutable": true,
+      "arguments": [
+        {
+          "name": "from",
+          "description": null,
+          "ty": "Key",
+          "optional": false
+        },
+        {
+          "name": "to",
+          "description": null,
+          "ty": "Key",
+          "optional": false
+        },
+        {
+          "name": "token_id",
+          "description": null,
+          "ty": "U256",
+          "optional": false
+        },
+        {
+          "name": "data",
+          "description": null,
+          "ty": {
+            "Option": {
+              "List": "U8"
+            }
+          },
+          "optional": false
+        }
+      ],
+      "return_ty": "Unit",
+      "is_contract_context": true,
+      "access": "public"
+    },
+    {
+      "name": "approve",
+      "description": "Delegated. See `self.token.approve()` for details.",
+      "is_mutable": true,
+      "arguments": [
+        {
+          "name": "spender",
+          "description": null,
+          "ty": "Key",
+          "optional": false
+        },
+        {
+          "name": "token_id",
+          "description": null,
+          "ty": "U256",
+          "optional": false
+        }
+      ],
+      "return_ty": "Unit",
+      "is_contract_context": true,
+      "access": "public"
+    },
+    {
+      "name": "revoke_approval",
+      "description": "Delegated. See `self.token.revoke_approval()` for details.",
+      "is_mutable": true,
+      "arguments": [
+        {
+          "name": "token_id",
+          "description": null,
+          "ty": "U256",
+          "optional": false
+        }
+      ],
+      "return_ty": "Unit",
+      "is_contract_context": true,
+      "access": "public"
+    },
+    {
+      "name": "approved_for",
+      "description": "Delegated. See `self.token.approved_for()` for details.",
+      "is_mutable": false,
+      "arguments": [
+        {
+          "name": "token_id",
+          "description": null,
+          "ty": "U256",
+          "optional": false
+        }
+      ],
+      "return_ty": {
+        "Option": "Key"
+      },
+      "is_contract_context": true,
+      "access": "public"
+    },
+    {
+      "name": "approve_for_all",
+      "description": "Delegated. See `self.token.approve_for_all()` for details.",
+      "is_mutable": true,
+      "arguments": [
+        {
+          "name": "operator",
+          "description": null,
+          "ty": "Key",
+          "optional": false
+        }
+      ],
+      "return_ty": "Unit",
+      "is_contract_context": true,
+      "access": "public"
+    },
+    {
+      "name": "revoke_approval_for_all",
+      "description": "Delegated. See `self.token.revoke_approval_for_all()` for details.",
+      "is_mutable": true,
+      "arguments": [
+        {
+          "name": "operator",
+          "description": null,
+          "ty": "Key",
+          "optional": false
+        }
+      ],
+      "return_ty": "Unit",
+      "is_contract_context": true,
+      "access": "public"
+    },
+    {
+      "name": "is_approved_for_all",
+      "description": "Delegated. See `self.token.is_approved_for_all()` for details.",
+      "is_mutable": false,
+      "arguments": [
+        {
+          "name": "owner",
+          "description": null,
+          "ty": "Key",
+          "optional": false
+        },
+        {
+          "name": "operator",
+          "description": null,
+          "ty": "Key",
+          "optional": false
+        }
+      ],
+      "return_ty": "Bool",
+      "is_contract_context": true,
+      "access": "public"
+    },
+    {
+      "name": "token_metadata",
+      "description": "Delegated. See `self.token.token_metadata()` for details.",
+      "is_mutable": false,
+      "arguments": [
+        {
+          "name": "token_id",
+          "description": null,
+          "ty": "U256",
+          "optional": false
+        }
+      ],
+      "return_ty": {
+        "List": {
+          "Tuple2": [
+            "String",
+            "String"
+          ]
+        }
+      },
+      "is_contract_context": true,
+      "access": "public"
+    },
+    {
+      "name": "get_owner",
+      "description": "Delegated. See `self.ownable.get_owner()` for details.",
+      "is_mutable": false,
+      "arguments": [],
+      "return_ty": "Key",
+      "is_contract_context": true,
+      "access": "public"
+    },
+    {
+      "name": "get_pending_owner",
+      "description": "Delegated. See `self.ownable.get_pending_owner()` for details.",
+      "is_mutable": false,
+      "arguments": [],
+      "return_ty": {
+        "Option": "Key"
+      },
+      "is_contract_context": true,
+      "access": "public"
+    },
+    {
+      "name": "transfer_ownership",
+      "description": "Delegated. See `self.ownable.transfer_ownership()` for details.",
+      "is_mutable": true,
+      "arguments": [
+        {
+          "name": "new_owner",
+          "description": null,
+          "ty": "Key",
+          "optional": false
+        }
+      ],
+      "return_ty": "Unit",
+      "is_contract_context": true,
+      "access": "public"
+    },
+    {
+      "name": "accept_ownership",
+      "description": "Delegated. See `self.ownable.accept_ownership()` for details.",
+      "is_mutable": true,
+      "arguments": [],
+      "return_ty": "Unit",
+      "is_contract_context": true,
+      "access": "public"
+    },
+    {
+      "name": "renounce_ownership",
+      "description": "Delegated. See `self.ownable.renounce_ownership()` for details.",
+      "is_mutable": true,
+      "arguments": [],
+      "return_ty": "Unit",
+      "is_contract_context": true,
+      "access": "public"
+    }
+  ],
+  "events": [
+    {
+      "name": "Approval",
+      "ty": "Approval"
+    },
+    {
+      "name": "ApprovalForAll",
+      "ty": "ApprovalForAll"
+    },
+    {
+      "name": "Burn",
+      "ty": "Burn"
+    },
+    {
+      "name": "MetadataUpdate",
+      "ty": "MetadataUpdate"
+    },
+    {
+      "name": "Mint",
+      "ty": "Mint"
+    },
+    {
+      "name": "OwnershipTransferStarted",
+      "ty": "OwnershipTransferStarted"
+    },
+    {
+      "name": "OwnershipTransferred",
+      "ty": "OwnershipTransferred"
+    },
+    {
+      "name": "RevokeApproval",
+      "ty": "RevokeApproval"
+    },
+    {
+      "name": "RevokeApprovalForAll",
+      "ty": "RevokeApprovalForAll"
+    },
+    {
+      "name": "Transfer",
+      "ty": "Transfer"
+    }
+  ],
+  "call": {
+    "wasm_file_name": "NameToken.wasm",
+    "description": "Initializes CEP95 with the given name and symbol.",
+    "arguments": [
+      {
+        "name": "odra_cfg_package_hash_key_name",
+        "description": "The arg name for the package hash key name.",
+        "ty": "String",
+        "optional": false
+      },
+      {
+        "name": "odra_cfg_allow_key_override",
+        "description": "If true and the key specified in odra_cfg_package_hash_key_name already exists, it will be overwritten.",
+        "ty": "Bool",
+        "optional": false
+      },
+      {
+        "name": "odra_cfg_is_upgradable",
+        "description": "The arg name for the contract upgradeability setting.",
+        "ty": "Bool",
+        "optional": false
+      },
+      {
+        "name": "name",
+        "description": null,
+        "ty": "String",
+        "optional": false
+      },
+      {
+        "name": "symbol",
+        "description": null,
+        "ty": "String",
+        "optional": false
+      },
+      {
+        "name": "max_supply",
+        "description": null,
+        "ty": "U64",
+        "optional": false
+      }
+    ]
+  }
+}

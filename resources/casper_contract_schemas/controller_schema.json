@@ -1,0 +1,678 @@
+{
+  "casper_contract_schema_version": 1,
+  "toolchain": "rustc 1.85.0-nightly (d117b7f21 2024-12-31)",
+  "authors": [],
+  "repository": null,
+  "homepage": null,
+  "contract_name": "Controller",
+  "contract_version": "0.1.0",
+  "types": [
+    {
+      "struct": {
+        "name": "NameMintInfo",
+        "description": null,
+        "members": [
+          {
+            "name": "label",
+            "description": null,
+            "ty": "String"
+          },
+          {
+            "name": "owner",
+            "description": null,
+            "ty": "Key"
+          },
+          {
+            "name": "token_expiration",
+            "description": null,
+            "ty": "U64"
+          },
+          {
+            "name": "asset_uri",
+            "description": null,
+            "ty": "String"
+          }
+        ]
+      }
+    },
+    {
+      "struct": {
+        "name": "Paused",
+        "description": null,
+        "members": [
+          {
+            "name": "account",
+            "description": null,
+            "ty": "Key"
+          }
+        ]
+      }
+    },
+    {
+      "struct": {
+        "name": "PaymentFulfilled",
+        "description": null,
+        "members": [
+          {
+            "name": "payment_id",
+            "description": null,
+            "ty": "String"
+          },
+          {
+            "name": "buyer",
+            "description": null,
+            "ty": "Key"
+          },
+          {
+            "name": "amount",
+            "description": null,
+            "ty": "U512"
+          }
+        ]
+      }
+    },
+    {
+      "struct": {
+        "name": "PaymentInfo",
+        "description": null,
+        "members": [
+          {
+            "name": "buyer",
+            "description": null,
+            "ty": "Key"
+          },
+          {
+            "name": "payment_id",
+            "description": null,
+            "ty": "String"
+          },
+          {
+            "name": "amount",
+            "description": null,
+            "ty": "U512"
+          }
+        ]
+      }
+    },
+    {
+      "struct": {
+        "name": "PaymentVoucher",
+        "description": null,
+        "members": [
+          {
+            "name": "payment",
+            "description": null,
+            "ty": "PaymentInfo"
+          },
+          {
+            "name": "names",
+            "description": null,
+            "ty": {
+              "List": "NameMintInfo"
+            }
+          },
+          {
+            "name": "voucher_expiration",
+            "description": null,
+            "ty": "U64"
+          }
+        ]
+      }
+    },
+    {
+      "struct": {
+        "name": "RenewalPaymentVoucher",
+        "description": null,
+        "members": [
+          {
+            "name": "payment",
+            "description": null,
+            "ty": "PaymentInfo"
+          },
+          {
+            "name": "tokens",
+            "description": null,
+            "ty": {
+              "List": "TokenRenewalInfo"
+            }
+          },
+          {
+            "name": "voucher_expiration",
+            "description": null,
+            "ty": "U64"
+          }
+        ]
+      }
+    },
+    {
+      "struct": {
+        "name": "RoleAdminChanged",
+        "description": null,
+        "members": [
+          {
+            "name": "role",
+            "description": null,
+            "ty": {
+              "ByteArray": 32
+            }
+          },
+          {
+            "name": "previous_admin_role",
+            "description": null,
+            "ty": {
+              "ByteArray": 32
+            }
+          },
+          {
+            "name": "new_admin_role",
+            "description": null,
+            "ty": {
+              "ByteArray": 32
+            }
+          }
+        ]
+      }
+    },
+    {
+      "struct": {
+        "name": "RoleGranted",
+        "description": null,
+        "members": [
+          {
+            "name": "role",
+            "description": null,
+            "ty": {
+              "ByteArray": 32
+            }
+          },
+          {
+            "name": "address",
+            "description": null,
+            "ty": "Key"
+          },
+          {
+            "name": "sender",
+            "description": null,
+            "ty": "Key"
+          }
+        ]
+      }
+    },
+    {
+      "struct": {
+        "name": "RoleRevoked",
+        "description": null,
+        "members": [
+          {
+            "name": "role",
+            "description": null,
+            "ty": {
+              "ByteArray": 32
+            }
+          },
+          {
+            "name": "address",
+            "description": null,
+            "ty": "Key"
+          },
+          {
+            "name": "sender",
+            "description": null,
+            "ty": "Key"
+          }
+        ]
+      }
+    },
+    {
+      "struct": {
+        "name": "SignerPublicKeyChanged",
+        "description": null,
+        "members": [
+          {
+            "name": "new_signer_public_key",
+            "description": null,
+            "ty": "PublicKey"
+          }
+        ]
+      }
+    },
+    {
+      "struct": {
+        "name": "TokenRenewalInfo",
+        "description": null,
+        "members": [
+          {
+            "name": "token_id",
+            "description": null,
+            "ty": "U256"
+          },
+          {
+            "name": "token_expiration",
+            "description": null,
+            "ty": "U64"
+          }
+        ]
+      }
+    },
+    {
+      "struct": {
+        "name": "TreasuryAddressChanged",
+        "description": null,
+        "members": [
+          {
+            "name": "new_treasury_address",
+            "description": null,
+            "ty": "Key"
+          }
+        ]
+      }
+    },
+    {
+      "struct": {
+        "name": "Unpaused",
+        "description": null,
+        "members": [
+          {
+            "name": "account",
+            "description": null,
+            "ty": "Key"
+          }
+        ]
+      }
+    }
+  ],
+  "errors": [
+    {
+      "name": "BuyerMustBeCaller",
+      "description": "",
+      "discriminant": 1104
+    },
+    {
+      "name": "CallerNotTheNewOwner",
+      "description": "The caller is not the new owner.",
+      "discriminant": 20002
+    },
+    {
+      "name": "CallerNotTheOwner",
+      "description": "The caller is not the owner.",
+      "discriminant": 20001
+    },
+    {
+      "name": "ContractAddressExpected",
+      "description": "",
+      "discriminant": 1107
+    },
+    {
+      "name": "FeeCollectorNotSet",
+      "description": "",
+      "discriminant": 1102
+    },
+    {
+      "name": "InsufficientPayment",
+      "description": "",
+      "discriminant": 1105
+    },
+    {
+      "name": "InvalidSignature",
+      "description": "",
+      "discriminant": 1101
+    },
+    {
+      "name": "MissingRole",
+      "description": "The role is missing.",
+      "discriminant": 20003
+    },
+    {
+      "name": "OwnerNotSet",
+      "description": "The owner is not set.",
+      "discriminant": 20000
+    },
+    {
+      "name": "PausedRequired",
+      "description": "Contract needs to be paused first.",
+      "discriminant": 21000
+    },
+    {
+      "name": "PaymentTooLarge",
+      "description": "",
+      "discriminant": 1106
+    },
+    {
+      "name": "RegistrarNotSet",
+      "description": "",
+      "discriminant": 1103
+    },
+    {
+      "name": "RoleRenounceForAnotherAddress",
+      "description": "The role cannot be renounced for another address.",
+      "discriminant": 20004
+    },
+    {
+      "name": "UnpausedRequired",
+      "description": "Contract needs to be unpaused first.",
+      "discriminant": 21001
+    }
+  ],
+  "entry_points": [
+    {
+      "name": "buy",
+      "description": "Payable. Buys new name tokens.",
+      "is_mutable": true,
+      "arguments": [
+        {
+          "name": "voucher",
+          "description": null,
+          "ty": "PaymentVoucher",
+          "optional": false
+        },
+        {
+          "name": "signature",
+          "description": null,
+          "ty": {
+            "List": "U8"
+          },
+          "optional": false
+        }
+      ],
+      "return_ty": "Unit",
+      "is_contract_context": true,
+      "access": "public"
+    },
+    {
+      "name": "renew",
+      "description": "Payable. Renews name tokens.",
+      "is_mutable": true,
+      "arguments": [
+        {
+          "name": "voucher",
+          "description": null,
+          "ty": "RenewalPaymentVoucher",
+          "optional": false
+        },
+        {
+          "name": "signature",
+          "description": null,
+          "ty": {
+            "List": "U8"
+          },
+          "optional": false
+        }
+      ],
+      "return_ty": "Unit",
+      "is_contract_context": true,
+      "access": "public"
+    },
+    {
+      "name": "buy_and_renew",
+      "description": "Payable. Buys new name tokens and renews existing ones.",
+      "is_mutable": true,
+      "arguments": [
+        {
+          "name": "payment_voucher",
+          "description": null,
+          "ty": "PaymentVoucher",
+          "optional": false
+        },
+        {
+          "name": "payment_signature",
+          "description": null,
+          "ty": {
+            "List": "U8"
+          },
+          "optional": false
+        },
+        {
+          "name": "renewal_voucher",
+          "description": null,
+          "ty": "RenewalPaymentVoucher",
+          "optional": false
+        },
+        {
+          "name": "renewal_signature",
+          "description": null,
+          "ty": {
+            "List": "U8"
+          },
+          "optional": false
+        }
+      ],
+      "return_ty": "Unit",
+      "is_contract_context": true,
+      "access": "public"
+    },
+    {
+      "name": "resolve",
+      "description": "Try to resolve a full domain name to an address.",
+      "is_mutable": false,
+      "arguments": [
+        {
+          "name": "full_domain",
+          "description": null,
+          "ty": "String",
+          "optional": false
+        }
+      ],
+      "return_ty": {
+        "Option": "Key"
+      },
+      "is_contract_context": true,
+      "access": "public"
+    },
+    {
+      "name": "has_role",
+      "description": "Delegated. See `self.controller.has_role()` for details.",
+      "is_mutable": false,
+      "arguments": [
+        {
+          "name": "role",
+          "description": null,
+          "ty": {
+            "ByteArray": 32
+          },
+          "optional": false
+        },
+        {
+          "name": "address",
+          "description": null,
+          "ty": "Key",
+          "optional": false
+        }
+      ],
+      "return_ty": "Bool",
+      "is_contract_context": true,
+      "access": "public"
+    },
+    {
+      "name": "grant_role",
+      "description": "Delegated. See `self.controller.grant_role()` for details.",
+      "is_mutable": true,
+      "arguments": [
+        {
+          "name": "role",
+          "description": null,
+          "ty": {
+            "ByteArray": 32
+          },
+          "optional": false
+        },
+        {
+          "name": "address",
+          "description": null,
+          "ty": "Key",
+          "optional": false
+        }
+      ],
+      "return_ty": "Unit",
+      "is_contract_context": true,
+      "access": "public"
+    },
+    {
+      "name": "revoke_role",
+      "description": "Delegated. See `self.controller.revoke_role()` for details.",
+      "is_mutable": true,
+      "arguments": [
+        {
+          "name": "role",
+          "description": null,
+          "ty": {
+            "ByteArray": 32
+          },
+          "optional": false
+        },
+        {
+          "name": "address",
+          "description": null,
+          "ty": "Key",
+          "optional": false
+        }
+      ],
+      "return_ty": "Unit",
+      "is_contract_context": true,
+      "access": "public"
+    },
+    {
+      "name": "set_signer_public_key",
+      "description": "Delegated. See `self.controller.set_signer_public_key()` for details.",
+      "is_mutable": true,
+      "arguments": [
+        {
+          "name": "signer",
+          "description": null,
+          "ty": "PublicKey",
+          "optional": false
+        }
+      ],
+      "return_ty": "Unit",
+      "is_contract_context": true,
+      "access": "public"
+    },
+    {
+      "name": "set_treasury",
+      "description": "Delegated. See `self.controller.set_treasury()` for details.",
+      "is_mutable": true,
+      "arguments": [
+        {
+          "name": "treasury",
+          "description": null,
+          "ty": "Key",
+          "optional": false
+        }
+      ],
+      "return_ty": "Unit",
+      "is_contract_context": true,
+      "access": "public"
+    },
+    {
+      "name": "signer_public_key",
+      "description": "Delegated. See `self.controller.signer_public_key()` for details.",
+      "is_mutable": false,
+      "arguments": [],
+      "return_ty": "PublicKey",
+      "is_contract_context": true,
+      "access": "public"
+    },
+    {
+      "name": "pause",
+      "description": "Delegated. See `self.controller.pause()` for details.",
+      "is_mutable": true,
+      "arguments": [],
+      "return_ty": "Unit",
+      "is_contract_context": true,
+      "access": "public"
+    },
+    {
+      "name": "unpause",
+      "description": "Delegated. See `self.controller.unpause()` for details.",
+      "is_mutable": true,
+      "arguments": [],
+      "return_ty": "Unit",
+      "is_contract_context": true,
+      "access": "public"
+    },
+    {
+      "name": "is_paused",
+      "description": "Delegated. See `self.controller.is_paused()` for details.",
+      "is_mutable": false,
+      "arguments": [],
+      "return_ty": "Bool",
+      "is_contract_context": true,
+      "access": "public"
+    }
+  ],
+  "events": [
+    {
+      "name": "Paused",
+      "ty": "Paused"
+    },
+    {
+      "name": "PaymentFulfilled",
+      "ty": "PaymentFulfilled"
+    },
+    {
+      "name": "RoleAdminChanged",
+      "ty": "RoleAdminChanged"
+    },
+    {
+      "name": "RoleGranted",
+      "ty": "RoleGranted"
+    },
+    {
+      "name": "RoleRevoked",
+      "ty": "RoleRevoked"
+    },
+    {
+      "name": "SignerPublicKeyChanged",
+      "ty": "SignerPublicKeyChanged"
+    },
+    {
+      "name": "TreasuryAddressChanged",
+      "ty": "TreasuryAddressChanged"
+    },
+    {
+      "name": "Unpaused",
+      "ty": "Unpaused"
+    }
+  ],
+  "call": {
+    "wasm_file_name": "Controller.wasm",
+    "description": "Initializes the controller with the registrar contract address, the",
+    "arguments": [
+      {
+        "name": "odra_cfg_package_hash_key_name",
+        "description": "The arg name for the package hash key name.",
+        "ty": "String",
+        "optional": false
+      },
+      {
+        "name": "odra_cfg_allow_key_override",
+        "description": "If true and the key specified in odra_cfg_package_hash_key_name already exists, it will be overwritten.",
+        "ty": "Bool",
+        "optional": false
+      },
+      {
+        "name": "odra_cfg_is_upgradable",
+        "description": "The arg name for the contract upgradeability setting.",
+        "ty": "Bool",
+        "optional": false
+      },
+      {
+        "name": "registrar",
+        "description": null,
+        "ty": "Key",
+        "optional": false
+      },
+      {
+        "name": "signer",
+        "description": null,
+        "ty": "PublicKey",
+        "optional": false
+      },
+      {
+        "name": "treasury",
+        "description": null,
+        "ty": "Key",
+        "optional": false
+      }
+    ]
+  }
+}

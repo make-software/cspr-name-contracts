@@ -1,0 +1,18 @@
+@startuml
+'https://plantuml.com/sequence-diagram
+
+'autonumber
+actor "NameToken Admin"
+participant "NameToken"
+boundary "Events"
+
+== Whitelist registrar contract ==
+
+"NameToken Admin" -> "NameToken": set_variables(registrars_package_hashes[])
+activate "NameToken"
+NameToken -> NameToken: Update ACL
+NameToken -> "Events": VariablesSet event
+"NameToken" -> "NameToken Admin"
+deactivate "NameToken"
+
+@enduml

@@ -1,0 +1,1 @@
+window.SIDEBAR_ITEMS = {"enum":["ResolverError"],"struct":["DefaultResolver","DefaultResolverContractRef","DefaultResolverHostRef","DefaultResolverInitArgs","NameTokenAddressChanged","ResolutionChanged","ResolutionCleared","ResolverContractRef","ResolverHostRef"]};

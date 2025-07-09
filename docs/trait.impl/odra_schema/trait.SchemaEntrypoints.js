@@ -1,0 +1,9 @@
+(function() {
+    var implementors = Object.fromEntries([["casper_name_contracts",[["impl SchemaEntrypoints for <a class=\"struct\" href=\"casper_name_contracts/contracts/controller/struct.BaseController.html\" title=\"struct casper_name_contracts::contracts::controller::BaseController\">BaseController</a>"],["impl SchemaEntrypoints for <a class=\"struct\" href=\"casper_name_contracts/contracts/controller/struct.Controller.html\" title=\"struct casper_name_contracts::contracts::controller::Controller\">Controller</a>"],["impl SchemaEntrypoints for <a class=\"struct\" href=\"casper_name_contracts/contracts/marketplace/struct.SecondaryMarket.html\" title=\"struct casper_name_contracts::contracts::marketplace::SecondaryMarket\">SecondaryMarket</a>"],["impl SchemaEntrypoints for <a class=\"struct\" href=\"casper_name_contracts/contracts/name_token/struct.NameToken.html\" title=\"struct casper_name_contracts::contracts::name_token::NameToken\">NameToken</a>"],["impl SchemaEntrypoints for <a class=\"struct\" href=\"casper_name_contracts/contracts/registrar/struct.Registrar.html\" title=\"struct casper_name_contracts::contracts::registrar::Registrar\">Registrar</a>"],["impl SchemaEntrypoints for <a class=\"struct\" href=\"casper_name_contracts/contracts/resolver/struct.DefaultResolver.html\" title=\"struct casper_name_contracts::contracts::resolver::DefaultResolver\">DefaultResolver</a>"],["impl SchemaEntrypoints for <a class=\"struct\" href=\"casper_name_contracts/contracts/reverse_resolver/struct.ReverseResolver.html\" title=\"struct casper_name_contracts::contracts::reverse_resolver::ReverseResolver\">ReverseResolver</a>"]]]]);
+    if (window.register_implementors) {
+        window.register_implementors(implementors);
+    } else {
+        window.pending_implementors = implementors;
+    }
+})()
+//{"start":57,"fragment_lengths":[1591]}

@@ -1,53 +1,19 @@
-[package]
-name = "casper-name"
-version = "0.1.0"
-edition = "2021"
+[workspace]
+members = [
+    "casper-name-cli",
+    "casper-name-contracts",
+]
 
-[dependencies]
-odra = { path = "../odra3/odra", features = [], default-features = false }
-odra-modules = { path = "../odra3/modules", features = [], default-features = false }
-hex = { version = "0.4.3", default-features = false }
-odra-casper-livenet-env = { path = "../odra3/odra-casper/livenet-env", optional = true }
-serde = { version = "1.0.80", default-features = false }
-serde_json = { version = "1.0.99", default-features = false }
-serde-json-wasm = { version = "1.0.1", default-features = false }
+resolver = "2"
 
-[dev-dependencies]
-odra-test = { path = "../odra3/odra-test", features = [], default-features = false }
-blake2 = "0.10.6"
-hex = "0.4.3"
-
-[build-dependencies]
-odra-build = { path = "../odra3/odra-build", features = [], default-features = false }
-
-[features]
-default = []
-livenet = ["odra-casper-livenet-env"]
-
-[[bin]]
-name = "casper_name_build_contract"
-path = "bin/build_contract.rs"
-test = false
-
-[[bin]]
-name = "casper_name_build_schema"
-path = "bin/build_schema.rs"
-test = false
-
-[[bin]]
-name = "deploy-example"
-path = "bin/deploy_example.rs"
-required-features = ["livenet"]
-test = false
-
-[[bin]]
-name = "test-schema"
-path = "bin/test_schema.rs"
-test = false
-
-[[test]]
-name = "test_register"
-path = "tests/test_register.rs"
+[workspace.dependencies]
+odra = { version = "2.1.0" }
+odra-cli = { version = "2.1.0" }
+odra-modules = { version = "2.1.0" }
+odra-test = { version = "2.1.0" }
+odra-build = { version = "2.1.0" }
+odra-bdd = { version = "2.1.0" }
+odra-casper-livenet-env = { version = "2.1.0" }
 
 [profile.release]
 codegen-units = 1

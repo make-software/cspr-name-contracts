@@ -1,0 +1,16 @@
+@startuml
+'https://plantuml.com/sequence-diagram
+
+'autonumber
+actor "Registrar admin"
+participant "Registrar"
+
+== Whitelist controller contract / admin address ==
+
+"Registrar admin" -> "Registrar": grant_role(CONTROLLER_ROLE, package_key)
+activate "Registrar"
+"Registrar" -> "Registrar": Update ACL
+"Registrar" -> "Registrar admin"
+deactivate "Registrar"
+
+@enduml

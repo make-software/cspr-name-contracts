@@ -1,0 +1,47 @@
+[package]
+name = "casper-name-contracts"
+version = "0.1.0"
+edition = "2021"
+
+[dependencies]
+odra = { workspace = true }
+odra-modules = { workspace = true }
+hex = { version = "0.4.3", default-features = false }
+serde = { version = "1.0.80", default-features = false }
+serde-json-wasm = { version = "1.0.1", default-features = false }
+
+[target.'cfg(not(target_arch = "wasm32"))'.dependencies]
+odra-build = { workspace = true }
+
+[dev-dependencies]
+odra-test = { workspace = true }
+blake2 = "0.10.6"
+hex = "0.4.3"
+
+[build-dependencies]
+odra-build = { workspace = true }
+
+[[bin]]
+name = "casper_name_contracts_build_contract"
+path = "bin/build_contract.rs"
+test = false
+
+[[bin]]
+name = "casper-name-contracts_build_schema"
+path = "bin/build_schema.rs"
+test = false
+
+[[bin]]
+name = "structs-as-bytes"
+path = "bin/structs_as_bytes.rs"
+test = false
+
+[[bin]]
+name = "serialize-structs"
+path = "bin/serialize_structs.rs"
+test = false
+
+# [[test]]
+# name = "test_register"
+# path = "tests/test_register.rs"
+

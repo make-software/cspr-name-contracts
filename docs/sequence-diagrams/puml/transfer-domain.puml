@@ -1,0 +1,25 @@
+@startuml
+'https://plantuml.com/sequence-diagram
+
+'autonumber
+actor Owner
+participant "NameToken"
+boundary "Events"
+
+== Transfer token ==
+
+Owner -> NameToken: transfer(new_owner, name_hash)
+activate NameToken
+NameToken -> NameToken: check expiration date
+alt expiration < blocktime
+    NameToken ->X Owner: Revert with cannot_transfer error
+end
+NameToken -> NameToken: clear operator
+NameToken -> NameToken : set new owner
+NameToken -> "Events": Transfer event
+NameToken -> Owner
+deactivate NameToken
+
+== ==
+
+@enduml

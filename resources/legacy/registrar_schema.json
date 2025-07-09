@@ -1,0 +1,467 @@
+{
+  "name": "Registrar",
+  "events": [
+    {
+      "name": "GracePeriodChanged",
+      "args": [
+        {
+          "name": "new_grace_period",
+          "ty": "U64",
+          "is_ref": false,
+          "is_slice": false,
+          "is_required": true
+        }
+      ]
+    },
+    {
+      "name": "RoleAdminChanged",
+      "args": [
+        {
+          "name": "role",
+          "ty": {
+            "ByteArray": 32
+          },
+          "is_ref": false,
+          "is_slice": false,
+          "is_required": true
+        },
+        {
+          "name": "previous_admin_role",
+          "ty": {
+            "ByteArray": 32
+          },
+          "is_ref": false,
+          "is_slice": false,
+          "is_required": true
+        },
+        {
+          "name": "new_admin_role",
+          "ty": {
+            "ByteArray": 32
+          },
+          "is_ref": false,
+          "is_slice": false,
+          "is_required": true
+        }
+      ]
+    },
+    {
+      "name": "RoleGranted",
+      "args": [
+        {
+          "name": "role",
+          "ty": {
+            "ByteArray": 32
+          },
+          "is_ref": false,
+          "is_slice": false,
+          "is_required": true
+        },
+        {
+          "name": "address",
+          "ty": "Key",
+          "is_ref": false,
+          "is_slice": false,
+          "is_required": true
+        },
+        {
+          "name": "sender",
+          "ty": "Key",
+          "is_ref": false,
+          "is_slice": false,
+          "is_required": true
+        }
+      ]
+    },
+    {
+      "name": "RoleRevoked",
+      "args": [
+        {
+          "name": "role",
+          "ty": {
+            "ByteArray": 32
+          },
+          "is_ref": false,
+          "is_slice": false,
+          "is_required": true
+        },
+        {
+          "name": "address",
+          "ty": "Key",
+          "is_ref": false,
+          "is_slice": false,
+          "is_required": true
+        },
+        {
+          "name": "sender",
+          "ty": "Key",
+          "is_ref": false,
+          "is_slice": false,
+          "is_required": true
+        }
+      ]
+    },
+    {
+      "name": "Paused",
+      "args": [
+        {
+          "name": "account",
+          "ty": "Key",
+          "is_ref": false,
+          "is_slice": false,
+          "is_required": true
+        }
+      ]
+    },
+    {
+      "name": "Unpaused",
+      "args": [
+        {
+          "name": "account",
+          "ty": "Key",
+          "is_ref": false,
+          "is_slice": false,
+          "is_required": true
+        }
+      ]
+    }
+  ],
+  "entrypoints": [
+    {
+      "name": "init",
+      "args": [
+        {
+          "name": "name_token",
+          "ty": "Key",
+          "is_ref": false,
+          "is_slice": false,
+          "is_required": true
+        }
+      ],
+      "is_mutable": true,
+      "return_ty": "Unit",
+      "ty": "Constructor",
+      "attributes": []
+    },
+    {
+      "name": "pause",
+      "args": [],
+      "is_mutable": true,
+      "return_ty": "Unit",
+      "ty": "Public",
+      "attributes": []
+    },
+    {
+      "name": "unpause",
+      "args": [],
+      "is_mutable": true,
+      "return_ty": "Unit",
+      "ty": "Public",
+      "attributes": []
+    },
+    {
+      "name": "grace_period",
+      "args": [],
+      "is_mutable": false,
+      "return_ty": "U64",
+      "ty": "Public",
+      "attributes": []
+    },
+    {
+      "name": "resolve",
+      "args": [
+        {
+          "name": "full_domain",
+          "ty": "String",
+          "is_ref": false,
+          "is_slice": false,
+          "is_required": true
+        }
+      ],
+      "is_mutable": false,
+      "return_ty": {
+        "Option": "Key"
+      },
+      "ty": "Public",
+      "attributes": []
+    },
+    {
+      "name": "expire",
+      "args": [
+        {
+          "name": "token_ids",
+          "ty": {
+            "List": "U256"
+          },
+          "is_ref": false,
+          "is_slice": false,
+          "is_required": true
+        }
+      ],
+      "is_mutable": true,
+      "return_ty": "Unit",
+      "ty": "Public",
+      "attributes": []
+    },
+    {
+      "name": "set_grace_period",
+      "args": [
+        {
+          "name": "period",
+          "ty": "U64",
+          "is_ref": false,
+          "is_slice": false,
+          "is_required": true
+        }
+      ],
+      "is_mutable": true,
+      "return_ty": "Unit",
+      "ty": "Public",
+      "attributes": []
+    },
+    {
+      "name": "admin_transfer",
+      "args": [
+        {
+          "name": "new_owner",
+          "ty": "Key",
+          "is_ref": false,
+          "is_slice": false,
+          "is_required": true
+        },
+        {
+          "name": "token_ids",
+          "ty": {
+            "List": "U256"
+          },
+          "is_ref": false,
+          "is_slice": false,
+          "is_required": true
+        }
+      ],
+      "is_mutable": true,
+      "return_ty": "Unit",
+      "ty": "Public",
+      "attributes": []
+    },
+    {
+      "name": "admin_burn",
+      "args": [
+        {
+          "name": "token_ids",
+          "ty": {
+            "List": "U256"
+          },
+          "is_ref": false,
+          "is_slice": false,
+          "is_required": true
+        }
+      ],
+      "is_mutable": true,
+      "return_ty": "Unit",
+      "ty": "Public",
+      "attributes": []
+    },
+    {
+      "name": "admin_prolong",
+      "args": [
+        {
+          "name": "tokens",
+          "ty": {
+            "List": "Any"
+          },
+          "is_ref": false,
+          "is_slice": false,
+          "is_required": true
+        }
+      ],
+      "is_mutable": true,
+      "return_ty": "Unit",
+      "ty": "Public",
+      "attributes": []
+    },
+    {
+      "name": "admin_register",
+      "args": [
+        {
+          "name": "names",
+          "ty": {
+            "List": "Any"
+          },
+          "is_ref": false,
+          "is_slice": false,
+          "is_required": true
+        }
+      ],
+      "is_mutable": true,
+      "return_ty": "Unit",
+      "ty": "Public",
+      "attributes": []
+    },
+    {
+      "name": "admin_prolong_and_register",
+      "args": [
+        {
+          "name": "renewal_tokens",
+          "ty": {
+            "List": "Any"
+          },
+          "is_ref": false,
+          "is_slice": false,
+          "is_required": true
+        },
+        {
+          "name": "new_tokens",
+          "ty": {
+            "List": "Any"
+          },
+          "is_ref": false,
+          "is_slice": false,
+          "is_required": true
+        }
+      ],
+      "is_mutable": true,
+      "return_ty": "Unit",
+      "ty": "Public",
+      "attributes": []
+    },
+    {
+      "name": "controller_prolong",
+      "args": [
+        {
+          "name": "voucher",
+          "ty": "Any",
+          "is_ref": false,
+          "is_slice": false,
+          "is_required": true
+        }
+      ],
+      "is_mutable": true,
+      "return_ty": "Unit",
+      "ty": "Public",
+      "attributes": []
+    },
+    {
+      "name": "controller_register",
+      "args": [
+        {
+          "name": "voucher",
+          "ty": "Any",
+          "is_ref": false,
+          "is_slice": false,
+          "is_required": true
+        }
+      ],
+      "is_mutable": true,
+      "return_ty": "Unit",
+      "ty": "Public",
+      "attributes": []
+    },
+    {
+      "name": "controller_prolong_and_register",
+      "args": [
+        {
+          "name": "renewal_voucher",
+          "ty": "Any",
+          "is_ref": false,
+          "is_slice": false,
+          "is_required": true
+        },
+        {
+          "name": "tokenization_voucher",
+          "ty": "Any",
+          "is_ref": false,
+          "is_slice": false,
+          "is_required": true
+        }
+      ],
+      "is_mutable": true,
+      "return_ty": "Unit",
+      "ty": "Public",
+      "attributes": []
+    },
+    {
+      "name": "has_role",
+      "args": [
+        {
+          "name": "role",
+          "ty": {
+            "ByteArray": 32
+          },
+          "is_ref": false,
+          "is_slice": false,
+          "is_required": true
+        },
+        {
+          "name": "address",
+          "ty": "Key",
+          "is_ref": false,
+          "is_slice": false,
+          "is_required": true
+        }
+      ],
+      "is_mutable": false,
+      "return_ty": "Bool",
+      "ty": "Public",
+      "attributes": []
+    },
+    {
+      "name": "grant_role",
+      "args": [
+        {
+          "name": "role",
+          "ty": {
+            "ByteArray": 32
+          },
+          "is_ref": false,
+          "is_slice": false,
+          "is_required": true
+        },
+        {
+          "name": "address",
+          "ty": "Key",
+          "is_ref": false,
+          "is_slice": false,
+          "is_required": true
+        }
+      ],
+      "is_mutable": true,
+      "return_ty": "Unit",
+      "ty": "Public",
+      "attributes": []
+    },
+    {
+      "name": "revoke_role",
+      "args": [
+        {
+          "name": "role",
+          "ty": {
+            "ByteArray": 32
+          },
+          "is_ref": false,
+          "is_slice": false,
+          "is_required": true
+        },
+        {
+          "name": "address",
+          "ty": "Key",
+          "is_ref": false,
+          "is_slice": false,
+          "is_required": true
+        }
+      ],
+      "is_mutable": true,
+      "return_ty": "Unit",
+      "ty": "Public",
+      "attributes": []
+    },
+    {
+      "name": "is_paused",
+      "args": [],
+      "is_mutable": false,
+      "return_ty": "Bool",
+      "ty": "Public",
+      "attributes": []
+    }
+  ]
+}

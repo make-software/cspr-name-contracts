@@ -1,0 +1,668 @@
+{
+  "casper_contract_schema_version": 1,
+  "toolchain": "rustc 1.85.0-nightly (d117b7f21 2024-12-31)",
+  "authors": [],
+  "repository": null,
+  "homepage": null,
+  "contract_name": "Registrar",
+  "contract_version": "0.1.0",
+  "types": [
+    {
+      "struct": {
+        "name": "GracePeriodChanged",
+        "description": null,
+        "members": [
+          {
+            "name": "new_grace_period",
+            "description": null,
+            "ty": "U64"
+          }
+        ]
+      }
+    },
+    {
+      "struct": {
+        "name": "NameMintInfo",
+        "description": null,
+        "members": [
+          {
+            "name": "label",
+            "description": null,
+            "ty": "String"
+          },
+          {
+            "name": "owner",
+            "description": null,
+            "ty": "Key"
+          },
+          {
+            "name": "token_expiration",
+            "description": null,
+            "ty": "U64"
+          },
+          {
+            "name": "asset_uri",
+            "description": null,
+            "ty": "String"
+          }
+        ]
+      }
+    },
+    {
+      "struct": {
+        "name": "Paused",
+        "description": null,
+        "members": [
+          {
+            "name": "account",
+            "description": null,
+            "ty": "Key"
+          }
+        ]
+      }
+    },
+    {
+      "struct": {
+        "name": "RenewalVoucher",
+        "description": null,
+        "members": [
+          {
+            "name": "tokens",
+            "description": null,
+            "ty": {
+              "List": "TokenRenewalInfo"
+            }
+          },
+          {
+            "name": "voucher_expiration",
+            "description": null,
+            "ty": "U64"
+          }
+        ]
+      }
+    },
+    {
+      "struct": {
+        "name": "RoleAdminChanged",
+        "description": null,
+        "members": [
+          {
+            "name": "role",
+            "description": null,
+            "ty": {
+              "ByteArray": 32
+            }
+          },
+          {
+            "name": "previous_admin_role",
+            "description": null,
+            "ty": {
+              "ByteArray": 32
+            }
+          },
+          {
+            "name": "new_admin_role",
+            "description": null,
+            "ty": {
+              "ByteArray": 32
+            }
+          }
+        ]
+      }
+    },
+    {
+      "struct": {
+        "name": "RoleGranted",
+        "description": null,
+        "members": [
+          {
+            "name": "role",
+            "description": null,
+            "ty": {
+              "ByteArray": 32
+            }
+          },
+          {
+            "name": "address",
+            "description": null,
+            "ty": "Key"
+          },
+          {
+            "name": "sender",
+            "description": null,
+            "ty": "Key"
+          }
+        ]
+      }
+    },
+    {
+      "struct": {
+        "name": "RoleRevoked",
+        "description": null,
+        "members": [
+          {
+            "name": "role",
+            "description": null,
+            "ty": {
+              "ByteArray": 32
+            }
+          },
+          {
+            "name": "address",
+            "description": null,
+            "ty": "Key"
+          },
+          {
+            "name": "sender",
+            "description": null,
+            "ty": "Key"
+          }
+        ]
+      }
+    },
+    {
+      "struct": {
+        "name": "TokenRenewalInfo",
+        "description": null,
+        "members": [
+          {
+            "name": "token_id",
+            "description": null,
+            "ty": "U256"
+          },
+          {
+            "name": "token_expiration",
+            "description": null,
+            "ty": "U64"
+          }
+        ]
+      }
+    },
+    {
+      "struct": {
+        "name": "TokenizationVoucher",
+        "description": null,
+        "members": [
+          {
+            "name": "names",
+            "description": null,
+            "ty": {
+              "List": "NameMintInfo"
+            }
+          },
+          {
+            "name": "voucher_expiration",
+            "description": null,
+            "ty": "U64"
+          }
+        ]
+      }
+    },
+    {
+      "struct": {
+        "name": "Unpaused",
+        "description": null,
+        "members": [
+          {
+            "name": "account",
+            "description": null,
+            "ty": "Key"
+          }
+        ]
+      }
+    }
+  ],
+  "errors": [
+    {
+      "name": "CallerNotTheNewOwner",
+      "description": "The caller is not the new owner.",
+      "discriminant": 20002
+    },
+    {
+      "name": "CallerNotTheOwner",
+      "description": "The caller is not the owner.",
+      "discriminant": 20001
+    },
+    {
+      "name": "ExpirationDateInThePast",
+      "description": "",
+      "discriminant": 1201
+    },
+    {
+      "name": "GracePeriodExpired",
+      "description": "",
+      "discriminant": 1203
+    },
+    {
+      "name": "GracePeriodTooLong",
+      "description": "",
+      "discriminant": 1206
+    },
+    {
+      "name": "MissingRole",
+      "description": "The role is missing.",
+      "discriminant": 20003
+    },
+    {
+      "name": "NameTokenIsNotValid",
+      "description": "",
+      "discriminant": 1207
+    },
+    {
+      "name": "OwnerNotSet",
+      "description": "The owner is not set.",
+      "discriminant": 20000
+    },
+    {
+      "name": "PausedRequired",
+      "description": "Contract needs to be paused first.",
+      "discriminant": 21000
+    },
+    {
+      "name": "RoleRenounceForAnotherAddress",
+      "description": "The role cannot be renounced for another address.",
+      "discriminant": 20004
+    },
+    {
+      "name": "TokenDoesNotExist",
+      "description": "",
+      "discriminant": 1205
+    },
+    {
+      "name": "TokenNameIsNotValid",
+      "description": "",
+      "discriminant": 1208
+    },
+    {
+      "name": "TokenNotExpired",
+      "description": "",
+      "discriminant": 1202
+    },
+    {
+      "name": "UnpausedRequired",
+      "description": "Contract needs to be unpaused first.",
+      "discriminant": 21001
+    },
+    {
+      "name": "VoucherExpired",
+      "description": "",
+      "discriminant": 1204
+    }
+  ],
+  "entry_points": [
+    {
+      "name": "pause",
+      "description": "Temporarily stops the contract.",
+      "is_mutable": true,
+      "arguments": [],
+      "return_ty": "Unit",
+      "is_contract_context": true,
+      "access": "public"
+    },
+    {
+      "name": "unpause",
+      "description": "Returns to normal operation.",
+      "is_mutable": true,
+      "arguments": [],
+      "return_ty": "Unit",
+      "is_contract_context": true,
+      "access": "public"
+    },
+    {
+      "name": "grace_period",
+      "description": "Returns the grace period.",
+      "is_mutable": false,
+      "arguments": [],
+      "return_ty": "U64",
+      "is_contract_context": true,
+      "access": "public"
+    },
+    {
+      "name": "resolve",
+      "description": "Try to resolve a full domain name to an address.",
+      "is_mutable": false,
+      "arguments": [
+        {
+          "name": "full_domain",
+          "description": null,
+          "ty": "String",
+          "optional": false
+        }
+      ],
+      "return_ty": {
+        "Option": "Key"
+      },
+      "is_contract_context": true,
+      "access": "public"
+    },
+    {
+      "name": "expire",
+      "description": "Expire a list of tokens if they are expired.",
+      "is_mutable": true,
+      "arguments": [
+        {
+          "name": "token_ids",
+          "description": null,
+          "ty": {
+            "List": "U256"
+          },
+          "optional": false
+        }
+      ],
+      "return_ty": "Unit",
+      "is_contract_context": true,
+      "access": "public"
+    },
+    {
+      "name": "set_grace_period",
+      "description": "Admin only. Sets the grace period.",
+      "is_mutable": true,
+      "arguments": [
+        {
+          "name": "period",
+          "description": null,
+          "ty": "U64",
+          "optional": false
+        }
+      ],
+      "return_ty": "Unit",
+      "is_contract_context": true,
+      "access": "public"
+    },
+    {
+      "name": "admin_transfer",
+      "description": "Admin only. Transfer ownership of a list of tokens.",
+      "is_mutable": true,
+      "arguments": [
+        {
+          "name": "new_owner",
+          "description": null,
+          "ty": "Key",
+          "optional": false
+        },
+        {
+          "name": "token_ids",
+          "description": null,
+          "ty": {
+            "List": "U256"
+          },
+          "optional": false
+        }
+      ],
+      "return_ty": "Unit",
+      "is_contract_context": true,
+      "access": "public"
+    },
+    {
+      "name": "admin_burn",
+      "description": "Admin only. Burn a list of tokens.",
+      "is_mutable": true,
+      "arguments": [
+        {
+          "name": "token_ids",
+          "description": null,
+          "ty": {
+            "List": "U256"
+          },
+          "optional": false
+        }
+      ],
+      "return_ty": "Unit",
+      "is_contract_context": true,
+      "access": "public"
+    },
+    {
+      "name": "admin_prolong",
+      "description": "Admin only. Prolong the expiration date of a list of tokens.",
+      "is_mutable": true,
+      "arguments": [
+        {
+          "name": "tokens",
+          "description": null,
+          "ty": {
+            "List": "TokenRenewalInfo"
+          },
+          "optional": false
+        }
+      ],
+      "return_ty": "Unit",
+      "is_contract_context": true,
+      "access": "public"
+    },
+    {
+      "name": "admin_register",
+      "description": "Admin only. Register a list of tokens.",
+      "is_mutable": true,
+      "arguments": [
+        {
+          "name": "names",
+          "description": null,
+          "ty": {
+            "List": "NameMintInfo"
+          },
+          "optional": false
+        }
+      ],
+      "return_ty": "Unit",
+      "is_contract_context": true,
+      "access": "public"
+    },
+    {
+      "name": "admin_prolong_and_register",
+      "description": "Admin only. Prolong the expiration date of a list of tokens and register a list of tokens.",
+      "is_mutable": true,
+      "arguments": [
+        {
+          "name": "renewal_tokens",
+          "description": null,
+          "ty": {
+            "List": "TokenRenewalInfo"
+          },
+          "optional": false
+        },
+        {
+          "name": "new_tokens",
+          "description": null,
+          "ty": {
+            "List": "NameMintInfo"
+          },
+          "optional": false
+        }
+      ],
+      "return_ty": "Unit",
+      "is_contract_context": true,
+      "access": "public"
+    },
+    {
+      "name": "controller_prolong",
+      "description": "Controller only. Prolong the expiration date of a list of tokens.",
+      "is_mutable": true,
+      "arguments": [
+        {
+          "name": "voucher",
+          "description": null,
+          "ty": "RenewalVoucher",
+          "optional": false
+        }
+      ],
+      "return_ty": "Unit",
+      "is_contract_context": true,
+      "access": "public"
+    },
+    {
+      "name": "controller_register",
+      "description": "Controller only. Register a list of tokens.",
+      "is_mutable": true,
+      "arguments": [
+        {
+          "name": "voucher",
+          "description": null,
+          "ty": "TokenizationVoucher",
+          "optional": false
+        }
+      ],
+      "return_ty": "Unit",
+      "is_contract_context": true,
+      "access": "public"
+    },
+    {
+      "name": "controller_prolong_and_register",
+      "description": "Controller only. Prolong the expiration date of a list of tokens and register a list of tokens.",
+      "is_mutable": true,
+      "arguments": [
+        {
+          "name": "renewal_voucher",
+          "description": null,
+          "ty": "RenewalVoucher",
+          "optional": false
+        },
+        {
+          "name": "tokenization_voucher",
+          "description": null,
+          "ty": "TokenizationVoucher",
+          "optional": false
+        }
+      ],
+      "return_ty": "Unit",
+      "is_contract_context": true,
+      "access": "public"
+    },
+    {
+      "name": "has_role",
+      "description": "Delegated. See `self.access_control.has_role()` for details.",
+      "is_mutable": false,
+      "arguments": [
+        {
+          "name": "role",
+          "description": null,
+          "ty": {
+            "ByteArray": 32
+          },
+          "optional": false
+        },
+        {
+          "name": "address",
+          "description": null,
+          "ty": "Key",
+          "optional": false
+        }
+      ],
+      "return_ty": "Bool",
+      "is_contract_context": true,
+      "access": "public"
+    },
+    {
+      "name": "grant_role",
+      "description": "Delegated. See `self.access_control.grant_role()` for details.",
+      "is_mutable": true,
+      "arguments": [
+        {
+          "name": "role",
+          "description": null,
+          "ty": {
+            "ByteArray": 32
+          },
+          "optional": false
+        },
+        {
+          "name": "address",
+          "description": null,
+          "ty": "Key",
+          "optional": false
+        }
+      ],
+      "return_ty": "Unit",
+      "is_contract_context": true,
+      "access": "public"
+    },
+    {
+      "name": "revoke_role",
+      "description": "Delegated. See `self.access_control.revoke_role()` for details.",
+      "is_mutable": true,
+      "arguments": [
+        {
+          "name": "role",
+          "description": null,
+          "ty": {
+            "ByteArray": 32
+          },
+          "optional": false
+        },
+        {
+          "name": "address",
+          "description": null,
+          "ty": "Key",
+          "optional": false
+        }
+      ],
+      "return_ty": "Unit",
+      "is_contract_context": true,
+      "access": "public"
+    },
+    {
+      "name": "is_paused",
+      "description": "Delegated. See `self.pauseable.is_paused()` for details.",
+      "is_mutable": false,
+      "arguments": [],
+      "return_ty": "Bool",
+      "is_contract_context": true,
+      "access": "public"
+    }
+  ],
+  "events": [
+    {
+      "name": "GracePeriodChanged",
+      "ty": "GracePeriodChanged"
+    },
+    {
+      "name": "Paused",
+      "ty": "Paused"
+    },
+    {
+      "name": "RoleAdminChanged",
+      "ty": "RoleAdminChanged"
+    },
+    {
+      "name": "RoleGranted",
+      "ty": "RoleGranted"
+    },
+    {
+      "name": "RoleRevoked",
+      "ty": "RoleRevoked"
+    },
+    {
+      "name": "Unpaused",
+      "ty": "Unpaused"
+    }
+  ],
+  "call": {
+    "wasm_file_name": "Registrar.wasm",
+    "description": "Initializes the registrar with the name token contract address.",
+    "arguments": [
+      {
+        "name": "odra_cfg_package_hash_key_name",
+        "description": "The arg name for the package hash key name.",
+        "ty": "String",
+        "optional": false
+      },
+      {
+        "name": "odra_cfg_allow_key_override",
+        "description": "If true and the key specified in odra_cfg_package_hash_key_name already exists, it will be overwritten.",
+        "ty": "Bool",
+        "optional": false
+      },
+      {
+        "name": "odra_cfg_is_upgradable",
+        "description": "The arg name for the contract upgradeability setting.",
+        "ty": "Bool",
+        "optional": false
+      },
+      {
+        "name": "name_token",
+        "description": null,
+        "ty": "Key",
+        "optional": false
+      }
+    ]
+  }
+}

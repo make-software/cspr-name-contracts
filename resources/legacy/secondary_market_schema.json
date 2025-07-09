@@ -1,0 +1,365 @@
+{
+  "name": "SecondaryMarket",
+  "events": [
+    {
+      "name": "PaymentFulfilled",
+      "args": [
+        {
+          "name": "payment_id",
+          "ty": "String",
+          "is_ref": false,
+          "is_slice": false,
+          "is_required": true
+        },
+        {
+          "name": "buyer",
+          "ty": "Key",
+          "is_ref": false,
+          "is_slice": false,
+          "is_required": true
+        },
+        {
+          "name": "amount",
+          "ty": "U512",
+          "is_ref": false,
+          "is_slice": false,
+          "is_required": true
+        }
+      ]
+    },
+    {
+      "name": "SignerPublicKeyChanged",
+      "args": [
+        {
+          "name": "new_signer_public_key",
+          "ty": "PublicKey",
+          "is_ref": false,
+          "is_slice": false,
+          "is_required": true
+        }
+      ]
+    },
+    {
+      "name": "TreasuryAddressChanged",
+      "args": [
+        {
+          "name": "new_treasury_address",
+          "ty": "Key",
+          "is_ref": false,
+          "is_slice": false,
+          "is_required": true
+        }
+      ]
+    },
+    {
+      "name": "RoleAdminChanged",
+      "args": [
+        {
+          "name": "role",
+          "ty": {
+            "ByteArray": 32
+          },
+          "is_ref": false,
+          "is_slice": false,
+          "is_required": true
+        },
+        {
+          "name": "previous_admin_role",
+          "ty": {
+            "ByteArray": 32
+          },
+          "is_ref": false,
+          "is_slice": false,
+          "is_required": true
+        },
+        {
+          "name": "new_admin_role",
+          "ty": {
+            "ByteArray": 32
+          },
+          "is_ref": false,
+          "is_slice": false,
+          "is_required": true
+        }
+      ]
+    },
+    {
+      "name": "RoleGranted",
+      "args": [
+        {
+          "name": "role",
+          "ty": {
+            "ByteArray": 32
+          },
+          "is_ref": false,
+          "is_slice": false,
+          "is_required": true
+        },
+        {
+          "name": "address",
+          "ty": "Key",
+          "is_ref": false,
+          "is_slice": false,
+          "is_required": true
+        },
+        {
+          "name": "sender",
+          "ty": "Key",
+          "is_ref": false,
+          "is_slice": false,
+          "is_required": true
+        }
+      ]
+    },
+    {
+      "name": "RoleRevoked",
+      "args": [
+        {
+          "name": "role",
+          "ty": {
+            "ByteArray": 32
+          },
+          "is_ref": false,
+          "is_slice": false,
+          "is_required": true
+        },
+        {
+          "name": "address",
+          "ty": "Key",
+          "is_ref": false,
+          "is_slice": false,
+          "is_required": true
+        },
+        {
+          "name": "sender",
+          "ty": "Key",
+          "is_ref": false,
+          "is_slice": false,
+          "is_required": true
+        }
+      ]
+    },
+    {
+      "name": "Paused",
+      "args": [
+        {
+          "name": "account",
+          "ty": "Key",
+          "is_ref": false,
+          "is_slice": false,
+          "is_required": true
+        }
+      ]
+    },
+    {
+      "name": "Unpaused",
+      "args": [
+        {
+          "name": "account",
+          "ty": "Key",
+          "is_ref": false,
+          "is_slice": false,
+          "is_required": true
+        }
+      ]
+    }
+  ],
+  "entrypoints": [
+    {
+      "name": "init",
+      "args": [
+        {
+          "name": "signer",
+          "ty": "PublicKey",
+          "is_ref": false,
+          "is_slice": false,
+          "is_required": true
+        },
+        {
+          "name": "treasury",
+          "ty": "Key",
+          "is_ref": false,
+          "is_slice": false,
+          "is_required": true
+        },
+        {
+          "name": "name_token",
+          "ty": "Key",
+          "is_ref": false,
+          "is_slice": false,
+          "is_required": true
+        }
+      ],
+      "is_mutable": true,
+      "return_ty": "Unit",
+      "ty": "Constructor",
+      "attributes": []
+    },
+    {
+      "name": "buy",
+      "args": [
+        {
+          "name": "voucher",
+          "ty": "Any",
+          "is_ref": false,
+          "is_slice": false,
+          "is_required": true
+        },
+        {
+          "name": "signature",
+          "ty": {
+            "List": "U8"
+          },
+          "is_ref": false,
+          "is_slice": false,
+          "is_required": true
+        }
+      ],
+      "is_mutable": true,
+      "return_ty": "Unit",
+      "ty": "Public",
+      "attributes": [
+        "Payable"
+      ]
+    },
+    {
+      "name": "has_role",
+      "args": [
+        {
+          "name": "role",
+          "ty": {
+            "ByteArray": 32
+          },
+          "is_ref": false,
+          "is_slice": false,
+          "is_required": true
+        },
+        {
+          "name": "address",
+          "ty": "Key",
+          "is_ref": false,
+          "is_slice": false,
+          "is_required": true
+        }
+      ],
+      "is_mutable": false,
+      "return_ty": "Bool",
+      "ty": "Public",
+      "attributes": []
+    },
+    {
+      "name": "grant_role",
+      "args": [
+        {
+          "name": "role",
+          "ty": {
+            "ByteArray": 32
+          },
+          "is_ref": false,
+          "is_slice": false,
+          "is_required": true
+        },
+        {
+          "name": "address",
+          "ty": "Key",
+          "is_ref": false,
+          "is_slice": false,
+          "is_required": true
+        }
+      ],
+      "is_mutable": true,
+      "return_ty": "Unit",
+      "ty": "Public",
+      "attributes": []
+    },
+    {
+      "name": "revoke_role",
+      "args": [
+        {
+          "name": "role",
+          "ty": {
+            "ByteArray": 32
+          },
+          "is_ref": false,
+          "is_slice": false,
+          "is_required": true
+        },
+        {
+          "name": "address",
+          "ty": "Key",
+          "is_ref": false,
+          "is_slice": false,
+          "is_required": true
+        }
+      ],
+      "is_mutable": true,
+      "return_ty": "Unit",
+      "ty": "Public",
+      "attributes": []
+    },
+    {
+      "name": "set_signer_public_key",
+      "args": [
+        {
+          "name": "signer",
+          "ty": "PublicKey",
+          "is_ref": false,
+          "is_slice": false,
+          "is_required": true
+        }
+      ],
+      "is_mutable": true,
+      "return_ty": "Unit",
+      "ty": "Public",
+      "attributes": []
+    },
+    {
+      "name": "set_treasury",
+      "args": [
+        {
+          "name": "treasury",
+          "ty": "Key",
+          "is_ref": false,
+          "is_slice": false,
+          "is_required": true
+        }
+      ],
+      "is_mutable": true,
+      "return_ty": "Unit",
+      "ty": "Public",
+      "attributes": []
+    },
+    {
+      "name": "signer_public_key",
+      "args": [],
+      "is_mutable": false,
+      "return_ty": "PublicKey",
+      "ty": "Public",
+      "attributes": []
+    },
+    {
+      "name": "pause",
+      "args": [],
+      "is_mutable": true,
+      "return_ty": "Unit",
+      "ty": "Public",
+      "attributes": []
+    },
+    {
+      "name": "unpause",
+      "args": [],
+      "is_mutable": true,
+      "return_ty": "Unit",
+      "ty": "Public",
+      "attributes": []
+    },
+    {
+      "name": "is_paused",
+      "args": [],
+      "is_mutable": false,
+      "return_ty": "Bool",
+      "ty": "Public",
+      "attributes": []
+    }
+  ]
+}

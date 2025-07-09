@@ -91,12 +91,12 @@ impl Registrar {
     /// Try to resolve a full domain name to an address.
     pub fn resolve(&self, full_domain: String) -> Option<Address> {
         let token_name = utils::extract_token_name(&full_domain)?;
-        let token_hash = self.token_id(token_name);
-        if !self.name_token.is_token_valid(token_hash) {
+        let token_id = self.token_id(token_name);
+        if !self.name_token.is_token_valid(token_id) {
             return None;
         }
 
-        match self.name_token.resolver(token_hash) {
+        match self.name_token.resolver(token_id) {
             Some(address) => self.resolver(address).resolve(full_domain),
             None => None,
         }

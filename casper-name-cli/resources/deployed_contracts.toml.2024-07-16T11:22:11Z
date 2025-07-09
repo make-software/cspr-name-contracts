@@ -1,9 +1,0 @@
-time = "2024-07-16T11:22:11Z"
-
-[[contracts]]
-name = "NameToken"
-package_hash = "hash-a373778985b7a0b94b8af361567949999ea877ff61d772c0e56b549f5c959463"
-
-[[contracts]]
-name = "Registrar"
-package_hash = "hash-d47e6c572e958d7cc87c98a4b610d075959e70eba778d17b18c4dfc6fa617a51"

@@ -12,10 +12,15 @@ use casper_name_contracts::{
 use odra::{
     casper_types::{
         bytesrepr::{Bytes, ToBytes},
-        AsymmetricType, PublicKey, U512,
+        U512,
     },
+    host::HostEnv,
     prelude::*,
-    schema::casper_contract_schema::NamedCLType
+    schema::casper_contract_schema::NamedCLType,
+};
+use odra_cli::{
+    scenario::{Args, Error as ScenarioError, Scenario, ScenarioMetadata},
+    CommandArg, ContractProvider, DeployedContractsContainer,
 };
 use odra_modules::access::DEFAULT_ADMIN_ROLE;
 use std::io::Write;
@@ -26,25 +31,25 @@ const EXPIRATION: u64 = ONE_DAY * 365;
 
 pub struct SetConfigScript;
 
-impl odra_cli::scenario::ScenarioMetadata for SetConfigScript {
+impl ScenarioMetadata for SetConfigScript {
     const NAME: &'static str = "config";
     const DESCRIPTION: &'static str = "Sets dependencies between contracts";
 }
 
-impl odra_cli::scenario::Scenario for SetConfigScript {
+impl Scenario for SetConfigScript {
     fn run(
         &self,
-        env: &odra::host::HostEnv,
-        container: odra_cli::DeployedContractsContainer,
-        _args: odra_cli::scenario::Args,
-    ) -> Result<(), odra_cli::scenario::Error> {
-        let resolver_address = container.get_ref::<DefaultResolver>(env)?.address();
-        let controller_address = container.get_ref::<Controller>(env)?.address();
-        let marketplace_address = container.get_ref::<SecondaryMarket>(env)?.address();
+        env: &HostEnv,
+        container: &DeployedContractsContainer,
+        _args: Args,
+    ) -> Result<(), ScenarioError> {
+        let resolver_address = container.contract_ref::<DefaultResolver>(env)?.address();
+        let controller_address = container.contract_ref::<Controller>(env)?.address();
+        let marketplace_address = container.contract_ref::<SecondaryMarket>(env)?.address();
 
-        let mut registrar = container.get_ref::<Registrar>(env)?;
-        let mut name_token = container.get_ref::<NameToken>(env)?;
-        let mut resolver = container.get_ref::<DefaultResolver>(env)?;
+        let mut registrar = container.contract_ref::<Registrar>(env)?;
+        let mut name_token = container.contract_ref::<NameToken>(env)?;
+        let mut resolver = container.contract_ref::<DefaultResolver>(env)?;
 
         // Set default resolver.
         env.set_gas(20_000_000_000);
@@ -75,18 +80,18 @@ impl odra_cli::scenario::Scenario for SetConfigScript {
 
 pub struct RegisterTokenScenario;
 
-impl odra_cli::scenario::ScenarioMetadata for RegisterTokenScenario {
+impl ScenarioMetadata for RegisterTokenScenario {
     const NAME: &'static str = "register-token";
     const DESCRIPTION: &'static str = "Registers a token";
 }
 
-impl odra_cli::scenario::Scenario for RegisterTokenScenario {
+impl Scenario for RegisterTokenScenario {
     fn run(
         &self,
-        env: &odra::host::HostEnv,
-        container: odra_cli::DeployedContractsContainer,
-        args: odra_cli::scenario::Args,
-    ) -> Result<(), odra_cli::scenario::Error> {
+        env: &HostEnv,
+        container: &DeployedContractsContainer,
+        args: Args,
+    ) -> Result<(), ScenarioError> {
         let owner = args.get_single::<Address>("buyer")?;
         let token_validity = to_mills(args.get_single::<u64>("token_validity").ok());
 
@@ -102,28 +107,19 @@ impl odra_cli::scenario::Scenario for RegisterTokenScenario {
 
         env.set_gas(10_000_000_000);
         container
-            .get_ref::<Registrar>(env)
-            .unwrap()
+            .contract_ref::<Registrar>(env)?
             .controller_register(voucher);
         Ok(())
     }
 
-    fn args(&self) -> Vec<odra_cli::CommandArg> {
+    fn args(&self) -> Vec<CommandArg> {
         vec![
-            odra_cli::CommandArg::new("name", "Name to register", NamedCLType::String, true, false),
-            odra_cli::CommandArg::new(
-                "buyer",
-                "Address of the buyer",
-                NamedCLType::Key,
-                true,
-                false,
-            ),
-            odra_cli::CommandArg::new(
+            CommandArg::new("name", "Name to register", NamedCLType::String).required(),
+            CommandArg::new("buyer", "Address of the buyer", NamedCLType::Key).required(),
+            CommandArg::new(
                 "token_validity",
                 "Token validity in seconds",
                 NamedCLType::U64,
-                false,
-                false,
             ),
         ]
     }
@@ -137,48 +133,42 @@ fn to_mills(seconds: Option<u64>) -> Option<u64> {
 
 pub struct CalculateTokenHash;
 
-impl odra_cli::scenario::ScenarioMetadata for CalculateTokenHash {
+impl ScenarioMetadata for CalculateTokenHash {
     const NAME: &'static str = "token-hash";
     const DESCRIPTION: &'static str = "Calculates the hash of a token";
 }
 
-impl odra_cli::scenario::Scenario for CalculateTokenHash {
+impl Scenario for CalculateTokenHash {
     fn run(
         &self,
-        _env: &odra::host::HostEnv,
-        _container: odra_cli::DeployedContractsContainer,
-        args: odra_cli::scenario::Args,
-    ) -> Result<(), odra_cli::scenario::Error> {
+        _env: &HostEnv,
+        _container: &DeployedContractsContainer,
+        args: Args,
+    ) -> Result<(), ScenarioError> {
         let token_name = args.get_single::<String>("token_name")?;
         prettycli::info(&blake2b(token_name));
         Ok(())
     }
 
-    fn args(&self) -> Vec<odra_cli::CommandArg> {
-        vec![odra_cli::CommandArg::new(
-            "token_name",
-            "Name of the token",
-            NamedCLType::String,
-            true,
-            false,
-        )]
+    fn args(&self) -> Vec<CommandArg> {
+        vec![CommandArg::new("token_name", "Name of the token", NamedCLType::String).required()]
     }
 }
 
 pub struct CalculateSignature;
 
-impl odra_cli::scenario::ScenarioMetadata for CalculateSignature {
+impl ScenarioMetadata for CalculateSignature {
     const NAME: &'static str = "signature";
     const DESCRIPTION: &'static str = "Calculates the signature of a token";
 }
 
-impl odra_cli::scenario::Scenario for CalculateSignature {
+impl Scenario for CalculateSignature {
     fn run(
         &self,
-        env: &odra::host::HostEnv,
-        _container: odra_cli::DeployedContractsContainer,
-        args: odra_cli::scenario::Args,
-    ) -> Result<(), odra_cli::scenario::Error> {
+        env: &HostEnv,
+        _container: &DeployedContractsContainer,
+        args: Args,
+    ) -> Result<(), ScenarioError> {
         let admin = env.get_account(0);
 
         let name = NameMintInfo {
@@ -205,40 +195,16 @@ impl odra_cli::scenario::Scenario for CalculateSignature {
         Ok(())
     }
 
-    fn args(&self) -> Vec<odra_cli::CommandArg> {
+    fn args(&self) -> Vec<CommandArg> {
         vec![
-            odra_cli::CommandArg::new("voucher.payment.buyer", "", NamedCLType::Key, true, false),
-            odra_cli::CommandArg::new(
-                "voucher.payment.payment_id",
-                "",
-                NamedCLType::String,
-                true,
-                false,
-            ),
-            odra_cli::CommandArg::new("voucher.payment.amount", "", NamedCLType::U512, true, false),
-            odra_cli::CommandArg::new("voucher.names.label", "", NamedCLType::String, true, false),
-            odra_cli::CommandArg::new("voucher.names.owner", "", NamedCLType::Key, true, false),
-            odra_cli::CommandArg::new(
-                "voucher.names.token_expiration",
-                "",
-                NamedCLType::U64,
-                true,
-                false,
-            ),
-            odra_cli::CommandArg::new(
-                "voucher.voucher_expiration",
-                "",
-                NamedCLType::U64,
-                true,
-                false,
-            ),
-            odra_cli::CommandArg::new(
-                "voucher.names.asset_uri",
-                "",
-                NamedCLType::String,
-                true,
-                false,
-            ),
+            CommandArg::new("voucher.payment.buyer", "", NamedCLType::Key).required(),
+            CommandArg::new("voucher.payment.payment_id", "", NamedCLType::String).required(),
+            CommandArg::new("voucher.payment.amount", "", NamedCLType::U512).required(),
+            CommandArg::new("voucher.names.label", "", NamedCLType::String).required(),
+            CommandArg::new("voucher.names.owner", "", NamedCLType::Key).required(),
+            CommandArg::new("voucher.names.token_expiration", "", NamedCLType::U64).required(),
+            CommandArg::new("voucher.voucher_expiration", "", NamedCLType::U64).required(),
+            CommandArg::new("voucher.names.asset_uri", "", NamedCLType::String).required(),
         ]
     }
 }
@@ -255,12 +221,4 @@ fn blake2b<T: AsRef<[u8]>>(data: T) -> String {
         .finalize_variable(&mut result)
         .expect("should copy hash to the result array");
     hex::encode(result)
-}
-
-fn _parse_address(addr: &str) -> Address {
-    let public_key = PublicKey::from_hex(addr.as_bytes());
-    match public_key {
-        Ok(public_key) => Address::from(public_key),
-        Err(_) => Address::from_str(addr).expect("Invalid address"),
-    }
 }

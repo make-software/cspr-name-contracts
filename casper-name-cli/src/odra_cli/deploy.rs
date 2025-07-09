@@ -6,8 +6,9 @@ use casper_name_contracts::contracts::{
     resolver::{DefaultResolver, DefaultResolverInitArgs},
     reverse_resolver::{ReverseResolver, ReverseResolverInitArgs},
 };
-use odra::host::{Deployer, HostEnv};
+use odra::host::HostEnv;
 use odra::prelude::*;
+use odra_cli::{deploy::Error, DeployedContractsContainer, DeployerExt};
 
 pub struct DeployScript;
 
@@ -15,68 +16,68 @@ impl odra_cli::deploy::DeployScript for DeployScript {
     fn deploy(
         &self,
         env: &HostEnv,
-        container: &mut odra_cli::DeployedContractsContainer,
-    ) -> Result<(), odra_cli::deploy::Error> {
+        container: &mut DeployedContractsContainer,
+    ) -> Result<(), Error> {
         let admin = env.get_account(0);
-        env.set_gas(500_000_000_000);
-        let token = NameToken::try_deploy(
+        let token = NameToken::load_or_deploy(
             &env,
             NameTokenInitArgs {
                 name: "008_CN".to_string(),
                 symbol: "008_CN".to_string(),
                 max_supply: 1_000_000,
             },
+            container,
+            500_000_000_000,
         )?;
-        container.add_contract(&token)?;
 
-        env.set_gas(300_000_000_000);
-        let resolver = DefaultResolver::try_deploy(
+        _ = DefaultResolver::load_or_deploy(
             &env,
             DefaultResolverInitArgs {
                 name_token: token.address(),
             },
+            container,
+            300_000_000_000,
         )?;
-        container.add_contract(&resolver)?;
 
-        env.set_gas(500_000_000_000);
-        let registrar = Registrar::try_deploy(
+        let registrar = Registrar::load_or_deploy(
             &env,
             RegistrarInitArgs {
                 name_token: token.address(),
             },
+            container,
+            500_000_000_000,
         )?;
-        container.add_contract(&registrar)?;
 
-        env.set_gas(500_000_000_000);
-        let controller = Controller::try_deploy(
+        _ = Controller::load_or_deploy(
             &env,
             ControllerInitArgs {
                 registrar: registrar.address(),
                 treasury: admin,
                 signer: env.public_key(&admin),
             },
+            container,
+            500_000_000_000,
         )?;
-        container.add_contract(&controller)?;
 
-        env.set_gas(500_000_000_000);
-        let market = SecondaryMarket::try_deploy(
+        _ = SecondaryMarket::load_or_deploy(
             &env,
             SecondaryMarketInitArgs {
                 signer: env.public_key(&admin),
                 treasury: admin,
                 name_token: token.address(),
             },
+            container,
+            500_000_000_000,
         )?;
-        container.add_contract(&market)?;
 
-        env.set_gas(300_000_000_000);
-        let reverse_resolver = ReverseResolver::try_deploy(
+        _ = ReverseResolver::load_or_deploy(
             &env,
             ReverseResolverInitArgs {
                 name_token: token.address(),
             },
+            container,
+            300_000_000_000,
         )?;
-        container.add_contract(&reverse_resolver)?;
 
         Ok(())
     }

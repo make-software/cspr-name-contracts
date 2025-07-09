@@ -1,5 +1,6 @@
 use casper_name_contracts::contracts::{
-    controller::Controller, marketplace::SecondaryMarket, name_token::NameToken, registrar::Registrar, resolver::DefaultResolver, reverse_resolver::ReverseResolver
+    controller::Controller, marketplace::SecondaryMarket, name_token::NameToken,
+    registrar::Registrar, resolver::DefaultResolver, reverse_resolver::ReverseResolver,
 };
 use deploy::DeployScript;
 use odra_cli::OdraCli;

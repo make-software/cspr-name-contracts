@@ -2,7 +2,6 @@ use blake2::{digest::VariableOutput, Blake2bVar};
 use casper_name_contracts::{
     contracts::{
         controller::Controller,
-        marketplace::SecondaryMarket,
         name_token::NameToken,
         registrar::{Registrar, CONTROLLER_ROLE},
         resolver::DefaultResolver,
@@ -44,10 +43,10 @@ impl Scenario for SetConfigScript {
         _args: Args,
     ) -> Result<(), ScenarioError> {
         env.set_captures_events(false);
-        
+
         let resolver_address = container.contract_ref::<DefaultResolver>(env)?.address();
         let controller_address = container.contract_ref::<Controller>(env)?.address();
-        let marketplace_address = container.contract_ref::<SecondaryMarket>(env)?.address();
+        // let marketplace_address = container.contract_ref::<SecondaryMarket>(env)?.address();
 
         let mut registrar = container.contract_ref::<Registrar>(env)?;
         let mut name_token = container.contract_ref::<NameToken>(env)?;
@@ -65,8 +64,8 @@ impl Scenario for SetConfigScript {
         // Whitelist controllers in the registrar.
         env.set_gas(10_000_000_000);
         registrar.grant_role(&CONTROLLER_ROLE, &controller_address);
-        env.set_gas(10_000_000_000);
-        registrar.grant_role(&CONTROLLER_ROLE, &marketplace_address);
+        // env.set_gas(10_000_000_000);
+        // registrar.grant_role(&CONTROLLER_ROLE, &marketplace_address);
 
         // Set the grace period.
         env.set_gas(10_000_000_000);

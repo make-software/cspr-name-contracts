@@ -1,14 +1,13 @@
 use casper_name_contracts::contracts::{
     controller::{Controller, ControllerInitArgs},
-    marketplace::{SecondaryMarket, SecondaryMarketInitArgs},
     name_token::{NameToken, NameTokenInitArgs},
     registrar::{Registrar, RegistrarInitArgs},
     resolver::{DefaultResolver, DefaultResolverInitArgs},
     reverse_resolver::{ReverseResolver, ReverseResolverInitArgs},
 };
-use odra::host::HostEnv;
+use odra::host::{Deployer, HostEnv, OdraConfig};
 use odra::prelude::*;
-use odra_cli::{deploy::Error, DeployedContractsContainer, DeployerExt};
+use odra_cli::{deploy::Error, DeployedContractsContainer};
 
 pub struct DeployScript;
 
@@ -19,66 +18,85 @@ impl odra_cli::deploy::DeployScript for DeployScript {
         container: &mut DeployedContractsContainer,
     ) -> Result<(), Error> {
         let admin = env.get_account(0);
-        let token = NameToken::load_or_deploy(
+
+        env.set_gas(400_000_000_000);
+        let token = NameToken::try_deploy_with_cfg(
             &env,
             NameTokenInitArgs {
-                name: "008_CN".to_string(),
-                symbol: "008_CN".to_string(),
-                max_supply: 1_000_000,
+                name: "CSPR.name".to_string(),
+                symbol: "NAME".to_string(),
+                max_supply: 1_000_000_000,
             },
-            container,
-            500_000_000_000,
+            Cfg::new("NameToken"),
         )?;
+        container.add_contract(&token)?;
 
-        _ = DefaultResolver::load_or_deploy(
+        env.set_gas(300_000_000_000);
+        let resolver = DefaultResolver::try_deploy_with_cfg(
             &env,
             DefaultResolverInitArgs {
                 name_token: token.address(),
             },
-            container,
-            300_000_000_000,
+            Cfg::new("DefaultResolver"),
         )?;
+        container.add_contract(&resolver)?;
 
-        let registrar = Registrar::load_or_deploy(
+        env.set_gas(400_000_000_000);
+        let registrar = Registrar::try_deploy_with_cfg(
             &env,
             RegistrarInitArgs {
                 name_token: token.address(),
             },
-            container,
-            500_000_000_000,
+            Cfg::new("Registrar"),
         )?;
+        container.add_contract(&registrar)?;
 
-        _ = Controller::load_or_deploy(
+        env.set_gas(400_000_000_000);
+        let controller = Controller::try_deploy_with_cfg(
             &env,
             ControllerInitArgs {
                 registrar: registrar.address(),
                 treasury: admin,
                 signer: env.public_key(&admin),
             },
-            container,
-            500_000_000_000,
+            Cfg::new("Controller"),
         )?;
+        container.add_contract(&controller)?;
 
-        _ = SecondaryMarket::load_or_deploy(
-            &env,
-            SecondaryMarketInitArgs {
-                signer: env.public_key(&admin),
-                treasury: admin,
-                name_token: token.address(),
-            },
-            container,
-            500_000_000_000,
-        )?;
-
-        _ = ReverseResolver::load_or_deploy(
+        env.set_gas(300_000_000_000);
+        let reverse_resolver = ReverseResolver::try_deploy_with_cfg(
             &env,
             ReverseResolverInitArgs {
                 name_token: token.address(),
             },
-            container,
-            300_000_000_000,
+            Cfg::new("ReverseResolver"),
         )?;
+        container.add_contract(&reverse_resolver)?;
 
         Ok(())
+    }
+}
+
+struct Cfg {
+    name: &'static str,
+}
+
+impl Cfg {
+    fn new(name: &'static str) -> Self {
+        Cfg { name }
+    }
+}
+
+impl OdraConfig for Cfg {
+    fn package_hash(&self) -> String {
+        String::from(self.name)
+    }
+
+    fn is_upgradable(&self) -> bool {
+        true
+    }
+
+    fn allow_key_override(&self) -> bool {
+        true
     }
 }

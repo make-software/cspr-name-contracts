@@ -43,6 +43,8 @@ impl Scenario for SetConfigScript {
         container: &DeployedContractsContainer,
         _args: Args,
     ) -> Result<(), ScenarioError> {
+        env.set_captures_events(false);
+        
         let resolver_address = container.contract_ref::<DefaultResolver>(env)?.address();
         let controller_address = container.contract_ref::<Controller>(env)?.address();
         let marketplace_address = container.contract_ref::<SecondaryMarket>(env)?.address();

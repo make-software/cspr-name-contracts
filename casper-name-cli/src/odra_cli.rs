@@ -1,5 +1,5 @@
 use casper_name_contracts::contracts::{
-    controller::Controller, marketplace::SecondaryMarket, name_token::NameToken,
+    controller::Controller, name_token::NameToken,
     registrar::Registrar, resolver::DefaultResolver, reverse_resolver::ReverseResolver,
 };
 use deploy::DeployScript;
@@ -17,7 +17,6 @@ pub fn cli() {
         .contract::<Controller>()
         .contract::<Registrar>()
         .contract::<NameToken>()
-        .contract::<SecondaryMarket>()
         .contract::<ReverseResolver>()
         .scenario(SetConfigScript)
         .scenario(RegisterTokenScenario)

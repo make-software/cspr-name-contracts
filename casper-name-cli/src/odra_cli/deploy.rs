@@ -5,9 +5,9 @@ use casper_name_contracts::contracts::{
     resolver::{DefaultResolver, DefaultResolverInitArgs},
     reverse_resolver::{ReverseResolver, ReverseResolverInitArgs},
 };
-use odra::host::{Deployer, HostEnv, OdraConfig};
+use odra::{contract_def::HasIdent, host::{HostEnv, InstallConfig}};
 use odra::prelude::*;
-use odra_cli::{deploy::Error, DeployedContractsContainer};
+use odra_cli::{deploy::Error, DeployedContractsContainer, DeployerExt};
 
 pub struct DeployScript;
 
@@ -19,84 +19,80 @@ impl odra_cli::deploy::DeployScript for DeployScript {
     ) -> Result<(), Error> {
         let admin = env.get_account(0);
 
-        env.set_gas(400_000_000_000);
-        let token = NameToken::try_deploy_with_cfg(
+        let token = NameToken::load_or_deploy_with_cfg(
             &env,
             NameTokenInitArgs {
                 name: "CSPR.name".to_string(),
                 symbol: "NAME".to_string(),
                 max_supply: 1_000_000_000,
             },
-            Cfg::new("NameToken"),
+            InstallConfig {
+                package_named_key: NameToken::ident(),
+                is_upgradable: true,
+                allow_key_override: true,
+            },
+            container,
+            400_000_000_000
         )?;
-        container.add_contract(&token)?;
 
-        env.set_gas(300_000_000_000);
-        let resolver = DefaultResolver::try_deploy_with_cfg(
+        let _resolver = DefaultResolver::load_or_deploy_with_cfg(
             &env,
             DefaultResolverInitArgs {
                 name_token: token.address(),
             },
-            Cfg::new("DefaultResolver"),
+            InstallConfig {
+                package_named_key: DefaultResolver::ident(),
+                is_upgradable: true,
+                allow_key_override: true,
+            },
+            container,
+            300_000_000_000
         )?;
-        container.add_contract(&resolver)?;
 
-        env.set_gas(400_000_000_000);
-        let registrar = Registrar::try_deploy_with_cfg(
+        let registrar = Registrar::load_or_deploy_with_cfg(
             &env,
             RegistrarInitArgs {
                 name_token: token.address(),
             },
-            Cfg::new("Registrar"),
+            InstallConfig {
+                package_named_key: Registrar::ident(),
+                is_upgradable: true,
+                allow_key_override: true,
+            },
+            container,
+            400_000_000_000
         )?;
-        container.add_contract(&registrar)?;
 
-        env.set_gas(400_000_000_000);
-        let controller = Controller::try_deploy_with_cfg(
+        let _controller = Controller::load_or_deploy_with_cfg(
             &env,
             ControllerInitArgs {
                 registrar: registrar.address(),
                 treasury: admin,
                 signer: env.public_key(&admin),
             },
-            Cfg::new("Controller"),
+            InstallConfig {
+                package_named_key: Controller::ident(),
+                is_upgradable: true,
+                allow_key_override: true,
+            },
+            container,
+            400_000_000_000
         )?;
-        container.add_contract(&controller)?;
 
-        env.set_gas(300_000_000_000);
-        let reverse_resolver = ReverseResolver::try_deploy_with_cfg(
+        let _reverse_resolver = ReverseResolver::load_or_deploy_with_cfg(
             &env,
             ReverseResolverInitArgs {
                 name_token: token.address(),
             },
-            Cfg::new("ReverseResolver"),
+            InstallConfig {
+                package_named_key: ReverseResolver::ident(),
+                is_upgradable: true,
+                allow_key_override: true,
+            },
+            container,
+            300_000_000_000
         )?;
-        container.add_contract(&reverse_resolver)?;
 
         Ok(())
-    }
-}
-
-struct Cfg {
-    name: &'static str,
-}
-
-impl Cfg {
-    fn new(name: &'static str) -> Self {
-        Cfg { name }
-    }
-}
-
-impl OdraConfig for Cfg {
-    fn package_hash(&self) -> String {
-        String::from(self.name)
-    }
-
-    fn is_upgradable(&self) -> bool {
-        true
-    }
-
-    fn allow_key_override(&self) -> bool {
-        true
     }
 }

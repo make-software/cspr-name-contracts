@@ -44,13 +44,10 @@ impl ReverseResolver {
             }
         };
 
-        if current_primary_name.as_ref() == Some(&primary_name) {
-            // If the primary name is the same, do nothing.
-            return;
+        // Don't set the same primary name again.
+        if current_primary_name.as_ref() != Some(&primary_name) {
+            self.primary_names.set(&caller, Some(primary_name.clone()));
         }
-
-        // Update primary name.
-        self.primary_names.set(&caller, Some(primary_name.clone()));
 
         // Emit event.
         self.env().emit_event(PrimaryNameChanged {

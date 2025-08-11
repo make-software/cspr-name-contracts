@@ -972,7 +972,7 @@ source = "registry+https://github.com/rust-lang/crates.io-index"
 checksum = "778e2ac28f6c47af28e4907f13ffd1e1ddbd400980a9abd7c8df189bf578a5ad"
 dependencies = [
  "libc",
- "windows-sys 0.52.0",
+ "windows-sys 0.60.2",
 ]
 
 [[package]]
@@ -1571,7 +1571,7 @@ checksum = "e04d7f318608d35d4b61ddd75cbdaee86b023ebe2bd5a66ee0915f0bf93095a9"
 dependencies = [
  "hermit-abi",
  "libc",
- "windows-sys 0.52.0",
+ "windows-sys 0.59.0",
 ]
 
 [[package]]
@@ -1902,9 +1902,9 @@ dependencies = [
 
 [[package]]
 name = "odra"
-version = "2.1.0"
+version = "2.3.1"
 source = "registry+https://github.com/rust-lang/crates.io-index"
-checksum = "4756357dd052fb9b523479c7304f36af402fc38af5049ead895ce46f1fac30c4"
+checksum = "45ade8d3eec5702f35701c8ad7bbd356363e3eb64ff7aedc0277fa06434bc6a8"
 dependencies = [
  "odra-casper-wasm-env",
  "odra-core",
@@ -1914,9 +1914,9 @@ dependencies = [
 
 [[package]]
 name = "odra-build"
-version = "2.1.0"
+version = "2.3.1"
 source = "registry+https://github.com/rust-lang/crates.io-index"
-checksum = "376038f4ca55c127dd48c16a3bbafe5531fc3df071429d26ba729a1a5591be5f"
+checksum = "f0635f039d466ac5dfcd6f96c1f8d7c757f7889aed8c0c49f055f373d9bae978"
 dependencies = [
  "serde",
  "serde_json",
@@ -1957,9 +1957,9 @@ dependencies = [
 
 [[package]]
 name = "odra-casper-livenet-env"
-version = "2.1.0"
+version = "2.3.1"
 source = "registry+https://github.com/rust-lang/crates.io-index"
-checksum = "6fab4d02a3e4234fc311530ed33c0ba51919f30c516004f21779b2b8148ecfa3"
+checksum = "8a7b69d5d0263aaceda1e0a4436ebfee1e500f4c778fc36f417fd30c521bb526"
 dependencies = [
  "anyhow",
  "blake2 0.10.6",
@@ -1974,9 +1974,9 @@ dependencies = [
 
 [[package]]
 name = "odra-casper-rpc-client"
-version = "2.1.0"
+version = "2.3.1"
 source = "registry+https://github.com/rust-lang/crates.io-index"
-checksum = "720d8e6040304ffea8ebfb90410a38e34b88a3b7cb1b1dcd96a25aafbddffe84"
+checksum = "d961d37ee3f43951a5fff1b8a6cf54847ab1eb7df4662369eae4b0dd3e4c0e52"
 dependencies = [
  "base16",
  "casper-types",
@@ -1995,9 +1995,9 @@ dependencies = [
 
 [[package]]
 name = "odra-casper-test-vm"
-version = "2.1.0"
+version = "2.3.1"
 source = "registry+https://github.com/rust-lang/crates.io-index"
-checksum = "7c172064107c353a714d7d708db880b5ae492fe681a2ce3482c90c888bcd18c2"
+checksum = "6bc1c480b0b61646341caa62c5a6e573482718493441685ea3de98e23fe10c4f"
 dependencies = [
  "casper-contract",
  "casper-engine-test-support",
@@ -2008,9 +2008,9 @@ dependencies = [
 
 [[package]]
 name = "odra-casper-wasm-env"
-version = "2.1.0"
+version = "2.3.1"
 source = "registry+https://github.com/rust-lang/crates.io-index"
-checksum = "128eb0e30219c2c48f404c7374c40cd6363c38b686236aa4632308e201e4de37"
+checksum = "160c1cf125d8ae2ded8c639b35263073a3949d5ab4e03e4d8d985be380a7ce13"
 dependencies = [
  "casper-contract",
  "ink_allocator",
@@ -2020,9 +2020,9 @@ dependencies = [
 
 [[package]]
 name = "odra-cli"
-version = "2.1.0"
+version = "2.3.1"
 source = "registry+https://github.com/rust-lang/crates.io-index"
-checksum = "9ddd25cf09d30f9e010f9a4c074778c61a6c8d4cacb27d2cddf51a969165d8e4"
+checksum = "84fb07eb1c3be197d31d0b4dc89edcf8a182ee58032ede63d9e20e5a7f23e261"
 dependencies = [
  "anyhow",
  "chrono",
@@ -2043,9 +2043,9 @@ dependencies = [
 
 [[package]]
 name = "odra-core"
-version = "2.1.0"
+version = "2.3.1"
 source = "registry+https://github.com/rust-lang/crates.io-index"
-checksum = "5bef8dd87dbe042a1387428720fc39ac28fa0030f33c2912ee2bb7e3783be00c"
+checksum = "3ab51e269a450161406c12f5892a6097ed848117be4d0033356185ef65b524c2"
 dependencies = [
  "anyhow",
  "casper-event-standard",
@@ -2059,9 +2059,9 @@ dependencies = [
 
 [[package]]
 name = "odra-macros"
-version = "2.1.0"
+version = "2.3.1"
 source = "registry+https://github.com/rust-lang/crates.io-index"
-checksum = "0e9192b32baab0e8197f8946b4f18bd40daf17b38bee62f42d4e91c7c415e79d"
+checksum = "ce8d259f7c3dc06338cecc1815374f4cff9989ad8f0c48de0e481d30da0984b8"
 dependencies = [
  "convert_case 0.5.0",
  "derive-try-from-ref",
@@ -2076,9 +2076,9 @@ dependencies = [
 
 [[package]]
 name = "odra-modules"
-version = "2.1.0"
+version = "2.3.1"
 source = "registry+https://github.com/rust-lang/crates.io-index"
-checksum = "85ecce99b271df61a0f045a9b4c2c088205fe967e22b0202b9cbb50d3405d94a"
+checksum = "b562f68b5f62a7dca995504f7e29292e0671917f234d0f3e344eccbe0cff6785"
 dependencies = [
  "base16",
  "base64 0.22.1",
@@ -2091,9 +2091,9 @@ dependencies = [
 
 [[package]]
 name = "odra-schema"
-version = "2.1.0"
+version = "2.3.1"
 source = "registry+https://github.com/rust-lang/crates.io-index"
-checksum = "582f3c39e28b29869effc99f1227aac49f1c2fddf90ddef5b738b5cc9409711c"
+checksum = "baeb5028b5e640e5898d5392ecb052b89c55dc997bb421aafe4214518967e058"
 dependencies = [
  "casper-contract-schema",
  "casper-types",
@@ -2104,9 +2104,9 @@ dependencies = [
 
 [[package]]
 name = "odra-test"
-version = "2.1.0"
+version = "2.3.1"
 source = "registry+https://github.com/rust-lang/crates.io-index"
-checksum = "eeb34614d48021b2c97d6c41fe57acf88bdfb6f0e1baa961ca88104759523d1a"
+checksum = "4b5778a6805ee490300ce88659169b83b97d268d544ae7181980bc206639b640"
 dependencies = [
  "odra-casper-test-vm",
  "odra-core",
@@ -2115,11 +2115,12 @@ dependencies = [
 
 [[package]]
 name = "odra-vm"
-version = "2.1.0"
+version = "2.3.1"
 source = "registry+https://github.com/rust-lang/crates.io-index"
-checksum = "c0d7d10af66c56aae4b2811faf35f4e56920ed9633a6b05229ef649969e0c600"
+checksum = "46ecb5479c063aa66b8ee33c1845690fa20fb2244327f590e70d1454b96459eb"
 dependencies = [
  "anyhow",
+ "backtrace",
  "blake2 0.10.6",
  "odra-core",
  "rand 0.9.2",
@@ -2604,7 +2605,7 @@ dependencies = [
  "errno",
  "libc",
  "linux-raw-sys",
- "windows-sys 0.52.0",
+ "windows-sys 0.60.2",
 ]
 
 [[package]]
@@ -3091,7 +3092,7 @@ dependencies = [
  "getrandom 0.3.3",
  "once_cell",
  "rustix",
- "windows-sys 0.52.0",
+ "windows-sys 0.59.0",
 ]
 
 [[package]]
@@ -3616,7 +3617,7 @@ version = "0.1.9"
 source = "registry+https://github.com/rust-lang/crates.io-index"
 checksum = "cf221c93e13a30d793f7645a0e7762c55d169dbb0a49671918a2319d289b10bb"
 dependencies = [
- "windows-sys 0.52.0",
+ "windows-sys 0.59.0",
 ]
 
 [[package]]

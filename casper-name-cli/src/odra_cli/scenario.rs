@@ -5,6 +5,7 @@ use casper_name_contracts::{
         name_token::NameToken,
         registrar::{Registrar, CONTROLLER_ROLE},
         resolver::DefaultResolver,
+        reverse_resolver::ReverseResolver,
     },
     data_structures::{NameMintInfo, PaymentVoucher, TokenizationVoucher},
 };
@@ -13,13 +14,13 @@ use odra::{
         bytesrepr::{Bytes, ToBytes},
         U512,
     },
-    host::HostEnv,
+    contract_def::HasIdent,
+    host::{Deployer, HostEnv, NoArgs, UpgradeConfig},
     prelude::*,
     schema::casper_contract_schema::NamedCLType,
 };
 use odra_cli::{
-    scenario::{Args, Error as ScenarioError, Scenario, ScenarioMetadata},
-    CommandArg, ContractProvider, DeployedContractsContainer,
+    cspr, scenario::{Args, Error as ScenarioError, Scenario, ScenarioMetadata}, CommandArg, ContractProvider, DeployedContractsContainer
 };
 use odra_modules::access::DEFAULT_ADMIN_ROLE;
 use std::io::Write;
@@ -207,6 +208,40 @@ impl Scenario for CalculateSignature {
             CommandArg::new("voucher.voucher_expiration", "", NamedCLType::U64).required(),
             CommandArg::new("voucher.names.asset_uri", "", NamedCLType::String).required(),
         ]
+    }
+}
+
+pub struct UpdateReverseResolver;
+
+impl ScenarioMetadata for UpdateReverseResolver {
+    const NAME: &'static str = "update-reverse-resolver";
+    const DESCRIPTION: &'static str = "Update the reverse resolver contract.";
+}
+
+impl Scenario for UpdateReverseResolver {
+    fn run(
+        &self,
+        env: &HostEnv,
+        container: &DeployedContractsContainer,
+        _args: Args,
+    ) -> Result<(), ScenarioError> {
+        let reverse_resolver_addr = container
+            .address_by_name(&ReverseResolver::ident())
+            .unwrap();
+
+        env.set_gas(cspr!(400));
+        let _result = ReverseResolver::try_upgrade_with_cfg(
+            env,
+            reverse_resolver_addr,
+            NoArgs,
+            UpgradeConfig {
+                package_named_key: String::from("ReverseResolver_contract_package"),
+                force_create_upgrade_group: true,
+                allow_key_override: true,
+            },
+        );
+
+        Ok(())
     }
 }
 

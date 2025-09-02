@@ -4,7 +4,7 @@ use casper_name_contracts::contracts::{
 };
 use deploy::DeployScript;
 use odra_cli::OdraCli;
-use scenario::{CalculateSignature, CalculateTokenHash, RegisterTokenScenario, SetConfigScript, UpdateReverseResolver};
+use scenario::{CalculateSignature, CalculateTokenHash, RegisterTokenScenario, SetConfigScript, UpgradeReverseResolver, UpgradeNameToken};
 
 mod deploy;
 mod scenario;
@@ -22,7 +22,8 @@ pub fn cli() {
         .scenario(RegisterTokenScenario)
         .scenario(CalculateTokenHash)
         .scenario(CalculateSignature)
-        .scenario(UpdateReverseResolver)
+        .scenario(UpgradeReverseResolver)
+        .scenario(UpgradeNameToken)
         .build()
         .run();
 }

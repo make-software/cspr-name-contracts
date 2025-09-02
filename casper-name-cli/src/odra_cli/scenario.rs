@@ -211,14 +211,14 @@ impl Scenario for CalculateSignature {
     }
 }
 
-pub struct UpdateReverseResolver;
+pub struct UpgradeReverseResolver;
 
-impl ScenarioMetadata for UpdateReverseResolver {
-    const NAME: &'static str = "update-reverse-resolver";
-    const DESCRIPTION: &'static str = "Update the reverse resolver contract.";
+impl ScenarioMetadata for UpgradeReverseResolver {
+    const NAME: &'static str = "upgrade-reverse-resolver";
+    const DESCRIPTION: &'static str = "Upgrade the reverse resolver contract.";
 }
 
-impl Scenario for UpdateReverseResolver {
+impl Scenario for UpgradeReverseResolver {
     fn run(
         &self,
         env: &HostEnv,
@@ -236,6 +236,40 @@ impl Scenario for UpdateReverseResolver {
             NoArgs,
             UpgradeConfig {
                 package_named_key: String::from("ReverseResolver_contract_package"),
+                force_create_upgrade_group: true,
+                allow_key_override: true,
+            },
+        );
+
+        Ok(())
+    }
+}
+
+pub struct UpgradeNameToken;
+
+impl ScenarioMetadata for UpgradeNameToken {
+    const NAME: &'static str = "upgrade-name-token";
+    const DESCRIPTION: &'static str = "Upgrade the NameToken contract.";
+}
+
+impl Scenario for UpgradeNameToken {
+    fn run(
+        &self,
+        env: &HostEnv,
+        container: &DeployedContractsContainer,
+        _args: Args,
+    ) -> Result<(), ScenarioError> {
+        let name_token_addr = container
+            .address_by_name(&NameToken::ident())
+            .unwrap();
+
+        env.set_gas(cspr!(400));
+        let _result = NameToken::try_upgrade_with_cfg(
+            env,
+            name_token_addr,
+            NoArgs,
+            UpgradeConfig {
+                package_named_key: String::from("NameToken_contract_package"),
                 force_create_upgrade_group: true,
                 allow_key_override: true,
             },

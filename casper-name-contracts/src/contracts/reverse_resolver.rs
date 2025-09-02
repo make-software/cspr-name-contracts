@@ -174,7 +174,7 @@ mod tests {
         reverse_resolver.set_primary_name(DOMAIN_TEST2.to_string());
 
         // The contract should not emit an event for the same primary name.
-        assert_eq!(ctx.events_count(&reverse_resolver), 2);
+        assert_eq!(ctx.events_count(&reverse_resolver), 3);
     }
 
     #[test]

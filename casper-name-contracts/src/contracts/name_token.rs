@@ -78,7 +78,7 @@ impl NameToken {
             self.revert(NameTokenError::InvalidTokenIdentifier);
         }
         // mint the token
-        self.token.mint(recipient, token_id, token_metadata);
+        self.token.raw_mint(recipient, token_id, token_metadata);
         // increment the minted tokens count
         self.minted_tokens_count.set(minted_tokens_count + 1);
     }
@@ -98,7 +98,7 @@ impl NameToken {
         self.set_token_metadata(token_id, metadata.to_vec());
 
         // burn the token
-        self.token.burn(token_id);
+        self.token.raw_burn(token_id);
     }
 
     pub fn admin_transfer(&mut self, recipient: Address, token_ids: Vec<U256>) {

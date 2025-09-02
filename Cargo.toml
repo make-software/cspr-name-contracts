@@ -7,13 +7,13 @@ members = [
 resolver = "2"
 
 [workspace.dependencies]
-odra = { version = "2.3.1" }
-odra-cli = { version = "2.3.1" }
-odra-modules = { version = "2.3.1" }
-odra-test = { version = "2.3.1" }
-odra-build = { version = "2.3.1" }
-odra-bdd = { version = "2.3.1" }
-odra-casper-livenet-env = { version = "2.3.1" }
+odra = { version = "2.4.0" }
+odra-cli = { version = "2.4.0" }
+odra-modules = { version = "2.4.0" }
+odra-test = { version = "2.4.0" }
+odra-build = { version = "2.4.0" }
+odra-bdd = { version = "2.4.0" }
+odra-casper-livenet-env = { version = "2.4.0" }
 
 [profile.release]
 codegen-units = 1

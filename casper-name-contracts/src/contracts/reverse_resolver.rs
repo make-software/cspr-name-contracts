@@ -73,6 +73,9 @@ impl ReverseResolver {
     fn existing_resolution(&self, name: &str) -> Option<Address> {
         let token_name = utils::extract_token_name(name)?;
         let token_id = self.token_id(token_name);
+        if !self.name_token.token_exists(token_id) {
+            return None;
+        }
         let resolver_address = self.name_token.resolver(token_id)?;
         ResolverContractRef::new(self.env(), resolver_address).resolve(name.to_owned())
     }
@@ -250,6 +253,88 @@ mod tests {
 
         // The primary name should no longer be valid.
         assert_eq!(reverse_resolver.get_primary_name(&user), None);
+    }
+
+    #[test]
+    fn test_burn_name_invalidate_primary_name() {
+        let (mut ctx, mut reverse_resolver) = setup();
+        let (admin, user) = (ctx.admin, ctx.alice);
+        ctx.with_name_registered(admin, user, TOKEN_TEST);
+
+        ctx.set_caller(user);
+        ctx.default_resolver
+            .set_resolution(DOMAIN_TEST.to_string(), Some(user));
+
+        reverse_resolver.set_primary_name(DOMAIN_TEST.to_string());
+        assert_eq!(
+            reverse_resolver.get_primary_name(&user),
+            Some(DOMAIN_TEST.to_string())
+        );
+
+        // Burn the name.
+        ctx.set_caller(admin);
+        ctx.token.burn(test_context::generate_token_id(TOKEN_TEST));
+
+        // The primary name should no longer be valid.
+        assert_eq!(reverse_resolver.get_primary_name(&user), None);
+    }
+
+    #[test]
+    fn test_set_primary_name_after_burn_and_reregister() {
+        let (mut ctx, mut reverse_resolver) = setup();
+        let (admin, user) = (ctx.admin, ctx.alice);
+        // Register the initial name.
+        ctx.with_name_registered(admin, user, TOKEN_TEST);
+        ctx.set_caller(user);
+        // Set resolution and primary name.
+        ctx.default_resolver
+            .set_resolution(DOMAIN_TEST.to_string(), Some(user));
+        reverse_resolver.set_primary_name(DOMAIN_TEST.to_string());
+        // Burn the name.
+        ctx.set_caller(admin);
+        ctx.token.burn(test_context::generate_token_id(TOKEN_TEST));
+
+        // Register the name again.
+        ctx.with_name_registered(admin, user, TOKEN_TEST);
+        ctx.set_caller(user);
+        ctx.default_resolver
+            .set_resolution(DOMAIN_TEST.to_string(), Some(user));
+
+        // It should be able to set the primary name again.
+        reverse_resolver.set_primary_name(DOMAIN_TEST.to_string());
+        assert_eq!(
+            reverse_resolver.get_primary_name(&user),
+            Some(DOMAIN_TEST.to_string())
+        );
+    }
+
+    #[test]
+    fn test_set_primary_name_after_burn_and_register_new_name() {
+        let (mut ctx, mut reverse_resolver) = setup();
+        let (admin, user) = (ctx.admin, ctx.alice);
+        // Register the initial name.
+        ctx.with_name_registered(admin, user, TOKEN_TEST);
+        ctx.set_caller(user);
+        // Set resolution and primary name.
+        ctx.default_resolver
+            .set_resolution(DOMAIN_TEST.to_string(), Some(user));
+        reverse_resolver.set_primary_name(DOMAIN_TEST.to_string());
+        // Burn the name.
+        ctx.set_caller(admin);
+        ctx.token.burn(test_context::generate_token_id(TOKEN_TEST));
+
+        // Register a different name.
+        ctx.with_name_registered(admin, user, TOKEN_TEST2);
+        ctx.set_caller(user);
+        ctx.default_resolver
+            .set_resolution(DOMAIN_TEST2.to_string(), Some(user));
+
+        // It should be able to set the primary name again.
+        reverse_resolver.set_primary_name(DOMAIN_TEST2.to_string());
+        assert_eq!(
+            reverse_resolver.get_primary_name(&user),
+            Some(DOMAIN_TEST2.to_string())
+        );
     }
 
     fn setup() -> (TestContext, ReverseResolverHostRef) {

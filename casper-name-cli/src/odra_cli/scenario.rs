@@ -20,7 +20,9 @@ use odra::{
     schema::casper_contract_schema::NamedCLType,
 };
 use odra_cli::{
-    cspr, scenario::{Args, Error as ScenarioError, Scenario, ScenarioMetadata}, CommandArg, ContractProvider, DeployedContractsContainer
+    cspr,
+    scenario::{Args, Error as ScenarioError, Scenario, ScenarioMetadata},
+    CommandArg, ContractProvider, DeployedContractsContainer,
 };
 use odra_modules::access::DEFAULT_ADMIN_ROLE;
 use std::io::Write;
@@ -259,9 +261,7 @@ impl Scenario for UpgradeNameToken {
         container: &DeployedContractsContainer,
         _args: Args,
     ) -> Result<(), ScenarioError> {
-        let name_token_addr = container
-            .address_by_name(&NameToken::ident())
-            .unwrap();
+        let name_token_addr = container.address_by_name(&NameToken::ident()).unwrap();
 
         env.set_gas(cspr!(400));
         let _result = NameToken::try_upgrade_with_cfg(

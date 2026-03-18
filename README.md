@@ -1,4 +1,4 @@
-# casper_name
+# CSPR.name Contracts
 
 ## Usage
 It's recommended to install 

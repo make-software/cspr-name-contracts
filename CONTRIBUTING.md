@@ -12,7 +12,7 @@ If you have questions about how to use CSPR.name Contracts in your projects, ple
   - You can also filter by appending e. g. "state:open" to the search string.
   - More info on [search syntax within GitHub](https://help.github.com/articles/searching-issues)
 
-## Contributing to Casper Account Info Contract
+## Contributing to CSPR.name Contracts
 
 All contributions to this repository are considered to be licensed under Apache License 2.0.
 

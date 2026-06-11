@@ -6,6 +6,8 @@ use deploy::DeployScript;
 use odra_cli::OdraCli;
 use scenario::{CalculateSignature, CalculateTokenHash, RegisterTokenScenario, SetConfigScript, UpgradeReverseResolver, UpgradeNameToken};
 
+use crate::odra_cli::scenario::UpgradeRegistrar;
+
 mod deploy;
 mod scenario;
 
@@ -24,6 +26,7 @@ pub fn cli() {
         .scenario(CalculateSignature)
         .scenario(UpgradeReverseResolver)
         .scenario(UpgradeNameToken)
+        .scenario(UpgradeRegistrar)
         .build()
         .run();
 }

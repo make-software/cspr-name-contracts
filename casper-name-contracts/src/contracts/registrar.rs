@@ -259,6 +259,8 @@ impl Registrar {
 
     #[inline]
     fn is_token_expired(&self, token_expiration: u64, grace_period: u64, block_time: u64) -> bool {
+        // NOTE: This fixes unexpected offchain bug, that supplied microsecond timestamps instead of milliseconds.
+        let token_expiration = utils::trim_microseconds_to_milliseconds_if_needed(token_expiration);
         block_time > token_expiration + grace_period + PENDING_DELETE_PERIOD
     }
 

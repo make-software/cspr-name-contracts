@@ -21,6 +21,7 @@ impl odra_cli::deploy::DeployScript for DeployScript {
 
         let token = NameToken::load_or_deploy_with_cfg(
             &env,
+            None,
             NameTokenInitArgs {
                 name: "CSPR.name".to_string(),
                 symbol: "NAME".to_string(),
@@ -33,6 +34,7 @@ impl odra_cli::deploy::DeployScript for DeployScript {
 
         let _resolver = DefaultResolver::load_or_deploy_with_cfg(
             &env,
+            None,
             DefaultResolverInitArgs {
                 name_token: token.address(),
             },
@@ -43,6 +45,7 @@ impl odra_cli::deploy::DeployScript for DeployScript {
 
         let registrar = Registrar::load_or_deploy_with_cfg(
             &env,
+            None,
             RegistrarInitArgs {
                 name_token: token.address(),
             },
@@ -53,6 +56,7 @@ impl odra_cli::deploy::DeployScript for DeployScript {
 
         let _controller = Controller::load_or_deploy_with_cfg(
             &env,
+            None,
             ControllerInitArgs {
                 registrar: registrar.address(),
                 treasury: admin,
@@ -65,6 +69,7 @@ impl odra_cli::deploy::DeployScript for DeployScript {
 
         let _reverse_resolver = ReverseResolver::load_or_deploy_with_cfg(
             &env,
+            None,
             ReverseResolverInitArgs {
                 name_token: token.address(),
             },

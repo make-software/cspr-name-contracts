@@ -259,16 +259,17 @@ impl Registrar {
 
     #[inline]
     fn is_token_expired(&self, token_expiration: u64, grace_period: u64, block_time: u64) -> bool {
-        // NOTE: This fixes unexpected offchain bug, that supplied microsecond timestamps instead of milliseconds.
-        let token_expiration = utils::trim_microseconds_to_milliseconds_if_needed(token_expiration);
         block_time > token_expiration + grace_period + PENDING_DELETE_PERIOD
     }
 
     fn prolong(&mut self, tokens: Vec<TokenRenewalInfo>) {
         let block_time = self.env().get_block_time();
         for token in tokens {
+            // The offchain component may supply microsecond timestamps.
+            let token_expiration =
+                utils::trim_microseconds_to_milliseconds_if_needed(token.token_expiration);
             // verify the new expiration date is in the future
-            self.assert_token_expires_in_future(token.token_expiration, block_time);
+            self.assert_token_expires_in_future(token_expiration, block_time);
             // Compute token hash.
             let token_id = token.token_id;
             // get the token metadata
@@ -276,7 +277,7 @@ impl Registrar {
             // check if the time for the renewal does not elapsed
             let expiration = metadata.expiration();
             self.assert_in_renewal_period(expiration);
-            metadata.set_expiration(token.token_expiration);
+            metadata.set_expiration(token_expiration);
 
             self.name_token
                 .set_token_metadata(token_id, metadata.to_vec());
@@ -286,13 +287,16 @@ impl Registrar {
     fn register(&mut self, names: Vec<NameMintInfo>) {
         let block_time = self.env().get_block_time();
         for info in names {
-            self.assert_token_expires_in_future(info.token_expiration, block_time);
+            // The offchain component may supply microsecond timestamps.
+            let token_expiration =
+                utils::trim_microseconds_to_milliseconds_if_needed(info.token_expiration);
+            self.assert_token_expires_in_future(token_expiration, block_time);
             if !utils::is_label_valid(&info.label) {
                 self.revert(RegistrarError::TokenNameIsNotValid);
             }
             let metadata = NameTokenMetadata::with_resolver(
                 &info.label,
-                info.token_expiration,
+                token_expiration,
                 &info.asset_uri,
                 self.name_token.get_default_resolver(),
             );
@@ -510,6 +514,90 @@ mod tests {
 
         // Then token is minted.
         ctx.expect_name_is_registered(alice, TOKEN_NAME);
+    }
+
+    #[test]
+    fn register_with_microsecond_timestamps_stores_milliseconds() {
+        let mut ctx = TestContext::install_and_setup();
+        let (admin, alice) = (ctx.admin, ctx.alice);
+
+        // When Admin registers with microsecond timestamps.
+        let token_expiration = ctx.token_expiration_time();
+        let voucher_expiration = ctx.voucher_expiration_time();
+        ctx.try_name_register(
+            admin,
+            alice,
+            TOKEN_NAME,
+            token_expiration * 1000,
+            voucher_expiration * 1000,
+        )
+        .unwrap();
+
+        // Then the token is minted with a millisecond expiration.
+        ctx.expect_name_is_registered(alice, TOKEN_NAME);
+
+        // And the token is valid and not burned prematurely.
+        assert!(ctx.token.is_token_valid(generate_token_id(TOKEN_NAME)));
+        ctx.with_name_expired(TOKEN_NAME);
+        assert_eq!(ctx.token.balance_of(alice), U256::one());
+    }
+
+    #[test]
+    fn renew_with_microsecond_timestamps_stores_milliseconds() {
+        let mut ctx = TestContext::install_and_setup();
+        let (admin, alice) = (ctx.admin, ctx.alice);
+
+        // Given Alice has a token.
+        ctx.with_name_registered(admin, alice, TOKEN_NAME);
+
+        // When Admin renews with microsecond timestamps.
+        let token_expiration = INIT_TIME + 2 * TOKEN_EXPIRATION;
+        let voucher_expiration = INIT_TIME + TOKEN_EXPIRATION + GRACE_PERIOD;
+        let tokens = vec![TokenRenewalInfo::new(
+            generate_token_id(TOKEN_NAME),
+            token_expiration * 1000,
+        )];
+        let voucher = RenewalVoucher::new(tokens, voucher_expiration * 1000);
+        ctx.advance_block_time(TOKEN_EXPIRATION + GRACE_PERIOD - 1);
+        ctx.set_caller(admin);
+        ctx.registrar.controller_prolong(voucher);
+
+        // Then the token expiration is stored in milliseconds.
+        let metadata = ctx.token.token_metadata(generate_token_id(TOKEN_NAME));
+        let expected = NameTokenMetadata::with_resolver(
+            TOKEN_NAME,
+            token_expiration,
+            "",
+            ctx.default_resolver.address(),
+        );
+        assert_eq!(metadata, expected.to_vec());
+    }
+
+    #[test]
+    fn legacy_microsecond_metadata_expires_correctly() {
+        let mut ctx = TestContext::install_and_setup();
+        let (admin, alice) = (ctx.admin, ctx.alice);
+
+        // Given Alice has a token with a legacy microsecond expiration stored on-chain.
+        ctx.with_name_registered(admin, alice, TOKEN_NAME);
+        let token_id = generate_token_id(TOKEN_NAME);
+        let expiration = ctx.token_expiration_time();
+        ctx.set_caller(admin);
+        ctx.token.set_token_metadata(
+            token_id,
+            vec![
+                ("asset_uri".to_string(), String::new()),
+                ("expiration".to_string(), (expiration * 1000).to_string()),
+                ("name".to_string(), TOKEN_NAME.to_string()),
+            ],
+        );
+
+        // When the grace period is over.
+        ctx.advance_block_time(TOKEN_EXPIRATION + GRACE_PERIOD + PENDING_DELETE_PERIOD + 1);
+
+        // Then the token can be expired despite the microsecond value.
+        ctx.with_name_expired(TOKEN_NAME);
+        assert_eq!(ctx.token.balance_of(alice), U256::zero());
     }
 
     #[test]

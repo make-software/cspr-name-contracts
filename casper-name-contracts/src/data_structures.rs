@@ -4,6 +4,8 @@ use odra::{
 };
 use serde::{Deserialize, Serialize};
 
+use crate::contracts::utils::trim_microseconds_to_milliseconds_if_needed;
+
 /// Errors that can occur while working with name tokens.
 #[odra::odra_error]
 #[derive(Debug)]
@@ -31,7 +33,7 @@ impl NameTokenMetadata {
     pub fn with_resolver(name: &str, expiration: u64, asset_uri: &str, resolver: Address) -> Self {
         Self {
             name: String::from(name),
-            expiration,
+            expiration: trim_microseconds_to_milliseconds_if_needed(expiration),
             resolver: Some(resolver),
             asset_uri: String::from(asset_uri),
         }
@@ -40,7 +42,7 @@ impl NameTokenMetadata {
     pub fn with_no_resolver(name: &str, expiration: u64, asset_uri: &str) -> Self {
         Self {
             name: String::from(name),
-            expiration,
+            expiration: trim_microseconds_to_milliseconds_if_needed(expiration),
             resolver: None,
             asset_uri: String::from(asset_uri),
         }
@@ -78,7 +80,7 @@ impl NameTokenMetadata {
     }
 
     pub fn set_expiration(&mut self, expiration: u64) {
-        self.expiration = expiration;
+        self.expiration = trim_microseconds_to_milliseconds_if_needed(expiration);
     }
 }
 
@@ -86,7 +88,10 @@ impl TryFrom<String> for NameTokenMetadata {
     type Error = NameTokenError;
 
     fn try_from(value: String) -> Result<Self, Self::Error> {
-        serde_json_wasm::from_str(&value).map_err(|_| NameTokenError::DeserializationError)
+        let mut metadata: NameTokenMetadata =
+            serde_json_wasm::from_str(&value).map_err(|_| NameTokenError::DeserializationError)?;
+        metadata.expiration = trim_microseconds_to_milliseconds_if_needed(metadata.expiration);
+        Ok(metadata)
     }
 }
 
@@ -107,6 +112,7 @@ impl TryFrom<Vec<(String, String)>> for NameTokenMetadata {
             .ok_or(NameTokenError::DeserializationError)?
             .1
             .parse()
+            .map(trim_microseconds_to_milliseconds_if_needed)
             .map_err(|_| NameTokenError::DeserializationError)?;
 
         let resolver = value
@@ -321,18 +327,21 @@ impl Payment for SecondarySaleVoucher {
 }
 
 pub trait ExpirableVoucher {
+    /// Returns the voucher expiration time in milliseconds.
     fn expiration_time(&self) -> u64;
 }
 
+// NOTE: Vouchers are signature-verified over their raw bytes, so the stored
+// `voucher_expiration` must stay untouched; normalization happens on read.
 impl ExpirableVoucher for TokenizationVoucher {
     fn expiration_time(&self) -> u64 {
-        self.voucher_expiration
+        trim_microseconds_to_milliseconds_if_needed(self.voucher_expiration)
     }
 }
 
 impl ExpirableVoucher for RenewalVoucher {
     fn expiration_time(&self) -> u64 {
-        self.voucher_expiration
+        trim_microseconds_to_milliseconds_if_needed(self.voucher_expiration)
     }
 }
 
@@ -381,5 +390,57 @@ mod tests {
         // Test metadata from_json.
         let deserialized: NameTokenMetadata = expected.try_into().unwrap();
         assert_eq!(metadata, deserialized);
+    }
+
+    #[test]
+    fn test_metadata_normalizes_microsecond_expiration() {
+        // 2024-01-01T10:00:00Z in microseconds.
+        let micros: u64 = 1_704_103_200_000_000;
+        let millis: u64 = 1_704_103_200_000;
+
+        // Constructors.
+        let metadata = NameTokenMetadata::with_no_resolver("test-label", micros, "");
+        assert_eq!(metadata.expiration(), millis);
+        let resolver =
+            Address::new("hash-7ba9daac84bebee8111c186588f21ebca35550b6cf1244e71768bd871938be6a")
+                .unwrap();
+        let metadata = NameTokenMetadata::with_resolver("test-label", micros, "", resolver);
+        assert_eq!(metadata.expiration(), millis);
+
+        // Setter.
+        let mut metadata = NameTokenMetadata::with_no_resolver("test-label", millis, "");
+        metadata.set_expiration(micros);
+        assert_eq!(metadata.expiration(), millis);
+
+        // Deserialization from JSON (legacy on-chain data).
+        let json = format!(
+            r#"{{"name":"test-label","expiration":{},"resolver":null,"asset_uri":""}}"#,
+            micros
+        );
+        let metadata: NameTokenMetadata = json.try_into().unwrap();
+        assert_eq!(metadata.expiration(), millis);
+
+        // Deserialization from key-value pairs (legacy on-chain data).
+        let pairs = vec![
+            ("name".to_string(), "test-label".to_string()),
+            ("expiration".to_string(), micros.to_string()),
+        ];
+        let metadata: NameTokenMetadata = pairs.try_into().unwrap();
+        assert_eq!(metadata.expiration(), millis);
+    }
+
+    #[test]
+    fn test_voucher_expiration_time_normalizes_microseconds() {
+        let micros: u64 = 1_704_103_200_000_000;
+        let millis: u64 = 1_704_103_200_000;
+
+        let voucher = TokenizationVoucher::new(vec![], micros);
+        assert_eq!(voucher.expiration_time(), millis);
+        // The stored value stays untouched, as it is part of the signed bytes.
+        assert_eq!(voucher.voucher_expiration, micros);
+
+        let voucher = RenewalVoucher::new(vec![], micros);
+        assert_eq!(voucher.expiration_time(), millis);
+        assert_eq!(voucher.voucher_expiration, micros);
     }
 }

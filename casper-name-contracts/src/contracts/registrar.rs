@@ -265,11 +265,13 @@ impl Registrar {
     fn prolong(&mut self, tokens: Vec<TokenRenewalInfo>) {
         let block_time = self.env().get_block_time();
         for token in tokens {
-            // The offchain component may supply microsecond timestamps.
-            let token_expiration =
+            // The offchain component may supply microsecond timestamps. Normalize
+            // only for the block-time comparison; the metadata stores the value
+            // verbatim (normalization happens on read in `metadata.expiration()`).
+            let normalized_expiration =
                 utils::trim_microseconds_to_milliseconds_if_needed(token.token_expiration);
             // verify the new expiration date is in the future
-            self.assert_token_expires_in_future(token_expiration, block_time);
+            self.assert_token_expires_in_future(normalized_expiration, block_time);
             // Compute token hash.
             let token_id = token.token_id;
             // get the token metadata
@@ -277,7 +279,7 @@ impl Registrar {
             // check if the time for the renewal does not elapsed
             let expiration = metadata.expiration();
             self.assert_in_renewal_period(expiration);
-            metadata.set_expiration(token_expiration);
+            metadata.set_expiration(token.token_expiration);
 
             self.name_token
                 .set_token_metadata(token_id, metadata.to_vec());
@@ -287,16 +289,18 @@ impl Registrar {
     fn register(&mut self, names: Vec<NameMintInfo>) {
         let block_time = self.env().get_block_time();
         for info in names {
-            // The offchain component may supply microsecond timestamps.
-            let token_expiration =
+            // The offchain component may supply microsecond timestamps. Normalize
+            // only for the block-time comparison; the metadata stores the value
+            // verbatim (normalization happens on read in `metadata.expiration()`).
+            let normalized_expiration =
                 utils::trim_microseconds_to_milliseconds_if_needed(info.token_expiration);
-            self.assert_token_expires_in_future(token_expiration, block_time);
+            self.assert_token_expires_in_future(normalized_expiration, block_time);
             if !utils::is_label_valid(&info.label) {
                 self.revert(RegistrarError::TokenNameIsNotValid);
             }
             let metadata = NameTokenMetadata::with_resolver(
                 &info.label,
-                token_expiration,
+                info.token_expiration,
                 &info.asset_uri,
                 self.name_token.get_default_resolver(),
             );
@@ -517,7 +521,7 @@ mod tests {
     }
 
     #[test]
-    fn register_with_microsecond_timestamps_stores_milliseconds() {
+    fn register_with_microsecond_timestamps_preserves_metadata() {
         let mut ctx = TestContext::install_and_setup();
         let (admin, alice) = (ctx.admin, ctx.alice);
 
@@ -533,17 +537,25 @@ mod tests {
         )
         .unwrap();
 
-        // Then the token is minted with a millisecond expiration.
-        ctx.expect_name_is_registered(alice, TOKEN_NAME);
+        // Then the token is minted and the metadata preserves the raw microsecond value.
+        let token_id = generate_token_id(TOKEN_NAME);
+        assert_eq!(ctx.token.owner_of(token_id), Some(alice));
+        let metadata = ctx.token.token_metadata(token_id);
+        let stored_expiration = metadata
+            .into_iter()
+            .find(|(key, _)| key == "expiration")
+            .unwrap()
+            .1;
+        assert_eq!(stored_expiration, (token_expiration * 1000).to_string());
 
-        // And the token is valid and not burned prematurely.
+        // And the token is valid and not burned prematurely (on-chain reads normalize).
         assert!(ctx.token.is_token_valid(generate_token_id(TOKEN_NAME)));
         ctx.with_name_expired(TOKEN_NAME);
         assert_eq!(ctx.token.balance_of(alice), U256::one());
     }
 
     #[test]
-    fn renew_with_microsecond_timestamps_stores_milliseconds() {
+    fn renew_with_microsecond_timestamps_preserves_metadata() {
         let mut ctx = TestContext::install_and_setup();
         let (admin, alice) = (ctx.admin, ctx.alice);
 
@@ -562,11 +574,11 @@ mod tests {
         ctx.set_caller(admin);
         ctx.registrar.controller_prolong(voucher);
 
-        // Then the token expiration is stored in milliseconds.
+        // Then the token metadata preserves the raw microsecond value.
         let metadata = ctx.token.token_metadata(generate_token_id(TOKEN_NAME));
         let expected = NameTokenMetadata::with_resolver(
             TOKEN_NAME,
-            token_expiration,
+            token_expiration * 1000,
             "",
             ctx.default_resolver.address(),
         );

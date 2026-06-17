@@ -252,6 +252,37 @@ mod tests {
         assert_eq!(reverse_resolver.get_primary_name(&user), None);
     }
 
+    #[test]
+    fn test_set_primary_name_after_burn_and_remint_fails() {
+        let (mut ctx, mut reverse_resolver) = setup();
+        let (admin, user) = (ctx.admin, ctx.alice);
+
+        // Register the name and set it as the primary name.
+        ctx.with_name_registered(admin, user, TOKEN_TEST);
+        ctx.set_caller(user);
+        ctx.default_resolver
+            .set_resolution(DOMAIN_TEST.to_string(), Some(user));
+        reverse_resolver.set_primary_name(DOMAIN_TEST.to_string());
+        assert_eq!(
+            reverse_resolver.get_primary_name(&user),
+            Some(DOMAIN_TEST.to_string())
+        );
+
+        // Burn the name. This invalidates its resolution.
+        ctx.admin_burn(vec![TOKEN_TEST]);
+        assert_eq!(reverse_resolver.get_primary_name(&user), None);
+
+        // Mint a new token with the same name. It has a fresh resolver with no
+        // resolution set, so it cannot be set as the primary name.
+        ctx.with_name_registered(admin, user, TOKEN_TEST);
+        ctx.set_caller(user);
+        let result = reverse_resolver.try_set_primary_name(DOMAIN_TEST.to_string());
+        assert_eq!(
+            result.unwrap_err(),
+            Error::ResolutionForPrimaryNameNotFound.into()
+        );
+    }
+
     fn setup() -> (TestContext, ReverseResolverHostRef) {
         let ctx = TestContext::install_and_setup();
         let reverse_resolver = ReverseResolver::deploy(

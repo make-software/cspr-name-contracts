@@ -4,6 +4,8 @@ use odra::{
 };
 use serde::{Deserialize, Serialize};
 
+use crate::contracts::utils::trim_microseconds_to_milliseconds_if_needed;
+
 /// Errors that can occur while working with name tokens.
 #[odra::odra_error]
 #[derive(Debug)]
@@ -73,8 +75,15 @@ impl NameTokenMetadata {
         vec
     }
 
+    /// Returns the expiration normalized to milliseconds.
+    ///
+    /// The stored value is kept verbatim as the off-chain component provides it
+    /// (which may be microseconds), so this getter normalizes on read. All
+    /// on-chain comparisons against block time (also in milliseconds) go
+    /// through here. The raw stored value is only ever serialized back via
+    /// [`to_vec`](Self::to_vec) / [`json`](Self::json), preserving metadata units.
     pub fn expiration(&self) -> u64 {
-        self.expiration
+        trim_microseconds_to_milliseconds_if_needed(self.expiration)
     }
 
     pub fn set_expiration(&mut self, expiration: u64) {
@@ -86,6 +95,8 @@ impl TryFrom<String> for NameTokenMetadata {
     type Error = NameTokenError;
 
     fn try_from(value: String) -> Result<Self, Self::Error> {
+        // Metadata is preserved verbatim (off-chain may store microseconds);
+        // normalization to milliseconds happens on read in `expiration()`.
         serde_json_wasm::from_str(&value).map_err(|_| NameTokenError::DeserializationError)
     }
 }
@@ -321,18 +332,21 @@ impl Payment for SecondarySaleVoucher {
 }
 
 pub trait ExpirableVoucher {
+    /// Returns the voucher expiration time in milliseconds.
     fn expiration_time(&self) -> u64;
 }
 
+// NOTE: Vouchers are signature-verified over their raw bytes, so the stored
+// `voucher_expiration` must stay untouched; normalization happens on read.
 impl ExpirableVoucher for TokenizationVoucher {
     fn expiration_time(&self) -> u64 {
-        self.voucher_expiration
+        trim_microseconds_to_milliseconds_if_needed(self.voucher_expiration)
     }
 }
 
 impl ExpirableVoucher for RenewalVoucher {
     fn expiration_time(&self) -> u64 {
-        self.voucher_expiration
+        trim_microseconds_to_milliseconds_if_needed(self.voucher_expiration)
     }
 }
 
@@ -381,5 +395,69 @@ mod tests {
         // Test metadata from_json.
         let deserialized: NameTokenMetadata = expected.try_into().unwrap();
         assert_eq!(metadata, deserialized);
+    }
+
+    #[test]
+    fn test_metadata_normalizes_microsecond_expiration_on_read() {
+        // 2024-01-01T10:00:00Z in microseconds.
+        let micros: u64 = 1_704_103_200_000_000;
+        let millis: u64 = 1_704_103_200_000;
+        let micros_str = micros.to_string();
+
+        // Constructors normalize on read but keep storage verbatim.
+        let metadata = NameTokenMetadata::with_no_resolver("test-label", micros, "");
+        assert_eq!(metadata.expiration(), millis);
+        assert!(metadata.json().contains(&micros_str));
+        let resolver =
+            Address::new("hash-7ba9daac84bebee8111c186588f21ebca35550b6cf1244e71768bd871938be6a")
+                .unwrap();
+        let metadata = NameTokenMetadata::with_resolver("test-label", micros, "", resolver);
+        assert_eq!(metadata.expiration(), millis);
+        assert!(metadata.json().contains(&micros_str));
+
+        // Setter keeps storage verbatim.
+        let mut metadata = NameTokenMetadata::with_no_resolver("test-label", millis, "");
+        metadata.set_expiration(micros);
+        assert_eq!(metadata.expiration(), millis);
+        assert!(metadata.json().contains(&micros_str));
+
+        // Deserialization from JSON (legacy on-chain data) is not mutated.
+        let json = format!(
+            r#"{{"name":"test-label","expiration":{},"resolver":null,"asset_uri":""}}"#,
+            micros
+        );
+        let metadata: NameTokenMetadata = json.try_into().unwrap();
+        assert_eq!(metadata.expiration(), millis);
+        assert!(metadata.json().contains(&micros_str));
+
+        // Deserialization from key-value pairs (legacy on-chain data) is not mutated.
+        let pairs = vec![
+            ("name".to_string(), "test-label".to_string()),
+            ("expiration".to_string(), micros.to_string()),
+        ];
+        let metadata: NameTokenMetadata = pairs.try_into().unwrap();
+        assert_eq!(metadata.expiration(), millis);
+        // `to_vec` round-trips the raw stored value.
+        let expiration_pair = metadata
+            .to_vec()
+            .into_iter()
+            .find(|(key, _)| key == "expiration")
+            .unwrap();
+        assert_eq!(expiration_pair.1, micros_str);
+    }
+
+    #[test]
+    fn test_voucher_expiration_time_normalizes_microseconds() {
+        let micros: u64 = 1_704_103_200_000_000;
+        let millis: u64 = 1_704_103_200_000;
+
+        let voucher = TokenizationVoucher::new(vec![], micros);
+        assert_eq!(voucher.expiration_time(), millis);
+        // The stored value stays untouched, as it is part of the signed bytes.
+        assert_eq!(voucher.voucher_expiration, micros);
+
+        let voucher = RenewalVoucher::new(vec![], micros);
+        assert_eq!(voucher.expiration_time(), millis);
+        assert_eq!(voucher.voucher_expiration, micros);
     }
 }

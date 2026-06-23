@@ -73,6 +73,23 @@ pub fn is_label_valid(label: &str) -> bool {
     is_valid_dns_label(label) && label != "cspr" && !label.contains('.')
 }
 
+/// Convert microsecond timestamps to milliseconds if they exceed the threshold.
+///
+/// The offchain component may supply timestamps in microseconds instead of
+/// milliseconds. This helper is applied at every timestamp entry point
+/// ([NameTokenMetadata](crate::data_structures::NameTokenMetadata) construction
+/// and deserialization, voucher expiration reads, and registrar inputs) so all
+/// time comparisons work in milliseconds, matching the block time.
+pub fn trim_microseconds_to_milliseconds_if_needed(expiration: u64) -> u64 {
+    // Values above ~10^14 are microseconds: 10^14 ms is the year 5138,
+    // while any microsecond timestamp after 1973 exceeds it.
+    if expiration > 99_999_999_999_999 {
+        expiration / 1000
+    } else {
+        expiration
+    }
+}
+
 #[cfg(test)]
 mod t {
     #[test]
@@ -140,5 +157,11 @@ mod t {
         assert!(!super::is_label_valid("cspr"));
         assert!(!super::is_label_valid("invalid.label"));
         assert!(super::is_label_valid("valid123"));
+    }
+
+    #[test]
+    fn test_trim_microseconds_to_milliseconds_if_needed() {
+        assert_eq!(super::trim_microseconds_to_milliseconds_if_needed(100_000_000_000_000), 100_000_000_000);
+        assert_eq!(super::trim_microseconds_to_milliseconds_if_needed(99_999_999_999_999), 99_999_999_999_999);
     }
 }

@@ -264,16 +264,50 @@ impl Scenario for UpgradeNameToken {
             .unwrap();
 
         env.set_gas(cspr!(400));
-        let _result = NameToken::try_upgrade_with_cfg(
+        NameToken::try_upgrade_with_cfg(
             env,
             name_token_addr,
             NoArgs,
             UpgradeConfig {
-                package_named_key: String::from("NameToken_contract_package"),
+                package_named_key: NameToken::ident(),
+                force_create_upgrade_group: false,
+                allow_key_override: true,
+            },
+        )?;
+
+        Ok(())
+    }
+}
+
+pub struct UpgradeRegistrar;
+
+impl ScenarioMetadata for UpgradeRegistrar {
+    const NAME: &'static str = "upgrade-registrar";
+    const DESCRIPTION: &'static str = "Upgrade the Registrar contract.";
+}
+
+impl Scenario for UpgradeRegistrar {
+    fn run(
+        &self,
+        env: &HostEnv,
+        container: &DeployedContractsContainer,
+        _args: Args,
+    ) -> Result<(), ScenarioError> {
+        let registrar_addr = container
+            .address_by_name(&Registrar::ident())
+            .unwrap();
+
+        env.set_gas(cspr!(400));
+        Registrar::try_upgrade_with_cfg(
+            env,
+            registrar_addr,
+            NoArgs,
+            UpgradeConfig {
+                package_named_key: Registrar::ident(),
                 force_create_upgrade_group: true,
                 allow_key_override: true,
             },
-        );
+        )?;
 
         Ok(())
     }

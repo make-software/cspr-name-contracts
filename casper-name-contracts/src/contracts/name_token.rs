@@ -110,11 +110,7 @@ impl NameToken {
                 self.revert(NameTokenError::ExpiredTokenTransfer);
             }
 
-            let owner = self
-                .token
-                .owner_of(token_id)
-                .unwrap_or_revert_with(self, Cep95Error::ValueNotSet);
-            self.token.raw_transfer_from(owner, recipient, token_id);
+            let owner = self.token.raw_transfer(recipient, token_id);
             // if called by an operator
             if caller != owner {
                 self.cleanup(token_id);

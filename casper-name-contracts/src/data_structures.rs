@@ -33,7 +33,7 @@ impl NameTokenMetadata {
     pub fn with_resolver(name: &str, expiration: u64, asset_uri: &str, resolver: Address) -> Self {
         Self {
             name: String::from(name),
-            expiration: trim_microseconds_to_milliseconds_if_needed(expiration),
+            expiration,
             resolver: Some(resolver),
             asset_uri: String::from(asset_uri),
         }
@@ -42,7 +42,7 @@ impl NameTokenMetadata {
     pub fn with_no_resolver(name: &str, expiration: u64, asset_uri: &str) -> Self {
         Self {
             name: String::from(name),
-            expiration: trim_microseconds_to_milliseconds_if_needed(expiration),
+            expiration,
             resolver: None,
             asset_uri: String::from(asset_uri),
         }
@@ -75,12 +75,19 @@ impl NameTokenMetadata {
         vec
     }
 
+    /// Returns the expiration normalized to milliseconds.
+    ///
+    /// The stored value is kept verbatim as the off-chain component provides it
+    /// (which may be microseconds), so this getter normalizes on read. All
+    /// on-chain comparisons against block time (also in milliseconds) go
+    /// through here. The raw stored value is only ever serialized back via
+    /// [`to_vec`](Self::to_vec) / [`json`](Self::json), preserving metadata units.
     pub fn expiration(&self) -> u64 {
-        self.expiration
+        trim_microseconds_to_milliseconds_if_needed(self.expiration)
     }
 
     pub fn set_expiration(&mut self, expiration: u64) {
-        self.expiration = trim_microseconds_to_milliseconds_if_needed(expiration);
+        self.expiration = expiration;
     }
 }
 
@@ -88,10 +95,9 @@ impl TryFrom<String> for NameTokenMetadata {
     type Error = NameTokenError;
 
     fn try_from(value: String) -> Result<Self, Self::Error> {
-        let mut metadata: NameTokenMetadata =
-            serde_json_wasm::from_str(&value).map_err(|_| NameTokenError::DeserializationError)?;
-        metadata.expiration = trim_microseconds_to_milliseconds_if_needed(metadata.expiration);
-        Ok(metadata)
+        // Metadata is preserved verbatim (off-chain may store microseconds);
+        // normalization to milliseconds happens on read in `expiration()`.
+        serde_json_wasm::from_str(&value).map_err(|_| NameTokenError::DeserializationError)
     }
 }
 
@@ -112,7 +118,6 @@ impl TryFrom<Vec<(String, String)>> for NameTokenMetadata {
             .ok_or(NameTokenError::DeserializationError)?
             .1
             .parse()
-            .map(trim_microseconds_to_milliseconds_if_needed)
             .map_err(|_| NameTokenError::DeserializationError)?;
 
         let resolver = value
@@ -393,40 +398,52 @@ mod tests {
     }
 
     #[test]
-    fn test_metadata_normalizes_microsecond_expiration() {
+    fn test_metadata_normalizes_microsecond_expiration_on_read() {
         // 2024-01-01T10:00:00Z in microseconds.
         let micros: u64 = 1_704_103_200_000_000;
         let millis: u64 = 1_704_103_200_000;
+        let micros_str = micros.to_string();
 
-        // Constructors.
+        // Constructors normalize on read but keep storage verbatim.
         let metadata = NameTokenMetadata::with_no_resolver("test-label", micros, "");
         assert_eq!(metadata.expiration(), millis);
+        assert!(metadata.json().contains(&micros_str));
         let resolver =
             Address::new("hash-7ba9daac84bebee8111c186588f21ebca35550b6cf1244e71768bd871938be6a")
                 .unwrap();
         let metadata = NameTokenMetadata::with_resolver("test-label", micros, "", resolver);
         assert_eq!(metadata.expiration(), millis);
+        assert!(metadata.json().contains(&micros_str));
 
-        // Setter.
+        // Setter keeps storage verbatim.
         let mut metadata = NameTokenMetadata::with_no_resolver("test-label", millis, "");
         metadata.set_expiration(micros);
         assert_eq!(metadata.expiration(), millis);
+        assert!(metadata.json().contains(&micros_str));
 
-        // Deserialization from JSON (legacy on-chain data).
+        // Deserialization from JSON (legacy on-chain data) is not mutated.
         let json = format!(
             r#"{{"name":"test-label","expiration":{},"resolver":null,"asset_uri":""}}"#,
             micros
         );
         let metadata: NameTokenMetadata = json.try_into().unwrap();
         assert_eq!(metadata.expiration(), millis);
+        assert!(metadata.json().contains(&micros_str));
 
-        // Deserialization from key-value pairs (legacy on-chain data).
+        // Deserialization from key-value pairs (legacy on-chain data) is not mutated.
         let pairs = vec![
             ("name".to_string(), "test-label".to_string()),
             ("expiration".to_string(), micros.to_string()),
         ];
         let metadata: NameTokenMetadata = pairs.try_into().unwrap();
         assert_eq!(metadata.expiration(), millis);
+        // `to_vec` round-trips the raw stored value.
+        let expiration_pair = metadata
+            .to_vec()
+            .into_iter()
+            .find(|(key, _)| key == "expiration")
+            .unwrap();
+        assert_eq!(expiration_pair.1, micros_str);
     }
 
     #[test]

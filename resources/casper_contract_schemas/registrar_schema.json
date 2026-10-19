@@ -229,6 +229,11 @@
       "discriminant": 1201
     },
     {
+      "name": "ExpirationNotExtended",
+      "description": "",
+      "discriminant": 1209
+    },
+    {
       "name": "GracePeriodExpired",
       "description": "",
       "discriminant": 1203

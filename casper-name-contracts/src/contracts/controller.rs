@@ -92,10 +92,12 @@ impl Controller {
         renewal_signature: Bytes,
     ) {
         self.controller.require_not_paused();
-        self.controller
-            .process_payment_voucher(&payment_voucher, payment_signature);
-        self.controller
-            .process_payment_voucher(&renewal_voucher, renewal_signature);
+        self.controller.process_payment_vouchers(
+            &payment_voucher,
+            payment_signature,
+            &renewal_voucher,
+            renewal_signature,
+        );
         self.registrar
             .controller_prolong_and_register(renewal_voucher.into(), payment_voucher.into());
     }
@@ -196,24 +198,53 @@ impl BaseController {
     }
 
     /// Validate the payment voucher and process the payment.
+    /// The attached value must be exactly the voucher amount.
     pub fn process_payment_voucher<P: Payment + ToBytes>(&self, voucher: &P, signature: Bytes) {
-        self.assert_caller_is_buyer(voucher);
-        self.verify_signature(voucher, &signature);
+        self.validate_payment_voucher(voucher, &signature);
+        self.assert_attached_value_is_exactly(voucher.payment_info().amount);
         self.collect_cspr_payment(voucher);
     }
 
+    /// Validate two payment vouchers paid with a single attached value and
+    /// process both payments. The attached value must be exactly the sum of
+    /// both voucher amounts.
+    pub fn process_payment_vouchers<P1: Payment + ToBytes, P2: Payment + ToBytes>(
+        &self,
+        first_voucher: &P1,
+        first_signature: Bytes,
+        second_voucher: &P2,
+        second_signature: Bytes,
+    ) {
+        self.validate_payment_voucher(first_voucher, &first_signature);
+        self.validate_payment_voucher(second_voucher, &second_signature);
+        let total = first_voucher.payment_info().amount + second_voucher.payment_info().amount;
+        self.assert_attached_value_is_exactly(total);
+        self.collect_cspr_payment(first_voucher);
+        self.collect_cspr_payment(second_voucher);
+    }
+
+    fn validate_payment_voucher<P: Payment + ToBytes>(&self, voucher: &P, signature: &Bytes) {
+        self.assert_caller_is_buyer(voucher);
+        self.verify_signature(voucher, signature);
+    }
+
+    fn assert_attached_value_is_exactly(&self, expected: U512) {
+        let attached_value = self.env().attached_value();
+        if attached_value < expected {
+            self.revert(ControllerError::InsufficientPayment);
+        }
+        if attached_value > expected {
+            self.revert(ControllerError::PaymentTooLarge);
+        }
+    }
+
+    /// Transfer the voucher amount to the treasury and emit the payment event.
+    /// The attached value is expected to be already checked by the caller.
     fn collect_cspr_payment<P: Payment>(&self, voucher: &P) {
         let fee_collector = self
             .treasury
             .get_or_revert_with(ControllerError::FeeCollectorNotSet);
         let payment_info = voucher.payment_info();
-        let attached_value = self.env().attached_value();
-        if attached_value < payment_info.amount {
-            self.revert(ControllerError::InsufficientPayment);
-        }
-        if attached_value > payment_info.amount {
-            self.revert(ControllerError::PaymentTooLarge);
-        }
         self.env()
             .transfer_tokens(&fee_collector, &payment_info.amount);
         self.env().emit_event(PaymentFulfilled {
@@ -249,20 +280,27 @@ pub enum ControllerError {
 mod tests {
     use odra::{
         casper_event_standard::EventInstance,
-        casper_types::U512,
+        casper_types::{bytesrepr::Bytes, U512},
         host::{Deployer, HostRef},
+        prelude::Addressable,
     };
 
     use crate::{
         contracts::{
             controller::{
-                Controller, ControllerInitArgs, SignerPublicKeyChanged, TreasuryAddressChanged,
+                Controller, ControllerError, ControllerInitArgs, PaymentFulfilled,
+                SignerPublicKeyChanged, TreasuryAddressChanged,
             },
             registrar::RegistrarError,
         },
-        data_structures::{NameMintInfo, PaymentVoucher, RenewalPaymentVoucher, TokenRenewalInfo},
+        data_structures::{
+            NameMintInfo, NameTokenMetadata, PaymentVoucher, RenewalPaymentVoucher,
+            TokenRenewalInfo,
+        },
         test_context::{generate_token_id, TestContext, INIT_TIME, TOKEN_EXPIRATION, TOKEN_NAME},
     };
+
+    const NEW_TOKEN_NAME: &str = "other";
 
     #[test]
     fn deploy_fails_if_account_set_as_registrar() {
@@ -396,6 +434,216 @@ mod tests {
 
         // And the token expiration is untouched.
         assert_eq!(ctx.token.token_metadata(token_id), metadata_after_first);
+    }
+
+    /// Builds a pair of vouchers: a payment voucher buying `NEW_TOKEN_NAME` and a
+    /// renewal voucher prolonging `TOKEN_NAME` (which must already be registered).
+    fn buy_and_renew_vouchers(
+        ctx: &TestContext,
+        payment_amount: U512,
+        renewal_amount: U512,
+    ) -> (PaymentVoucher, Bytes, RenewalPaymentVoucher, Bytes) {
+        let alice = ctx.alice;
+        let payment_voucher = PaymentVoucher::new(
+            payment_amount,
+            "id_buy",
+            alice,
+            vec![NameMintInfo::new(
+                NEW_TOKEN_NAME,
+                alice,
+                ctx.token_expiration_time(),
+                "",
+            )],
+            ctx.voucher_expiration_time(),
+        );
+        let renewal_voucher = RenewalPaymentVoucher::new(
+            renewal_amount,
+            "id_renew",
+            alice,
+            vec![TokenRenewalInfo::new(
+                generate_token_id(TOKEN_NAME),
+                INIT_TIME + 2 * TOKEN_EXPIRATION,
+            )],
+            ctx.voucher_expiration_time(),
+        );
+        let payment_signature = ctx.sign(&payment_voucher);
+        let renewal_signature = ctx.sign(&renewal_voucher);
+        (
+            payment_voucher,
+            payment_signature,
+            renewal_voucher,
+            renewal_signature,
+        )
+    }
+
+    #[test]
+    fn test_buy_and_renew_charges_sum_of_both_vouchers() {
+        let mut ctx = TestContext::install_and_setup();
+        let (admin, fee_collector, alice) = (ctx.admin, ctx.treasury, ctx.alice);
+        ctx.with_name_registered(admin, alice, TOKEN_NAME);
+        let renewed_token_id = generate_token_id(TOKEN_NAME);
+        let new_token_id = generate_token_id(NEW_TOKEN_NAME);
+
+        // Given vouchers with different amounts.
+        let payment_amount = U512::from(3000);
+        let renewal_amount = U512::from(2000);
+        let total = payment_amount + renewal_amount;
+        let (payment_voucher, payment_signature, renewal_voucher, renewal_signature) =
+            buy_and_renew_vouchers(&ctx, payment_amount, renewal_amount);
+
+        let fee_collector_balance = ctx.balance_of(&fee_collector);
+        let alice_balance = ctx.balance_of(&alice);
+
+        // When Alice attaches exactly the sum of both vouchers.
+        ctx.set_caller(alice);
+        ctx.controller.with_tokens(total).buy_and_renew(
+            payment_voucher,
+            payment_signature,
+            renewal_voucher,
+            renewal_signature,
+        );
+
+        // Then the new token is minted and the old one is prolonged.
+        assert_eq!(ctx.token.owner_of(new_token_id), Some(alice));
+        let metadata =
+            NameTokenMetadata::try_from(ctx.token.token_metadata(renewed_token_id)).unwrap();
+        assert_eq!(metadata.expiration(), INIT_TIME + 2 * TOKEN_EXPIRATION);
+
+        // And exactly the sum is moved from Alice to the treasury.
+        assert_eq!(
+            ctx.balance_of(&fee_collector),
+            fee_collector_balance + total
+        );
+        assert_eq!(ctx.balance_of(&alice), alice_balance - total);
+        assert_eq!(ctx.balance_of(&ctx.controller.address()), U512::zero());
+
+        // And a payment event is emitted for each voucher.
+        assert!(ctx.env.emitted_event(
+            &ctx.controller,
+            PaymentFulfilled {
+                payment_id: "id_buy".to_string(),
+                buyer: alice,
+                amount: payment_amount,
+            }
+        ));
+        assert!(ctx.env.emitted_event(
+            &ctx.controller,
+            PaymentFulfilled {
+                payment_id: "id_renew".to_string(),
+                buyer: alice,
+                amount: renewal_amount,
+            }
+        ));
+    }
+
+    #[test]
+    fn test_buy_and_renew_with_only_one_voucher_amount_attached_fails() {
+        let mut ctx = TestContext::install_and_setup();
+        let (admin, fee_collector, alice) = (ctx.admin, ctx.treasury, ctx.alice);
+        ctx.with_name_registered(admin, alice, TOKEN_NAME);
+
+        // Given vouchers with equal amounts.
+        let amount = U512::from(2000);
+        let (payment_voucher, payment_signature, renewal_voucher, renewal_signature) =
+            buy_and_renew_vouchers(&ctx, amount, amount);
+        let fee_collector_balance = ctx.balance_of(&fee_collector);
+        let alice_balance = ctx.balance_of(&alice);
+
+        // When Alice attaches the amount of a single voucher only.
+        ctx.set_caller(alice);
+        let result = ctx.controller.with_tokens(amount).try_buy_and_renew(
+            payment_voucher,
+            payment_signature,
+            renewal_voucher,
+            renewal_signature,
+        );
+
+        // Then it fails and nothing is charged or minted.
+        assert_eq!(result, Err(ControllerError::InsufficientPayment.into()));
+        assert_eq!(ctx.balance_of(&fee_collector), fee_collector_balance);
+        assert_eq!(ctx.balance_of(&alice), alice_balance);
+        assert!(!ctx.token.token_exists(generate_token_id(NEW_TOKEN_NAME)));
+    }
+
+    #[test]
+    fn test_buy_and_renew_with_insufficient_payment_fails() {
+        let mut ctx = TestContext::install_and_setup();
+        let (admin, alice) = (ctx.admin, ctx.alice);
+        ctx.with_name_registered(admin, alice, TOKEN_NAME);
+
+        let payment_amount = U512::from(3000);
+        let renewal_amount = U512::from(2000);
+        let (payment_voucher, payment_signature, renewal_voucher, renewal_signature) =
+            buy_and_renew_vouchers(&ctx, payment_amount, renewal_amount);
+
+        // When Alice attaches one mote less than the sum.
+        ctx.set_caller(alice);
+        let result = ctx
+            .controller
+            .with_tokens(payment_amount + renewal_amount - U512::one())
+            .try_buy_and_renew(
+                payment_voucher,
+                payment_signature,
+                renewal_voucher,
+                renewal_signature,
+            );
+
+        assert_eq!(result, Err(ControllerError::InsufficientPayment.into()));
+    }
+
+    #[test]
+    fn test_buy_and_renew_with_too_large_payment_fails() {
+        let mut ctx = TestContext::install_and_setup();
+        let (admin, alice) = (ctx.admin, ctx.alice);
+        ctx.with_name_registered(admin, alice, TOKEN_NAME);
+
+        let payment_amount = U512::from(3000);
+        let renewal_amount = U512::from(2000);
+        let (payment_voucher, payment_signature, renewal_voucher, renewal_signature) =
+            buy_and_renew_vouchers(&ctx, payment_amount, renewal_amount);
+
+        // When Alice attaches one mote more than the sum.
+        ctx.set_caller(alice);
+        let result = ctx
+            .controller
+            .with_tokens(payment_amount + renewal_amount + U512::one())
+            .try_buy_and_renew(
+                payment_voucher,
+                payment_signature,
+                renewal_voucher,
+                renewal_signature,
+            );
+
+        assert_eq!(result, Err(ControllerError::PaymentTooLarge.into()));
+    }
+
+    #[test]
+    fn test_buy_and_renew_with_invalid_renewal_signature_fails() {
+        let mut ctx = TestContext::install_and_setup();
+        let (admin, fee_collector, alice) = (ctx.admin, ctx.treasury, ctx.alice);
+        ctx.with_name_registered(admin, alice, TOKEN_NAME);
+
+        let payment_amount = U512::from(3000);
+        let renewal_amount = U512::from(2000);
+        let (payment_voucher, payment_signature, renewal_voucher, _) =
+            buy_and_renew_vouchers(&ctx, payment_amount, renewal_amount);
+        let fee_collector_balance = ctx.balance_of(&fee_collector);
+
+        // When the renewal signature is not valid.
+        ctx.set_caller(alice);
+        let result = ctx
+            .controller
+            .with_tokens(payment_amount + renewal_amount)
+            .try_buy_and_renew(
+                payment_voucher,
+                payment_signature.clone(),
+                renewal_voucher,
+                payment_signature,
+            );
+
+        // Then nothing is charged, not even the valid payment voucher.
+        assert_eq!(result, Err(ControllerError::InvalidSignature.into()));
+        assert_eq!(ctx.balance_of(&fee_collector), fee_collector_balance);
     }
 
     #[test]

@@ -254,8 +254,11 @@ mod tests {
     };
 
     use crate::{
-        contracts::controller::{
-            Controller, ControllerInitArgs, SignerPublicKeyChanged, TreasuryAddressChanged,
+        contracts::{
+            controller::{
+                Controller, ControllerInitArgs, SignerPublicKeyChanged, TreasuryAddressChanged,
+            },
+            registrar::RegistrarError,
         },
         data_structures::{NameMintInfo, PaymentVoucher, RenewalPaymentVoucher, TokenRenewalInfo},
         test_context::{generate_token_id, TestContext, INIT_TIME, TOKEN_EXPIRATION, TOKEN_NAME},
@@ -350,6 +353,49 @@ mod tests {
             fee_collector_balance + amount
         );
         assert_eq!(ctx.balance_of(&alice), alice_balance - amount);
+    }
+
+    #[test]
+    fn test_renew_replayed_voucher_is_rejected_and_not_charged_twice() {
+        let mut ctx = TestContext::install_and_setup();
+        let (admin, fee_collector, alice) = (ctx.admin, ctx.treasury, ctx.alice);
+        ctx.with_name_registered(admin, alice, TOKEN_NAME);
+        let token_id = generate_token_id(TOKEN_NAME);
+
+        // Given a valid renewal voucher.
+        let token_expiration = INIT_TIME + 2 * TOKEN_EXPIRATION;
+        let voucher_expiration = INIT_TIME + TOKEN_EXPIRATION + 100;
+        let amount = U512::from(2000);
+        let names = vec![TokenRenewalInfo::new(token_id, token_expiration)];
+        let voucher = RenewalPaymentVoucher::new(amount, "id_1", alice, names, voucher_expiration);
+        let signature = ctx.sign(&voucher);
+
+        // And Alice renews the token with it once.
+        ctx.advance_block_time(TOKEN_EXPIRATION + 1);
+        ctx.set_caller(alice);
+        ctx.controller
+            .with_tokens(amount)
+            .renew(voucher.clone(), signature.clone());
+        let metadata_after_first = ctx.token.token_metadata(token_id);
+        let fee_collector_balance = ctx.balance_of(&fee_collector);
+        let alice_balance = ctx.balance_of(&alice);
+
+        // When the very same voucher and signature are submitted again.
+        ctx.set_caller(alice);
+        let result = ctx
+            .controller
+            .with_tokens(amount)
+            .try_renew(voucher, signature);
+
+        // Then the replay is rejected.
+        assert_eq!(result, Err(RegistrarError::ExpirationNotExtended.into()));
+
+        // And nobody is charged for the second time.
+        assert_eq!(ctx.balance_of(&fee_collector), fee_collector_balance);
+        assert_eq!(ctx.balance_of(&alice), alice_balance);
+
+        // And the token expiration is untouched.
+        assert_eq!(ctx.token.token_metadata(token_id), metadata_after_first);
     }
 
     #[test]

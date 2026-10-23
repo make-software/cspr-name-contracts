@@ -220,6 +220,12 @@ impl Registrar {
         }
     }
 
+    fn assert_expiration_extended(&self, new_expiration: u64, current_expiration: u64) {
+        if new_expiration <= current_expiration {
+            self.revert(RegistrarError::ExpirationNotExtended);
+        }
+    }
+
     fn expire_single(&mut self, token_id: U256, block_time: u64, grace_period: u64) {
         let metadata = self.wrapped_metadata(token_id);
         let token_expiration = metadata.expiration();
@@ -279,6 +285,10 @@ impl Registrar {
             // check if the time for the renewal does not elapsed
             let expiration = metadata.expiration();
             self.assert_in_renewal_period(expiration);
+            // The new expiration must strictly extend the stored one. This makes
+            // a replayed renewal voucher revert (unwinding the payment) instead
+            // of silently charging again for zero additional term.
+            self.assert_expiration_extended(normalized_expiration, expiration);
             metadata.set_expiration(token.token_expiration);
 
             self.name_token
@@ -334,6 +344,7 @@ pub enum RegistrarError {
     GracePeriodTooLong = 1206,
     NameTokenIsNotValid = 1207,
     TokenNameIsNotValid = 1208,
+    ExpirationNotExtended = 1209,
 }
 
 #[cfg(test)]
@@ -583,6 +594,90 @@ mod tests {
             ctx.default_resolver.address(),
         );
         assert_eq!(metadata, expected.to_vec());
+    }
+
+    #[test]
+    fn renew_with_same_expiration_fails() {
+        let mut ctx = TestContext::install_and_setup();
+        let (admin, alice) = (ctx.admin, ctx.alice);
+
+        // Given Alice has a token.
+        ctx.with_name_registered(admin, alice, TOKEN_NAME);
+        let token_id = generate_token_id(TOKEN_NAME);
+        let current_expiration = INIT_TIME + TOKEN_EXPIRATION;
+        let metadata_before = ctx.token.token_metadata(token_id);
+
+        // When Admin tries to renew the token to the expiration it already has.
+        let tokens = vec![TokenRenewalInfo::new(token_id, current_expiration)];
+        let voucher = RenewalVoucher::new(tokens, ctx.voucher_expiration_time());
+        ctx.set_caller(admin);
+        let result = ctx.registrar.try_controller_prolong(voucher);
+
+        // Then renewal fails and metadata is untouched.
+        assert_eq!(result, Err(RegistrarError::ExpirationNotExtended.into()));
+        assert_eq!(ctx.token.token_metadata(token_id), metadata_before);
+    }
+
+    #[test]
+    fn renew_with_earlier_expiration_fails() {
+        let mut ctx = TestContext::install_and_setup();
+        let (admin, alice) = (ctx.admin, ctx.alice);
+
+        // Given Alice has a token.
+        ctx.with_name_registered(admin, alice, TOKEN_NAME);
+        let token_id = generate_token_id(TOKEN_NAME);
+        let current_expiration = INIT_TIME + TOKEN_EXPIRATION;
+        let metadata_before = ctx.token.token_metadata(token_id);
+
+        // When Admin tries to shorten the expiration (still in the future).
+        let tokens = vec![TokenRenewalInfo::new(token_id, current_expiration - 1)];
+        let voucher = RenewalVoucher::new(tokens, ctx.voucher_expiration_time());
+        ctx.set_caller(admin);
+        let result = ctx.registrar.try_controller_prolong(voucher);
+
+        // Then renewal fails and metadata is untouched.
+        assert_eq!(result, Err(RegistrarError::ExpirationNotExtended.into()));
+        assert_eq!(ctx.token.token_metadata(token_id), metadata_before);
+    }
+
+    #[test]
+    fn renew_with_same_expiration_in_microseconds_fails() {
+        let mut ctx = TestContext::install_and_setup();
+        let (admin, alice) = (ctx.admin, ctx.alice);
+
+        // Given Alice has a token with a millisecond expiration.
+        ctx.with_name_registered(admin, alice, TOKEN_NAME);
+        let token_id = generate_token_id(TOKEN_NAME);
+        let current_expiration = INIT_TIME + TOKEN_EXPIRATION;
+
+        // When Admin renews to the same instant expressed in microseconds.
+        let tokens = vec![TokenRenewalInfo::new(token_id, current_expiration * 1000)];
+        let voucher = RenewalVoucher::new(tokens, ctx.voucher_expiration_time());
+        ctx.set_caller(admin);
+        let result = ctx.registrar.try_controller_prolong(voucher);
+
+        // Then renewal fails because the expiration is not extended.
+        assert_eq!(result, Err(RegistrarError::ExpirationNotExtended.into()));
+    }
+
+    #[test]
+    fn admin_prolong_with_same_expiration_fails() {
+        let mut ctx = TestContext::install_and_setup();
+        let (admin, alice) = (ctx.admin, ctx.alice);
+
+        // Given Alice has a token.
+        ctx.with_name_registered(admin, alice, TOKEN_NAME);
+        let token_id = generate_token_id(TOKEN_NAME);
+        let current_expiration = INIT_TIME + TOKEN_EXPIRATION;
+
+        // When Admin prolongs without extending the expiration.
+        ctx.set_caller(admin);
+        let result = ctx
+            .registrar
+            .try_admin_prolong(vec![TokenRenewalInfo::new(token_id, current_expiration)]);
+
+        // Then it fails.
+        assert_eq!(result, Err(RegistrarError::ExpirationNotExtended.into()));
     }
 
     #[test]

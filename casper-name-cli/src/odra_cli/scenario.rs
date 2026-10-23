@@ -313,6 +313,40 @@ impl Scenario for UpgradeRegistrar {
     }
 }
 
+pub struct UpgradeController;
+
+impl ScenarioMetadata for UpgradeController {
+    const NAME: &'static str = "upgrade-controller";
+    const DESCRIPTION: &'static str = "Upgrade the Controller contract.";
+}
+
+impl Scenario for UpgradeController {
+    fn run(
+        &self,
+        env: &HostEnv,
+        container: &DeployedContractsContainer,
+        _args: Args,
+    ) -> Result<(), ScenarioError> {
+        let controller_addr = container
+            .address_by_name(&Controller::ident())
+            .unwrap();
+
+        env.set_gas(cspr!(400));
+        Controller::try_upgrade_with_cfg(
+            env,
+            controller_addr,
+            NoArgs,
+            UpgradeConfig {
+                package_named_key: Controller::ident(),
+                force_create_upgrade_group: true,
+                allow_key_override: true,
+            },
+        )?;
+
+        Ok(())
+    }
+}
+
 fn now() -> u64 {
     chrono::Utc::now().timestamp_millis() as u64
 }

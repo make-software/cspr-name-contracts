@@ -66,6 +66,14 @@
       "attributes": []
     },
     {
+      "name": "unset_primary_name",
+      "args": [],
+      "is_mutable": true,
+      "return_ty": "Unit",
+      "ty": "Public",
+      "attributes": []
+    },
+    {
       "name": "get_primary_name",
       "args": [
         {

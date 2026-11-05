@@ -1,6 +1,10 @@
 {
   "casper_contract_schema_version": 1,
   "toolchain": "rustc 1.94.0-nightly (8d670b93d 2025-12-31)",
+  "toolkit": {
+    "name": "Odra",
+    "version": "2.10.0"
+  },
   "authors": [],
   "repository": null,
   "homepage": null,
@@ -299,6 +303,7 @@
       "name": "pause",
       "description": "Temporarily stops the contract.",
       "is_mutable": true,
+      "is_payable": false,
       "arguments": [],
       "return_ty": "Unit",
       "is_contract_context": true,
@@ -308,6 +313,7 @@
       "name": "unpause",
       "description": "Returns to normal operation.",
       "is_mutable": true,
+      "is_payable": false,
       "arguments": [],
       "return_ty": "Unit",
       "is_contract_context": true,
@@ -317,6 +323,7 @@
       "name": "grace_period",
       "description": "Returns the grace period.",
       "is_mutable": false,
+      "is_payable": false,
       "arguments": [],
       "return_ty": "U64",
       "is_contract_context": true,
@@ -326,6 +333,7 @@
       "name": "resolve",
       "description": "Try to resolve a full domain name to an address.",
       "is_mutable": false,
+      "is_payable": false,
       "arguments": [
         {
           "name": "full_domain",
@@ -344,6 +352,7 @@
       "name": "expire",
       "description": "Expire a list of tokens if they are expired.",
       "is_mutable": true,
+      "is_payable": false,
       "arguments": [
         {
           "name": "token_ids",
@@ -362,6 +371,7 @@
       "name": "set_grace_period",
       "description": "Admin only. Sets the grace period.",
       "is_mutable": true,
+      "is_payable": false,
       "arguments": [
         {
           "name": "period",
@@ -378,6 +388,7 @@
       "name": "admin_transfer",
       "description": "Admin only. Transfer ownership of a list of tokens.",
       "is_mutable": true,
+      "is_payable": false,
       "arguments": [
         {
           "name": "new_owner",
@@ -402,6 +413,7 @@
       "name": "admin_burn",
       "description": "Admin only. Burn a list of tokens.",
       "is_mutable": true,
+      "is_payable": false,
       "arguments": [
         {
           "name": "token_ids",
@@ -420,6 +432,7 @@
       "name": "admin_prolong",
       "description": "Admin only. Prolong the expiration date of a list of tokens.",
       "is_mutable": true,
+      "is_payable": false,
       "arguments": [
         {
           "name": "tokens",
@@ -438,6 +451,7 @@
       "name": "admin_register",
       "description": "Admin only. Register a list of tokens.",
       "is_mutable": true,
+      "is_payable": false,
       "arguments": [
         {
           "name": "names",
@@ -456,6 +470,7 @@
       "name": "admin_prolong_and_register",
       "description": "Admin only. Prolong the expiration date of a list of tokens and register a list of tokens.",
       "is_mutable": true,
+      "is_payable": false,
       "arguments": [
         {
           "name": "renewal_tokens",
@@ -482,6 +497,7 @@
       "name": "controller_prolong",
       "description": "Controller only. Prolong the expiration date of a list of tokens.",
       "is_mutable": true,
+      "is_payable": false,
       "arguments": [
         {
           "name": "voucher",
@@ -498,6 +514,7 @@
       "name": "controller_register",
       "description": "Controller only. Register a list of tokens.",
       "is_mutable": true,
+      "is_payable": false,
       "arguments": [
         {
           "name": "voucher",
@@ -514,6 +531,7 @@
       "name": "controller_prolong_and_register",
       "description": "Controller only. Prolong the expiration date of a list of tokens and register a list of tokens.",
       "is_mutable": true,
+      "is_payable": false,
       "arguments": [
         {
           "name": "renewal_voucher",
@@ -534,8 +552,9 @@
     },
     {
       "name": "has_role",
-      "description": "Delegated. See `self.access_control.has_role()` for details.",
+      "description": "Returns true if account has been granted `role`.",
       "is_mutable": false,
+      "is_payable": false,
       "arguments": [
         {
           "name": "role",
@@ -558,8 +577,9 @@
     },
     {
       "name": "grant_role",
-      "description": "Delegated. See `self.access_control.grant_role()` for details.",
+      "description": "Grants `role` to `address`. If the role has been already granted - nothing happens, otherwise [`RoleGranted`] event is emitted. The caller must have `role`'s admin role.",
       "is_mutable": true,
+      "is_payable": false,
       "arguments": [
         {
           "name": "role",
@@ -582,8 +602,9 @@
     },
     {
       "name": "revoke_role",
-      "description": "Delegated. See `self.access_control.revoke_role()` for details.",
+      "description": "Grants `role` to `address`. If the role has been already revoked - nothing happens, otherwise [`RoleRevoked`] event is emitted. The caller must have `role`'s admin role.",
       "is_mutable": true,
+      "is_payable": false,
       "arguments": [
         {
           "name": "role",
@@ -606,8 +627,9 @@
     },
     {
       "name": "is_paused",
-      "description": "Delegated. See `self.pauseable.is_paused()` for details.",
+      "description": "Returns true if the contract is paused, and false otherwise.",
       "is_mutable": false,
+      "is_payable": false,
       "arguments": [],
       "return_ty": "Bool",
       "is_contract_context": true,
@@ -673,6 +695,74 @@
         "description": null,
         "ty": "Key",
         "optional": false
+      }
+    ]
+  },
+  "storage": {
+    "kind": "module",
+    "fields": [
+      {
+        "name": "name_token",
+        "index": 1,
+        "kind": "value",
+        "ty": "Key"
+      },
+      {
+        "name": "access_control",
+        "index": 2,
+        "kind": "module",
+        "fields": [
+          {
+            "name": "roles",
+            "index": 1,
+            "kind": "mapping",
+            "key": {
+              "Tuple2": [
+                {
+                  "ByteArray": 32
+                },
+                "Key"
+              ]
+            },
+            "value": {
+              "kind": "value",
+              "ty": "Bool"
+            }
+          },
+          {
+            "name": "role_admin",
+            "index": 2,
+            "kind": "mapping",
+            "key": {
+              "ByteArray": 32
+            },
+            "value": {
+              "kind": "value",
+              "ty": {
+                "ByteArray": 32
+              }
+            }
+          }
+        ]
+      },
+      {
+        "name": "grace_period",
+        "index": 3,
+        "kind": "value",
+        "ty": "U64"
+      },
+      {
+        "name": "pauseable",
+        "index": 4,
+        "kind": "module",
+        "fields": [
+          {
+            "name": "is_paused",
+            "index": 1,
+            "kind": "value",
+            "ty": "Bool"
+          }
+        ]
       }
     ]
   }

@@ -8,6 +8,7 @@ enum Error {
     InvalidTokenName = 1500,
     ResolutionForPrimaryNameNotFound = 1501,
     InvalidResolutionAddress = 1502,
+    PrimaryNameNotSet = 1503,
 }
 
 /// Reverse Resolver contract. It resolves primary names to addresses.
@@ -57,6 +58,34 @@ impl ReverseResolver {
         });
     }
 
+    /// Clears the primary name of the caller.
+    ///
+    /// The forward resolution (name -> address) is left untouched, only the
+    /// reverse record (address -> name) is removed. The stored primary name is
+    /// cleared even if it no longer resolves to the caller (e.g. the name was
+    /// burned), so a later re-mint of the same name does not revive it.
+    ///
+    /// Reverts with [`Error::PrimaryNameNotSet`] if the caller has no primary
+    /// name stored.
+    pub fn unset_primary_name(&mut self) {
+        let caller = self.env().caller();
+
+        // Read the raw stored value, not the validated one, so a stale primary
+        // name can be cleared too.
+        let Some(old_primary_name) = self.primary_names.get(&caller).flatten() else {
+            self.revert(Error::PrimaryNameNotSet);
+        };
+
+        self.primary_names.set(&caller, None);
+
+        // Emit event.
+        self.env().emit_event(PrimaryNameChanged {
+            address: caller,
+            old_primary_name: Some(old_primary_name),
+            new_primary_name: None,
+        });
+    }
+
     /// Returns the primary name for the address.
     pub fn get_primary_name(&self, address: &Address) -> Option<String> {
         let primary_name = self.primary_names.get(address).flatten()?;
@@ -96,7 +125,7 @@ pub struct PrimaryNameChanged {
 mod tests {
     use super::*;
     use crate::test_context::{self, TestContext};
-    use odra::host::Deployer;
+    use odra::host::{Deployer, HostRef};
 
     const TOKEN_TEST: &str = "test";
     const TOKEN_TEST2: &str = "test2";
@@ -326,6 +355,174 @@ mod tests {
             reverse_resolver.get_primary_name(&user),
             Some(DOMAIN_TEST.to_string())
         );
+    }
+
+    #[test]
+    fn test_unset_primary_name() {
+        let (mut ctx, mut reverse_resolver) = setup();
+        let (admin, user) = (ctx.admin, ctx.alice);
+
+        ctx.with_name_registered(admin, user, TOKEN_TEST);
+        ctx.set_caller(user);
+        ctx.default_resolver
+            .set_resolution(DOMAIN_TEST.to_string(), Some(user));
+        reverse_resolver.set_primary_name(DOMAIN_TEST.to_string());
+        assert_eq!(
+            reverse_resolver.get_primary_name(&user),
+            Some(DOMAIN_TEST.to_string())
+        );
+
+        // Unset the primary name.
+        ctx.set_caller(user);
+        reverse_resolver.unset_primary_name();
+
+        // The primary name is gone.
+        assert_eq!(reverse_resolver.get_primary_name(&user), None);
+
+        // The forward resolution is still assigned to the user.
+        assert_eq!(
+            ctx.default_resolver.resolve(DOMAIN_TEST.to_string()),
+            Some(user)
+        );
+
+        // One event for set, one for unset.
+        assert_eq!(ctx.events_count(&reverse_resolver), 2);
+        assert_eq!(
+            reverse_resolver.get_event::<PrimaryNameChanged>(-1),
+            Ok(PrimaryNameChanged {
+                address: user,
+                old_primary_name: Some(DOMAIN_TEST.to_string()),
+                new_primary_name: None,
+            })
+        );
+    }
+
+    #[test]
+    fn test_unset_primary_name_when_not_set() {
+        let (mut ctx, mut reverse_resolver) = setup();
+        let user = ctx.alice;
+
+        ctx.set_caller(user);
+        let result = reverse_resolver.try_unset_primary_name();
+        assert_eq!(result.unwrap_err(), Error::PrimaryNameNotSet.into());
+        assert_eq!(ctx.events_count(&reverse_resolver), 0);
+    }
+
+    #[test]
+    fn test_unset_primary_name_twice() {
+        let (mut ctx, mut reverse_resolver) = setup();
+        let (admin, user) = (ctx.admin, ctx.alice);
+
+        ctx.with_name_registered(admin, user, TOKEN_TEST);
+        ctx.set_caller(user);
+        ctx.default_resolver
+            .set_resolution(DOMAIN_TEST.to_string(), Some(user));
+        reverse_resolver.set_primary_name(DOMAIN_TEST.to_string());
+
+        ctx.set_caller(user);
+        reverse_resolver.unset_primary_name();
+
+        // The second unset has nothing to clear.
+        ctx.set_caller(user);
+        let result = reverse_resolver.try_unset_primary_name();
+        assert_eq!(result.unwrap_err(), Error::PrimaryNameNotSet.into());
+    }
+
+    #[test]
+    fn test_unset_primary_name_only_affects_caller() {
+        let (mut ctx, mut reverse_resolver) = setup();
+        let (admin, user, other) = (ctx.admin, ctx.alice, ctx.bob);
+
+        ctx.with_name_registered(admin, user, TOKEN_TEST);
+        ctx.with_name_registered(admin, other, TOKEN_TEST2);
+
+        ctx.set_caller(user);
+        ctx.default_resolver
+            .set_resolution(DOMAIN_TEST.to_string(), Some(user));
+        reverse_resolver.set_primary_name(DOMAIN_TEST.to_string());
+
+        ctx.set_caller(other);
+        ctx.default_resolver
+            .set_resolution(DOMAIN_TEST2.to_string(), Some(other));
+        reverse_resolver.set_primary_name(DOMAIN_TEST2.to_string());
+
+        // Unsetting as `other` leaves the user's primary name intact.
+        ctx.set_caller(other);
+        reverse_resolver.unset_primary_name();
+        assert_eq!(reverse_resolver.get_primary_name(&other), None);
+        assert_eq!(
+            reverse_resolver.get_primary_name(&user),
+            Some(DOMAIN_TEST.to_string())
+        );
+    }
+
+    #[test]
+    fn test_set_primary_name_again_after_unset() {
+        let (mut ctx, mut reverse_resolver) = setup();
+        let (admin, user) = (ctx.admin, ctx.alice);
+
+        ctx.with_name_registered(admin, user, TOKEN_TEST);
+        ctx.set_caller(user);
+        ctx.default_resolver
+            .set_resolution(DOMAIN_TEST.to_string(), Some(user));
+        reverse_resolver.set_primary_name(DOMAIN_TEST.to_string());
+
+        ctx.set_caller(user);
+        reverse_resolver.unset_primary_name();
+        assert_eq!(reverse_resolver.get_primary_name(&user), None);
+
+        // The resolution is still there, so the name can be set as primary
+        // again without touching the resolver.
+        ctx.set_caller(user);
+        reverse_resolver.set_primary_name(DOMAIN_TEST.to_string());
+        assert_eq!(
+            reverse_resolver.get_primary_name(&user),
+            Some(DOMAIN_TEST.to_string())
+        );
+        assert_eq!(
+            reverse_resolver.get_event::<PrimaryNameChanged>(-1),
+            Ok(PrimaryNameChanged {
+                address: user,
+                old_primary_name: None,
+                new_primary_name: Some(DOMAIN_TEST.to_string()),
+            })
+        );
+    }
+
+    #[test]
+    fn test_unset_stale_primary_name_after_burn() {
+        let (mut ctx, mut reverse_resolver) = setup();
+        let (admin, user) = (ctx.admin, ctx.alice);
+
+        ctx.with_name_registered(admin, user, TOKEN_TEST);
+        ctx.set_caller(user);
+        ctx.default_resolver
+            .set_resolution(DOMAIN_TEST.to_string(), Some(user));
+        reverse_resolver.set_primary_name(DOMAIN_TEST.to_string());
+
+        // Burn the name. The primary name is stale but still stored.
+        ctx.admin_burn(vec![TOKEN_TEST]);
+        assert_eq!(reverse_resolver.get_primary_name(&user), None);
+
+        // The stale primary name can still be cleared.
+        ctx.set_caller(user);
+        reverse_resolver.unset_primary_name();
+        assert_eq!(
+            reverse_resolver.get_event::<PrimaryNameChanged>(-1),
+            Ok(PrimaryNameChanged {
+                address: user,
+                old_primary_name: Some(DOMAIN_TEST.to_string()),
+                new_primary_name: None,
+            })
+        );
+
+        // Re-mint the same name and restore its resolution. Since the primary
+        // name was cleared, it does not come back on its own.
+        ctx.with_name_registered(admin, user, TOKEN_TEST);
+        ctx.set_caller(user);
+        ctx.default_resolver
+            .set_resolution(DOMAIN_TEST.to_string(), Some(user));
+        assert_eq!(reverse_resolver.get_primary_name(&user), None);
     }
 
     fn setup() -> (TestContext, ReverseResolverHostRef) {

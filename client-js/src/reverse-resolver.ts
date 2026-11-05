@@ -46,4 +46,25 @@ export class ReverseResolver {
       }))
       .build();
   }
+
+  /**
+   * Clears the primary name of the sender. The forward resolution of the name
+   * is left untouched, only the reverse record (address -> name) is removed.
+   * @param paymentAmount the amount of gas price that should be paid in motes
+   * @param sender the PublicKey of transaction submitter account
+   * @returns Transaction object which can be sent to the node.
+   */
+  public unsetPrimaryName(
+    paymentAmount: BigNumberish,
+    sender: PublicKey,
+  ): Transaction {
+    return new ContractCallBuilder()
+      .chainName(this.networkName)
+      .from(sender)
+      .payment(Number(paymentAmount))
+      .byPackageHash(this.contractPackageHash)
+      .entryPoint('unset_primary_name')
+      .runtimeArgs(Args.fromMap({}))
+      .build();
+  }
 }

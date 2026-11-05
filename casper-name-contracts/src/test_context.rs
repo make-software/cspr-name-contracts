@@ -4,7 +4,7 @@ use blake2::digest::VariableOutput;
 use blake2::Blake2bVar;
 use odra::casper_types::bytesrepr::{Bytes, ToBytes};
 use odra::casper_types::{U256, U512};
-use odra::host::{Deployer, HostEnv};
+use odra::host::{Deployer, HostEnv, InstallConfig};
 use odra::prelude::*;
 use odra_modules::access::DEFAULT_ADMIN_ROLE;
 use odra_modules::cep95::Mint;
@@ -50,33 +50,39 @@ impl TestContext {
         let signer = env.get_account(10);
         let treasury = env.get_account(11);
 
-        let name_token = NameToken::deploy(
+        // Contracts are installed upgradable, as the deploy script does, so
+        // the upgrade entry points can be tested on every backend.
+        let name_token = NameToken::deploy_with_cfg(
             &env,
             NameTokenInitArgs {
                 name: String::from(NAME_TOKEN_NAME),
                 symbol: String::from(NAME_TOKEN_SYMBOL),
                 max_supply: max_supply,
             },
+            InstallConfig::upgradable::<NameToken>(),
         );
-        let resolver = DefaultResolver::deploy(
+        let resolver = DefaultResolver::deploy_with_cfg(
             &env,
             DefaultResolverInitArgs {
                 name_token: name_token.address(),
             },
+            InstallConfig::upgradable::<DefaultResolver>(),
         );
-        let registrar = Registrar::deploy(
+        let registrar = Registrar::deploy_with_cfg(
             &env,
             RegistrarInitArgs {
                 name_token: name_token.address(),
             },
+            InstallConfig::upgradable::<Registrar>(),
         );
-        let controller = Controller::deploy(
+        let controller = Controller::deploy_with_cfg(
             &env,
             controller::ControllerInitArgs {
                 registrar: registrar.address(),
                 signer: env.public_key(&signer),
                 treasury,
             },
+            InstallConfig::upgradable::<Controller>(),
         );
 
         // Set start time.

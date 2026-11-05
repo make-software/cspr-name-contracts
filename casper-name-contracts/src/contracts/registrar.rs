@@ -4,6 +4,7 @@ use odra::module::Revertible;
 use odra::prelude::*;
 use odra::ContractRef;
 use odra_modules::access::{AccessControl, Role, DEFAULT_ADMIN_ROLE};
+use odra_modules::dapp::DappContractBase;
 use odra_modules::security::Pauseable;
 
 use crate::{
@@ -35,6 +36,8 @@ pub struct Registrar {
     access_control: SubModule<AccessControl>,
     grace_period: Var<u64>,
     pauseable: SubModule<Pauseable>,
+    /// Membership in the CSPR.name dapp. The NameToken is the registry.
+    dapp: SubModule<DappContractBase>,
 }
 
 #[odra::module]
@@ -50,6 +53,11 @@ impl Registrar {
             /// Returns true if the contract is paused, and false otherwise.
             fn is_paused(&self) -> bool;
         }
+
+        to self.dapp {
+            /// Returns the dapp registry the contract belongs to.
+            fn get_dapp_registry(&self) -> Address;
+        }
     }
 
     /// Initializes the registrar with the name token contract address.
@@ -59,8 +67,9 @@ impl Registrar {
         }
         let caller = self.env().caller();
 
-        // Set NameToken address.
+        // Set NameToken address. It is also the dapp registry.
         self.name_token.set(name_token);
+        self.dapp.set_dapp_registry(&name_token);
 
         // Init grace period to 0.
         self.grace_period.set(0);
@@ -70,6 +79,19 @@ impl Registrar {
             .unchecked_grant_role(&DEFAULT_ADMIN_ROLE, &caller);
         self.access_control
             .unchecked_grant_role(&CONTROLLER_ROLE, &caller);
+    }
+
+    /// Runs once during an upgrade. Points the contract at its dapp registry,
+    /// which is the NameToken contract.
+    pub fn upgrade(&mut self) {
+        let registry = *self.name_token.address();
+        self.dapp.set_dapp_registry(&registry);
+    }
+
+    /// Admin only. Changes the dapp registry the contract belongs to.
+    pub fn set_dapp_registry(&mut self, registry: &Address) {
+        self.assert_caller_is_admin();
+        self.dapp.set_dapp_registry(registry);
     }
 
     /// Temporarily stops the contract.
@@ -1191,5 +1213,42 @@ mod tests {
             result,
             Err(odra_modules::security::errors::Error::UnpausedRequired.into())
         );
+    }
+}
+
+#[cfg(test)]
+mod dapp_tests {
+    use super::*;
+    use crate::test_context::{TestContext, GRACE_PERIOD};
+    use odra::host::{Deployer, NoArgs};
+    use odra_modules::access::errors::Error as AccessControlError;
+
+    #[test]
+    fn test_dapp_registry_is_the_name_token() {
+        let mut ctx = TestContext::install_and_setup();
+        let token = ctx.token.address();
+        let other = ctx.default_resolver.address();
+        assert_eq!(ctx.registrar.get_dapp_registry(), token);
+
+        // Only the admin may re-point the contract.
+        ctx.set_caller(ctx.alice);
+        assert_eq!(
+            ctx.registrar.try_set_dapp_registry(&other).unwrap_err(),
+            AccessControlError::MissingRole.into()
+        );
+        ctx.set_caller(ctx.admin);
+        ctx.registrar.set_dapp_registry(&other);
+        assert_eq!(ctx.registrar.get_dapp_registry(), other);
+    }
+
+    #[test]
+    fn test_upgrade_points_at_the_name_token() {
+        let mut ctx = TestContext::install_and_setup();
+        let token = ctx.token.address();
+        ctx.set_caller(ctx.admin);
+        let upgraded = Registrar::try_upgrade(&ctx.env, ctx.registrar.address(), NoArgs).unwrap();
+        assert_eq!(upgraded.get_dapp_registry(), token);
+        // Existing storage survived.
+        assert_eq!(upgraded.grace_period(), GRACE_PERIOD);
     }
 }

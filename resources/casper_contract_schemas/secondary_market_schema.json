@@ -13,6 +13,26 @@
   "types": [
     {
       "struct": {
+        "name": "DappRegistryChanged",
+        "description": null,
+        "members": [
+          {
+            "name": "previous_registry",
+            "description": null,
+            "ty": {
+              "Option": "Key"
+            }
+          },
+          {
+            "name": "new_registry",
+            "description": null,
+            "ty": "Key"
+          }
+        ]
+      }
+    },
+    {
+      "struct": {
         "name": "NameTransferInfo",
         "description": null,
         "members": [
@@ -239,6 +259,11 @@
       "discriminant": 1104
     },
     {
+      "name": "CallerNotDappRegistrar",
+      "description": "The caller is not a registrar of the dapp.",
+      "discriminant": 22004
+    },
+    {
       "name": "CallerNotTheNewOwner",
       "description": "The caller is not the new owner.",
       "discriminant": 20002
@@ -249,9 +274,34 @@
       "discriminant": 20001
     },
     {
+      "name": "CannotRemoveDappRegistry",
+      "description": "The dapp registry cannot remove itself.",
+      "discriminant": 22006
+    },
+    {
       "name": "ContractAddressExpected",
       "description": "",
       "discriminant": 1107
+    },
+    {
+      "name": "DappContractAlreadyRegistered",
+      "description": "The contract is already registered. The registry itself counts as registered.",
+      "discriminant": 22001
+    },
+    {
+      "name": "DappContractNotRegistered",
+      "description": "The contract is not registered.",
+      "discriminant": 22002
+    },
+    {
+      "name": "DappRegistryMismatch",
+      "description": "The contract points to a different dapp registry.",
+      "discriminant": 22003
+    },
+    {
+      "name": "DappRegistryNotSet",
+      "description": "The dapp registry has not been set.",
+      "discriminant": 22005
     },
     {
       "name": "FeeCollectorNotSet",
@@ -272,6 +322,11 @@
       "name": "MissingRole",
       "description": "The role is missing.",
       "discriminant": 20003
+    },
+    {
+      "name": "NotAContract",
+      "description": "The address is not a contract address.",
+      "discriminant": 22000
     },
     {
       "name": "OwnerNotSet",
@@ -305,6 +360,23 @@
     }
   ],
   "entry_points": [
+    {
+      "name": "set_dapp_registry",
+      "description": "Admin only. Changes the dapp registry the contract belongs to.",
+      "is_mutable": true,
+      "is_payable": false,
+      "arguments": [
+        {
+          "name": "registry",
+          "description": null,
+          "ty": "Key",
+          "optional": false
+        }
+      ],
+      "return_ty": "Unit",
+      "is_contract_context": true,
+      "access": "public"
+    },
     {
       "name": "buy",
       "description": "Payable. Buys name tokens from the secondary market.",
@@ -484,9 +556,23 @@
       "return_ty": "Bool",
       "is_contract_context": true,
       "access": "public"
+    },
+    {
+      "name": "get_dapp_registry",
+      "description": "Returns the dapp registry the contract belongs to.",
+      "is_mutable": false,
+      "is_payable": false,
+      "arguments": [],
+      "return_ty": "Key",
+      "is_contract_context": true,
+      "access": "public"
     }
   ],
   "events": [
+    {
+      "name": "DappRegistryChanged",
+      "ty": "DappRegistryChanged"
+    },
     {
       "name": "Paused",
       "ty": "Paused"
@@ -646,6 +732,22 @@
         "index": 2,
         "kind": "value",
         "ty": "Key"
+      },
+      {
+        "name": "dapp",
+        "index": 3,
+        "kind": "module",
+        "fields": [
+          {
+            "name": "registry",
+            "index": 1,
+            "kind": "dictionary",
+            "dictionary": "__dapp",
+            "key": "String",
+            "key_encoding": "utf8",
+            "value": "Key"
+          }
+        ]
       }
     ]
   }

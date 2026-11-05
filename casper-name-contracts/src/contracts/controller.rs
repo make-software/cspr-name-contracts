@@ -9,6 +9,7 @@ use odra::{
 };
 use odra_modules::{
     access::{AccessControl, Role, DEFAULT_ADMIN_ROLE},
+    dapp::DappContractBase,
     security::Pauseable,
 };
 
@@ -38,6 +39,8 @@ pub struct TreasuryAddressChanged {
 pub struct Controller {
     controller: SubModule<BaseController>,
     registrar: External<RegistrarContractRef>,
+    /// Membership in the CSPR.name dapp. The NameToken is the registry.
+    dapp: SubModule<DappContractBase>,
 }
 
 #[odra::module]
@@ -54,16 +57,37 @@ impl Controller {
             fn unpause(&mut self);
             fn is_paused(&self) -> bool;
         }
+
+        to self.dapp {
+            /// Returns the dapp registry the contract belongs to.
+            fn get_dapp_registry(&self) -> Address;
+        }
     }
 
     /// Initializes the controller with the registrar contract address, the
-    /// signer public key and the treasury address.
+    /// signer public key and the treasury address. The controller joins the
+    /// dapp of its registrar.
     pub fn init(&mut self, registrar: Address, signer: PublicKey, treasury: Address) {
         if !registrar.is_contract() {
             self.revert(ControllerError::ContractAddressExpected);
         }
         self.registrar.set(registrar);
         self.controller.init(signer, treasury);
+        let registry = self.registrar.get_dapp_registry();
+        self.dapp.set_dapp_registry(&registry);
+    }
+
+    /// Runs once during an upgrade. Points the contract at the dapp registry of
+    /// its registrar, so the registrar must be upgraded first.
+    pub fn upgrade(&mut self) {
+        let registry = self.registrar.get_dapp_registry();
+        self.dapp.set_dapp_registry(&registry);
+    }
+
+    /// Admin only. Changes the dapp registry the contract belongs to.
+    pub fn set_dapp_registry(&mut self, registry: &Address) {
+        self.controller.assert_caller_is_admin();
+        self.dapp.set_dapp_registry(registry);
     }
 
     /// Payable. Buys new name tokens.
@@ -187,8 +211,9 @@ impl BaseController {
         self.signer_public_key.get().unwrap_or_revert(self)
     }
 
+    /// Reverts unless the caller has the admin role.
     #[inline]
-    fn assert_caller_is_admin(&self) {
+    pub fn assert_caller_is_admin(&self) {
         self.access_control
             .check_role(&DEFAULT_ADMIN_ROLE, &self.env().caller());
     }
@@ -843,5 +868,44 @@ mod tests {
         let result = ctx.controller.try_set_treasury(bob);
         // Then it should fail.
         assert!(result.is_err());
+    }
+}
+
+#[cfg(test)]
+mod dapp_tests {
+    use super::*;
+    use crate::test_context::TestContext;
+    use odra::host::{Deployer, NoArgs};
+    use odra_modules::access::errors::Error as AccessControlError;
+
+    #[test]
+    fn test_dapp_registry_is_the_name_token() {
+        let mut ctx = TestContext::install_and_setup();
+        let token = ctx.token.address();
+        let other = ctx.registrar.address();
+        // The controller joined the dapp of its registrar.
+        assert_eq!(ctx.controller.get_dapp_registry(), token);
+
+        // Only the admin may re-point the contract.
+        ctx.set_caller(ctx.alice);
+        assert_eq!(
+            ctx.controller.try_set_dapp_registry(&other).unwrap_err(),
+            AccessControlError::MissingRole.into()
+        );
+        ctx.set_caller(ctx.admin);
+        ctx.controller.set_dapp_registry(&other);
+        assert_eq!(ctx.controller.get_dapp_registry(), other);
+    }
+
+    #[test]
+    fn test_upgrade_points_at_the_registrar_dapp() {
+        let mut ctx = TestContext::install_and_setup();
+        let token = ctx.token.address();
+        let signer = ctx.controller.signer_public_key();
+        ctx.set_caller(ctx.admin);
+        let upgraded = Controller::try_upgrade(&ctx.env, ctx.controller.address(), NoArgs).unwrap();
+        assert_eq!(upgraded.get_dapp_registry(), token);
+        // Existing storage survived.
+        assert_eq!(upgraded.signer_public_key(), signer);
     }
 }

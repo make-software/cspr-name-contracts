@@ -47,6 +47,7 @@ impl Registrar {
         }
 
         to self.pauseable {
+            /// Returns true if the contract is paused, and false otherwise.
             fn is_paused(&self) -> bool;
         }
     }

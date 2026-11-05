@@ -1,6 +1,10 @@
 {
   "casper_contract_schema_version": 1,
   "toolchain": "rustc 1.94.0-nightly (8d670b93d 2025-12-31)",
+  "toolkit": {
+    "name": "Odra",
+    "version": "2.10.0"
+  },
   "authors": [],
   "repository": null,
   "homepage": null,
@@ -200,6 +204,7 @@
       "name": "set_name_token",
       "description": "Admin only. Sets the name token contract address.",
       "is_mutable": true,
+      "is_payable": false,
       "arguments": [
         {
           "name": "name_token",
@@ -216,6 +221,7 @@
       "name": "set_resolution",
       "description": "Token owner only. Sets the resolution for a domain to an address.",
       "is_mutable": true,
+      "is_payable": false,
       "arguments": [
         {
           "name": "full_domain",
@@ -240,6 +246,7 @@
       "name": "resolve",
       "description": "Resolves a domain to an address.",
       "is_mutable": false,
+      "is_payable": false,
       "arguments": [
         {
           "name": "full_domain",
@@ -258,6 +265,7 @@
       "name": "invalidate_resolutions",
       "description": "Invalidates all the resolutions for a token. Only the token owner or the admin can do this.",
       "is_mutable": true,
+      "is_payable": false,
       "arguments": [
         {
           "name": "token_id",
@@ -272,8 +280,9 @@
     },
     {
       "name": "has_role",
-      "description": "Delegated. See `self.access_control.has_role()` for details.",
+      "description": "Returns true if account has been granted `role`.",
       "is_mutable": false,
+      "is_payable": false,
       "arguments": [
         {
           "name": "role",
@@ -296,8 +305,9 @@
     },
     {
       "name": "grant_role",
-      "description": "Delegated. See `self.access_control.grant_role()` for details.",
+      "description": "Grants `role` to `address`. If the role has been already granted - nothing happens, otherwise [`RoleGranted`] event is emitted. The caller must have `role`'s admin role.",
       "is_mutable": true,
+      "is_payable": false,
       "arguments": [
         {
           "name": "role",
@@ -320,8 +330,9 @@
     },
     {
       "name": "revoke_role",
-      "description": "Delegated. See `self.access_control.revoke_role()` for details.",
+      "description": "Grants `role` to `address`. If the role has been already revoked - nothing happens, otherwise [`RoleRevoked`] event is emitted. The caller must have `role`'s admin role.",
       "is_mutable": true,
+      "is_payable": false,
       "arguments": [
         {
           "name": "role",
@@ -371,7 +382,7 @@
   ],
   "call": {
     "wasm_file_name": "DefaultResolver.wasm",
-    "description": "Initializes the default resolver with the name token contract address.",
+    "description": "Initializes the default resolver with the name token contract address. The caller is granted the admin role.",
     "arguments": [
       {
         "name": "odra_cfg_package_hash_key_name",
@@ -402,6 +413,83 @@
         "description": null,
         "ty": "Key",
         "optional": false
+      }
+    ]
+  },
+  "storage": {
+    "kind": "module",
+    "fields": [
+      {
+        "name": "access_control",
+        "index": 1,
+        "kind": "module",
+        "fields": [
+          {
+            "name": "roles",
+            "index": 1,
+            "kind": "mapping",
+            "key": {
+              "Tuple2": [
+                {
+                  "ByteArray": 32
+                },
+                "Key"
+              ]
+            },
+            "value": {
+              "kind": "value",
+              "ty": "Bool"
+            }
+          },
+          {
+            "name": "role_admin",
+            "index": 2,
+            "kind": "mapping",
+            "key": {
+              "ByteArray": 32
+            },
+            "value": {
+              "kind": "value",
+              "ty": {
+                "ByteArray": 32
+              }
+            }
+          }
+        ]
+      },
+      {
+        "name": "name_token",
+        "index": 2,
+        "kind": "value",
+        "ty": "Key"
+      },
+      {
+        "name": "nonces",
+        "index": 3,
+        "kind": "mapping",
+        "key": "U256",
+        "value": {
+          "kind": "value",
+          "ty": "U32"
+        }
+      },
+      {
+        "name": "resolutions",
+        "index": 4,
+        "kind": "mapping",
+        "key": {
+          "Tuple3": [
+            "U256",
+            "String",
+            "U32"
+          ]
+        },
+        "value": {
+          "kind": "value",
+          "ty": {
+            "Option": "Key"
+          }
+        }
       }
     ]
   }

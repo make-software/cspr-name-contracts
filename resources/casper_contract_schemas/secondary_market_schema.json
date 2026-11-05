@@ -1,6 +1,10 @@
 {
   "casper_contract_schema_version": 1,
   "toolchain": "rustc 1.94.0-nightly (8d670b93d 2025-12-31)",
+  "toolkit": {
+    "name": "Odra",
+    "version": "2.10.0"
+  },
   "authors": [],
   "repository": null,
   "homepage": null,
@@ -305,6 +309,7 @@
       "name": "buy",
       "description": "Payable. Buys name tokens from the secondary market.",
       "is_mutable": true,
+      "is_payable": true,
       "arguments": [
         {
           "name": "voucher",
@@ -333,8 +338,9 @@
     },
     {
       "name": "has_role",
-      "description": "Delegated. See `self.controller.has_role()` for details.",
+      "description": "Returns true if account has been granted `role`.",
       "is_mutable": false,
+      "is_payable": false,
       "arguments": [
         {
           "name": "role",
@@ -357,8 +363,9 @@
     },
     {
       "name": "grant_role",
-      "description": "Delegated. See `self.controller.grant_role()` for details.",
+      "description": "Grants `role` to `address`. If the role has been already granted - nothing happens, otherwise [`RoleGranted`] event is emitted. The caller must have `role`'s admin role.",
       "is_mutable": true,
+      "is_payable": false,
       "arguments": [
         {
           "name": "role",
@@ -381,8 +388,9 @@
     },
     {
       "name": "revoke_role",
-      "description": "Delegated. See `self.controller.revoke_role()` for details.",
+      "description": "Grants `role` to `address`. If the role has been already revoked - nothing happens, otherwise [`RoleRevoked`] event is emitted. The caller must have `role`'s admin role.",
       "is_mutable": true,
+      "is_payable": false,
       "arguments": [
         {
           "name": "role",
@@ -407,6 +415,7 @@
       "name": "set_signer_public_key",
       "description": "Delegated. See `self.controller.set_signer_public_key()` for details.",
       "is_mutable": true,
+      "is_payable": false,
       "arguments": [
         {
           "name": "signer",
@@ -423,6 +432,7 @@
       "name": "set_treasury",
       "description": "Delegated. See `self.controller.set_treasury()` for details.",
       "is_mutable": true,
+      "is_payable": false,
       "arguments": [
         {
           "name": "treasury",
@@ -439,6 +449,7 @@
       "name": "signer_public_key",
       "description": "Delegated. See `self.controller.signer_public_key()` for details.",
       "is_mutable": false,
+      "is_payable": false,
       "arguments": [],
       "return_ty": "PublicKey",
       "is_contract_context": true,
@@ -448,6 +459,7 @@
       "name": "pause",
       "description": "Delegated. See `self.controller.pause()` for details.",
       "is_mutable": true,
+      "is_payable": false,
       "arguments": [],
       "return_ty": "Unit",
       "is_contract_context": true,
@@ -457,6 +469,7 @@
       "name": "unpause",
       "description": "Delegated. See `self.controller.unpause()` for details.",
       "is_mutable": true,
+      "is_payable": false,
       "arguments": [],
       "return_ty": "Unit",
       "is_contract_context": true,
@@ -464,8 +477,9 @@
     },
     {
       "name": "is_paused",
-      "description": "Delegated. See `self.controller.is_paused()` for details.",
+      "description": "Returns true if the contract is paused, and false otherwise.",
       "is_mutable": false,
+      "is_payable": false,
       "arguments": [],
       "return_ty": "Bool",
       "is_contract_context": true,
@@ -508,7 +522,7 @@
   ],
   "call": {
     "wasm_file_name": "SecondaryMarket.wasm",
-    "description": "Initializes the secondary market with the signer public key, the treasury",
+    "description": "Initializes the secondary market with the signer public key, the treasury address and the name token contract address.",
     "arguments": [
       {
         "name": "odra_cfg_package_hash_key_name",
@@ -551,6 +565,87 @@
         "description": null,
         "ty": "Key",
         "optional": false
+      }
+    ]
+  },
+  "storage": {
+    "kind": "module",
+    "fields": [
+      {
+        "name": "controller",
+        "index": 1,
+        "kind": "module",
+        "fields": [
+          {
+            "name": "signer_public_key",
+            "index": 1,
+            "kind": "value",
+            "ty": "PublicKey"
+          },
+          {
+            "name": "treasury",
+            "index": 2,
+            "kind": "value",
+            "ty": "Key"
+          },
+          {
+            "name": "access_control",
+            "index": 3,
+            "kind": "module",
+            "fields": [
+              {
+                "name": "roles",
+                "index": 1,
+                "kind": "mapping",
+                "key": {
+                  "Tuple2": [
+                    {
+                      "ByteArray": 32
+                    },
+                    "Key"
+                  ]
+                },
+                "value": {
+                  "kind": "value",
+                  "ty": "Bool"
+                }
+              },
+              {
+                "name": "role_admin",
+                "index": 2,
+                "kind": "mapping",
+                "key": {
+                  "ByteArray": 32
+                },
+                "value": {
+                  "kind": "value",
+                  "ty": {
+                    "ByteArray": 32
+                  }
+                }
+              }
+            ]
+          },
+          {
+            "name": "pausable",
+            "index": 4,
+            "kind": "module",
+            "fields": [
+              {
+                "name": "is_paused",
+                "index": 1,
+                "kind": "value",
+                "ty": "Bool"
+              }
+            ]
+          }
+        ]
+      },
+      {
+        "name": "name_token",
+        "index": 2,
+        "kind": "value",
+        "ty": "Key"
       }
     ]
   }

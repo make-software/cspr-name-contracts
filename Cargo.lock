@@ -271,7 +271,7 @@ dependencies = [
  "base16",
  "base64 0.22.1",
  "bytes",
- "casper-types",
+ "casper-types 6.1.0",
  "flate2",
  "hex-buffer-serde 0.4.0",
  "humantime",
@@ -298,17 +298,17 @@ version = "5.1.1"
 source = "registry+https://github.com/rust-lang/crates.io-index"
 checksum = "9fd15d0e835459cdcc2f5629253ffcf92824a79c3ae62a36c563d4e1ec315318"
 dependencies = [
- "casper-types",
+ "casper-types 6.1.0",
  "hex_fmt",
 ]
 
 [[package]]
 name = "casper-contract-schema"
-version = "0.6.0"
+version = "0.9.0"
 source = "registry+https://github.com/rust-lang/crates.io-index"
-checksum = "3895e20cb937a9bac83d8d8d6cade52d38ad1a1bb50e226e4eee9e0489586efa"
+checksum = "749ec7bcedb46c9dc9c377c6fe65c47c5d0151f3aab02541a8670a91a4ea85ea"
 dependencies = [
- "casper-types",
+ "casper-types 7.0.0",
  "schemars 0.9.0",
  "serde",
  "serde_json",
@@ -332,7 +332,7 @@ dependencies = [
  "blake2 0.9.2",
  "casper-execution-engine",
  "casper-storage",
- "casper-types",
+ "casper-types 6.1.0",
  "env_logger",
  "filesize",
  "humantime",
@@ -356,7 +356,7 @@ checksum = "9bce72275b1a5734a307929fdaf06e61c984b1daa05a350380b55737c9647aa0"
 dependencies = [
  "casper-contract",
  "casper-event-standard-macro",
- "casper-types",
+ "casper-types 6.1.0",
 ]
 
 [[package]]
@@ -382,7 +382,7 @@ dependencies = [
  "blake2 0.10.6",
  "blake3",
  "casper-storage",
- "casper-types",
+ "casper-types 6.1.0",
  "casper-wasm",
  "casper-wasm-utils",
  "casper-wasmi",
@@ -460,7 +460,7 @@ source = "registry+https://github.com/rust-lang/crates.io-index"
 checksum = "8c108a6e833a8c2905c4f7c99684ddf69e54e2bdd1e56236c4e76933a5332b84"
 dependencies = [
  "bincode",
- "casper-types",
+ "casper-types 6.1.0",
  "datasize",
  "either",
  "itertools 0.10.5",
@@ -524,6 +524,36 @@ dependencies = [
  "tracing",
  "uint",
  "untrusted 0.7.1",
+]
+
+[[package]]
+name = "casper-types"
+version = "7.0.0"
+source = "registry+https://github.com/rust-lang/crates.io-index"
+checksum = "3064813bbff188f71c2c726dc1e2bcf5c9a30acd323f8d63adcbb1833af116f9"
+dependencies = [
+ "base16",
+ "base64 0.13.1",
+ "bitflags 1.3.2",
+ "blake2 0.9.2",
+ "derive_more",
+ "ed25519-dalek",
+ "hex",
+ "hex_fmt",
+ "itertools 0.10.5",
+ "k256",
+ "num",
+ "num-derive",
+ "num-integer",
+ "num-rational",
+ "num-traits",
+ "rand 0.8.5",
+ "serde",
+ "serde-map-to-array",
+ "serde_bytes",
+ "serde_json",
+ "tracing",
+ "uint",
 ]
 
 [[package]]
@@ -593,6 +623,12 @@ source = "registry+https://github.com/rust-lang/crates.io-index"
 checksum = "2fd1289c04a9ea8cb22300a459a72a385d7c73d3259e2ed7dcb2af674838cfa9"
 
 [[package]]
+name = "cfg_aliases"
+version = "0.1.1"
+source = "registry+https://github.com/rust-lang/crates.io-index"
+checksum = "fd16c4719339c4530435d38e511904438d07cce7950afa3718a84ac36c10e89e"
+
+[[package]]
 name = "chrono"
 version = "0.4.41"
 source = "registry+https://github.com/rust-lang/crates.io-index"
@@ -630,6 +666,15 @@ dependencies = [
 ]
 
 [[package]]
+name = "clap_complete"
+version = "4.6.9"
+source = "registry+https://github.com/rust-lang/crates.io-index"
+checksum = "3be2ad0423bdbbb0e25bc89add796f3559706d4a95e1bc98e4d9662a957b6a19"
+dependencies = [
+ "clap",
+]
+
+[[package]]
 name = "clap_derive"
 version = "4.5.45"
 source = "registry+https://github.com/rust-lang/crates.io-index"
@@ -646,6 +691,15 @@ name = "clap_lex"
 version = "0.7.5"
 source = "registry+https://github.com/rust-lang/crates.io-index"
 checksum = "b94f61472cee1439c0b966b47e3aca9ae07e45d070759512cd390ea2bebc6675"
+
+[[package]]
+name = "clipboard-win"
+version = "5.4.3"
+source = "registry+https://github.com/rust-lang/crates.io-index"
+checksum = "052af7878466feccda12ba7a6a67d019d712f296809559b47c12c8cc196d3a9a"
+dependencies = [
+ "error-code",
+]
 
 [[package]]
 name = "colorchoice"
@@ -882,10 +936,10 @@ dependencies = [
 ]
 
 [[package]]
-name = "dotenv"
-version = "0.15.0"
+name = "dotenvy"
+version = "0.15.7"
 source = "registry+https://github.com/rust-lang/crates.io-index"
-checksum = "77c90badedccf4105eca100756a0b1289e191f6fcbdadd3cee1d2f614f97da8f"
+checksum = "1aaf95b3e5c8f23aa320147307562d361db0ae0d51242340f558153b4eb2439b"
 
 [[package]]
 name = "downcast-rs"
@@ -970,6 +1024,12 @@ dependencies = [
 ]
 
 [[package]]
+name = "endian-type"
+version = "0.1.2"
+source = "registry+https://github.com/rust-lang/crates.io-index"
+checksum = "c34f04666d835ff5d62e058c3995147c06f42fe86ff053337632bca83e42702d"
+
+[[package]]
 name = "env_logger"
 version = "0.10.2"
 source = "registry+https://github.com/rust-lang/crates.io-index"
@@ -999,10 +1059,38 @@ dependencies = [
 ]
 
 [[package]]
+name = "error-code"
+version = "3.4.0"
+source = "registry+https://github.com/rust-lang/crates.io-index"
+checksum = "0b5343afd4a8365a643ac588dab4cf234a190c7f6c88c9f6dd6ffe00837661b7"
+
+[[package]]
+name = "eventsource-stream"
+version = "0.2.3"
+source = "registry+https://github.com/rust-lang/crates.io-index"
+checksum = "74fef4569247a5f429d9156b9d0a2599914385dd189c539334c625d8099d90ab"
+dependencies = [
+ "futures-core",
+ "nom",
+ "pin-project-lite",
+]
+
+[[package]]
 name = "fastrand"
 version = "2.3.0"
 source = "registry+https://github.com/rust-lang/crates.io-index"
 checksum = "37909eebbb50d72f9059c3b6d82c0463f2ff062c9e95845c43a6c9c0355411be"
+
+[[package]]
+name = "fd-lock"
+version = "4.0.4"
+source = "registry+https://github.com/rust-lang/crates.io-index"
+checksum = "0ce92ff622d6dadf7349484f42c93271a0d49b7cc4d466a936405bacbe10aa78"
+dependencies = [
+ "cfg-if",
+ "rustix",
+ "windows-sys 0.59.0",
+]
 
 [[package]]
 name = "ff"
@@ -1130,6 +1218,12 @@ name = "futures-task"
 version = "0.3.31"
 source = "registry+https://github.com/rust-lang/crates.io-index"
 checksum = "f90f7dce0722e95104fcb095585910c0977252f286e354b5e3bd38902cd99988"
+
+[[package]]
+name = "futures-timer"
+version = "3.0.4"
+source = "registry+https://github.com/rust-lang/crates.io-index"
+checksum = "af43fadb8a98512d547e37b4e92e0ced13e205c061b87b4623eff01d918d6968"
 
 [[package]]
 name = "futures-util"
@@ -1289,6 +1383,15 @@ source = "registry+https://github.com/rust-lang/crates.io-index"
 checksum = "6c49c37c09c17a53d937dfbb742eb3a961d65a994e6bcdcf37e7399d0cc8ab5e"
 dependencies = [
  "digest 0.10.7",
+]
+
+[[package]]
+name = "home"
+version = "0.5.12"
+source = "registry+https://github.com/rust-lang/crates.io-index"
+checksum = "cc627f471c528ff0c4a49e1d5e60450c8f6461dd6d10ba9dcd3a61d3dff7728d"
+dependencies = [
+ "windows-sys 0.61.2",
 ]
 
 [[package]]
@@ -1820,6 +1923,12 @@ source = "registry+https://github.com/rust-lang/crates.io-index"
 checksum = "6877bb514081ee2a7ff5ef9de3281f14a4dd4bceac4c09388074a6b5df8a139a"
 
 [[package]]
+name = "minimal-lexical"
+version = "0.2.1"
+source = "registry+https://github.com/rust-lang/crates.io-index"
+checksum = "68354c5c6bd36d73ff3feceb05efa59b6acb7626617f4962be322a825e61f79a"
+
+[[package]]
 name = "miniz_oxide"
 version = "0.8.9"
 source = "registry+https://github.com/rust-lang/crates.io-index"
@@ -1854,6 +1963,37 @@ dependencies = [
  "security-framework",
  "security-framework-sys",
  "tempfile",
+]
+
+[[package]]
+name = "nibble_vec"
+version = "0.1.0"
+source = "registry+https://github.com/rust-lang/crates.io-index"
+checksum = "77a5d83df9f36fe23f0c3648c6bbb8b0298bb5f1939c8f2704431371f4b84d43"
+dependencies = [
+ "smallvec",
+]
+
+[[package]]
+name = "nix"
+version = "0.28.0"
+source = "registry+https://github.com/rust-lang/crates.io-index"
+checksum = "ab2156c4fce2f8df6c499cc1c763e4394b7482525bf2a9701c9d79d215f519e4"
+dependencies = [
+ "bitflags 2.9.4",
+ "cfg-if",
+ "cfg_aliases",
+ "libc",
+]
+
+[[package]]
+name = "nom"
+version = "7.1.3"
+source = "registry+https://github.com/rust-lang/crates.io-index"
+checksum = "d273983c5a657a70a3e8f2a01329822f3b8c8172b73826411a55751e404a0a4a"
+dependencies = [
+ "memchr",
+ "minimal-lexical",
 ]
 
 [[package]]
@@ -1962,9 +2102,9 @@ dependencies = [
 
 [[package]]
 name = "odra"
-version = "2.8.1"
+version = "2.10.0"
 source = "registry+https://github.com/rust-lang/crates.io-index"
-checksum = "f2f4d14dccb0ddcf8fe1808caef3fe2e7bb93a786d5bd3967b2c67a0a7af6c2f"
+checksum = "71aaa1b8f65e101f8f4096b1cf473c98575d06b01352f3f6f586cccb252284af"
 dependencies = [
  "odra-casper-wasm-env",
  "odra-core",
@@ -1974,9 +2114,9 @@ dependencies = [
 
 [[package]]
 name = "odra-build"
-version = "2.8.1"
+version = "2.10.0"
 source = "registry+https://github.com/rust-lang/crates.io-index"
-checksum = "4c5b91a79fa9a660b3a1237a719dd94e12813743f064ce129055b0c14bf89768"
+checksum = "53fe85947f2b8de9e50a50bbe834c95f38f773e753ae28286ca89113c6b141a0"
 dependencies = [
  "serde",
  "serde_json",
@@ -1984,9 +2124,9 @@ dependencies = [
 
 [[package]]
 name = "odra-casper-livenet-env"
-version = "2.8.1"
+version = "2.10.0"
 source = "registry+https://github.com/rust-lang/crates.io-index"
-checksum = "95469f8db21e6d91ff646562a760493aeb965a0156ea23857080adf5df282285"
+checksum = "2ae9de86956f72242bcdeb61617af4217380954095fa280019c0a0e8675a102f"
 dependencies = [
  "anyhow",
  "blake2 0.10.6",
@@ -1996,20 +2136,19 @@ dependencies = [
  "odra-schema",
  "project-root",
  "serde_json",
- "tokio",
 ]
 
 [[package]]
 name = "odra-casper-rpc-client"
-version = "2.8.1"
+version = "2.10.0"
 source = "registry+https://github.com/rust-lang/crates.io-index"
-checksum = "039a08f9e3815ffde428fc7d66ac9e47f8da87ebb0ba3264bb6cbadd25f3053c"
+checksum = "8b099ec7765bb8847c392e8fda848e5cac0beec3d660b8ba5747dd92c7c4135e"
 dependencies = [
  "base16",
  "bytes",
  "casper-client",
- "casper-types",
- "dotenv",
+ "casper-types 6.1.0",
+ "dotenvy",
  "futures-util",
  "itertools 0.14.0",
  "odra-core",
@@ -2017,6 +2156,7 @@ dependencies = [
  "project-root",
  "rand 0.9.2",
  "reqwest",
+ "reqwest-eventsource",
  "serde_json",
  "thiserror",
  "tokio",
@@ -2025,9 +2165,9 @@ dependencies = [
 
 [[package]]
 name = "odra-casper-test-vm"
-version = "2.8.1"
+version = "2.10.0"
 source = "registry+https://github.com/rust-lang/crates.io-index"
-checksum = "218a93ca6d729beb9a898b31d31f2bda29486453e6f4592fbabd8cd23cd5777a"
+checksum = "6a44281ed5580cc48cb7f6fad79105bf65ff2832f69f0e5a7876dfaf054e9d24"
 dependencies = [
  "casper-contract",
  "casper-engine-test-support",
@@ -2038,9 +2178,9 @@ dependencies = [
 
 [[package]]
 name = "odra-casper-wasm-env"
-version = "2.8.1"
+version = "2.10.0"
 source = "registry+https://github.com/rust-lang/crates.io-index"
-checksum = "67de2cddccb900998696a13967c59f2809b3a6b24b45d2ee6731a05de795c32c"
+checksum = "8a1a090b4a7d4f2991b8ad8b715bbfb8d592be118645ed0fa97c082ce2a4a80a"
 dependencies = [
  "casper-contract",
  "ink_allocator",
@@ -2050,36 +2190,39 @@ dependencies = [
 
 [[package]]
 name = "odra-cli"
-version = "2.8.1"
+version = "2.10.0"
 source = "registry+https://github.com/rust-lang/crates.io-index"
-checksum = "cfb07990e6615dd393d970b8bc35304ff46c570e646dc83607f7f7de0dc4cc96"
+checksum = "72d4b1434143bc0385f61161ec2db4cc68e6d650bd038254900e9f34c2442d9c"
 dependencies = [
  "anyhow",
  "chrono",
  "clap",
+ "clap_complete",
  "hex",
  "odra",
- "odra-build",
  "odra-casper-livenet-env",
+ "odra-schema",
  "pretty_assertions",
  "prettycli",
  "project-root",
+ "rustyline",
  "serde",
  "serde_derive",
  "serde_json",
+ "shlex",
  "thiserror",
  "toml 0.9.12+spec-1.1.0",
 ]
 
 [[package]]
 name = "odra-core"
-version = "2.8.1"
+version = "2.10.0"
 source = "registry+https://github.com/rust-lang/crates.io-index"
-checksum = "940fef67dfa971d79fba7344844c9fe7c750e97258f08277797aa13a3fe7c439"
+checksum = "d2b76adcd4ce6f80996607fcfb188eecd968a8cd00f69dff0f8e02594717734e"
 dependencies = [
  "anyhow",
  "casper-event-standard",
- "casper-types",
+ "casper-types 6.1.0",
  "num-traits",
  "rand 0.9.2",
  "rand_chacha 0.9.0",
@@ -2089,9 +2232,9 @@ dependencies = [
 
 [[package]]
 name = "odra-macros"
-version = "2.8.1"
+version = "2.10.0"
 source = "registry+https://github.com/rust-lang/crates.io-index"
-checksum = "2e4d87eb0bc0d286c227a245c9c47fbca5c37e396a47c6ed6deb78eefe005259"
+checksum = "f1f2c79d740a3f3e507b3119a8c16c135921f255bb8fa52987b13ec8ebfa90dd"
 dependencies = [
  "convert_case 0.6.0",
  "derive-try-from-ref",
@@ -2104,9 +2247,9 @@ dependencies = [
 
 [[package]]
 name = "odra-modules"
-version = "2.8.1"
+version = "2.10.0"
 source = "registry+https://github.com/rust-lang/crates.io-index"
-checksum = "64ea5b0e8d4c36287a86a615db423f7ccaa2f870a11ce3bc6602986cfe23f912"
+checksum = "2bad158ed18b1990d1cd37f3fb68cef4db3734a3c9ea04eac6d01270909b3901"
 dependencies = [
  "base64 0.22.1",
  "casper-eip-712",
@@ -2116,22 +2259,28 @@ dependencies = [
 
 [[package]]
 name = "odra-schema"
-version = "2.8.1"
+version = "2.10.0"
 source = "registry+https://github.com/rust-lang/crates.io-index"
-checksum = "42fcd0da8f46722a2204b4aa0a1adc52206c9d5ca2e8d8346d701b1dcb12c0bc"
+checksum = "ab1c5bbabb098b6fd919a399c555b635b56da28bddc8428472b901e2cfa74c49"
 dependencies = [
+ "base64 0.22.1",
+ "blake2 0.10.6",
  "casper-contract-schema",
- "casper-types",
+ "casper-types 6.1.0",
  "convert_case 0.6.0",
+ "hex",
  "num-traits",
  "odra-core",
+ "serde",
+ "serde_json",
+ "thiserror",
 ]
 
 [[package]]
 name = "odra-test"
-version = "2.8.1"
+version = "2.10.0"
 source = "registry+https://github.com/rust-lang/crates.io-index"
-checksum = "b57bce89f1e1ef65b84e0e633a3bdfe38370ed6e99926ce30dcb110cda469557"
+checksum = "ccbf850682aac1ea5a59a23f0e1d4cc39b4e6622119ac7539f7b924d78562ce1"
 dependencies = [
  "odra-casper-test-vm",
  "odra-core",
@@ -2140,9 +2289,9 @@ dependencies = [
 
 [[package]]
 name = "odra-vm"
-version = "2.8.1"
+version = "2.10.0"
 source = "registry+https://github.com/rust-lang/crates.io-index"
-checksum = "c06d3dd16611a3901953c9c9e01f39c03d9ef6e11dbce9bce444fa147b895988"
+checksum = "eb55efb1449c7f399710396bb8efee06b7d23997951feab261aa508e2c34a6e0"
 dependencies = [
  "anyhow",
  "backtrace",
@@ -2428,6 +2577,16 @@ source = "registry+https://github.com/rust-lang/crates.io-index"
 checksum = "69cdb34c158ceb288df11e18b4bd39de994f6657d83847bdffdbd7f346754b0f"
 
 [[package]]
+name = "radix_trie"
+version = "0.2.1"
+source = "registry+https://github.com/rust-lang/crates.io-index"
+checksum = "c069c179fcdc6a2fe24d8d18305cf085fdbd4f922c041943e203685d6a1c58fd"
+dependencies = [
+ "endian-type",
+ "nibble_vec",
+]
+
+[[package]]
 name = "rand"
 version = "0.8.5"
 source = "registry+https://github.com/rust-lang/crates.io-index"
@@ -2606,6 +2765,22 @@ dependencies = [
 ]
 
 [[package]]
+name = "reqwest-eventsource"
+version = "0.6.0"
+source = "registry+https://github.com/rust-lang/crates.io-index"
+checksum = "632c55746dbb44275691640e7b40c907c16a2dc1a5842aa98aaec90da6ec6bde"
+dependencies = [
+ "eventsource-stream",
+ "futures-core",
+ "futures-timer",
+ "mime",
+ "nom",
+ "pin-project-lite",
+ "reqwest",
+ "thiserror",
+]
+
+[[package]]
 name = "rfc6979"
 version = "0.4.0"
 source = "registry+https://github.com/rust-lang/crates.io-index"
@@ -2706,6 +2881,28 @@ dependencies = [
  "quick-error",
  "tempfile",
  "wait-timeout",
+]
+
+[[package]]
+name = "rustyline"
+version = "14.0.0"
+source = "registry+https://github.com/rust-lang/crates.io-index"
+checksum = "7803e8936da37efd9b6d4478277f4b2b9bb5cdb37a113e8d63222e58da647e63"
+dependencies = [
+ "bitflags 2.9.4",
+ "cfg-if",
+ "clipboard-win",
+ "fd-lock",
+ "home",
+ "libc",
+ "log",
+ "memchr",
+ "nix",
+ "radix_trie",
+ "unicode-segmentation",
+ "unicode-width 0.1.14",
+ "utf8parse",
+ "windows-sys 0.52.0",
 ]
 
 [[package]]
@@ -3491,6 +3688,12 @@ checksum = "c6f5d3c3b1bf09027a88a6bc961fc00497d651009560b5463668dc81b0fa87a8"
 
 [[package]]
 name = "unicode-width"
+version = "0.1.14"
+source = "registry+https://github.com/rust-lang/crates.io-index"
+checksum = "7dd6e30e90baa6f72411720665d41d89b9a3d039dc45b8faea1ddd07f617f6af"
+
+[[package]]
+name = "unicode-width"
 version = "0.2.1"
 source = "registry+https://github.com/rust-lang/crates.io-index"
 checksum = "4a1a07cc7db3810833284e8d372ccdc6da29741639ecc70c9ec107df0fa6154c"
@@ -3706,7 +3909,7 @@ dependencies = [
  "bumpalo",
  "leb128fmt",
  "memchr",
- "unicode-width",
+ "unicode-width 0.2.1",
  "wasm-encoder",
 ]
 

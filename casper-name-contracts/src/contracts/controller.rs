@@ -131,7 +131,9 @@ impl BaseController {
         }
 
         to self.pausable {
+            /// Returns true if the contract is paused, and false otherwise.
             fn is_paused(&self) -> bool;
+            /// Reverts if the contract is paused.
             fn require_not_paused(&self);
         }
     }

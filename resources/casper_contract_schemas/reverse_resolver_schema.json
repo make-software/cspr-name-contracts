@@ -1,6 +1,10 @@
 {
   "casper_contract_schema_version": 1,
   "toolchain": "rustc 1.94.0-nightly (8d670b93d 2025-12-31)",
+  "toolkit": {
+    "name": "Odra",
+    "version": "2.10.0"
+  },
   "authors": [],
   "repository": null,
   "homepage": null,
@@ -62,6 +66,7 @@
       "name": "set_primary_name",
       "description": "Sets the primary preferred reverse resolution address for the caller.",
       "is_mutable": true,
+      "is_payable": false,
       "arguments": [
         {
           "name": "primary_name",
@@ -76,8 +81,9 @@
     },
     {
       "name": "unset_primary_name",
-      "description": "Clears the primary name of the caller.",
+      "description": "Clears the primary name of the caller. The forward resolution (name -> address) is left untouched, only the reverse record (address -> name) is removed. The stored primary name is cleared even if it no longer resolves to the caller (e.g. the name was burned), so a later re-mint of the same name does not revive it. Reverts with [`Error::PrimaryNameNotSet`] if the caller has no primary name stored.",
       "is_mutable": true,
+      "is_payable": false,
       "arguments": [],
       "return_ty": "Unit",
       "is_contract_context": true,
@@ -87,6 +93,7 @@
       "name": "get_primary_name",
       "description": "Returns the primary name for the address.",
       "is_mutable": false,
+      "is_payable": false,
       "arguments": [
         {
           "name": "address",
@@ -141,6 +148,29 @@
         "description": null,
         "ty": "Key",
         "optional": false
+      }
+    ]
+  },
+  "storage": {
+    "kind": "module",
+    "fields": [
+      {
+        "name": "primary_names",
+        "index": 1,
+        "kind": "mapping",
+        "key": "Key",
+        "value": {
+          "kind": "value",
+          "ty": {
+            "Option": "String"
+          }
+        }
+      },
+      {
+        "name": "name_token",
+        "index": 2,
+        "kind": "value",
+        "ty": "Key"
       }
     ]
   }

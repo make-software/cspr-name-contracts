@@ -1,6 +1,10 @@
 {
   "casper_contract_schema_version": 1,
   "toolchain": "rustc 1.94.0-nightly (8d670b93d 2025-12-31)",
+  "toolkit": {
+    "name": "Odra",
+    "version": "2.10.0"
+  },
   "authors": [],
   "repository": null,
   "homepage": null,
@@ -308,6 +312,7 @@
       "name": "token_exists",
       "description": "",
       "is_mutable": false,
+      "is_payable": false,
       "arguments": [
         {
           "name": "token_id",
@@ -324,6 +329,7 @@
       "name": "mint",
       "description": "",
       "is_mutable": true,
+      "is_payable": false,
       "arguments": [
         {
           "name": "recipient",
@@ -359,6 +365,7 @@
       "name": "burn",
       "description": "",
       "is_mutable": true,
+      "is_payable": false,
       "arguments": [
         {
           "name": "token_id",
@@ -375,6 +382,7 @@
       "name": "admin_transfer",
       "description": "",
       "is_mutable": true,
+      "is_payable": false,
       "arguments": [
         {
           "name": "recipient",
@@ -399,6 +407,7 @@
       "name": "transfer_from",
       "description": "",
       "is_mutable": true,
+      "is_payable": false,
       "arguments": [
         {
           "name": "from",
@@ -427,6 +436,7 @@
       "name": "set_token_metadata",
       "description": "",
       "is_mutable": true,
+      "is_payable": false,
       "arguments": [
         {
           "name": "token_id",
@@ -456,6 +466,7 @@
       "name": "resolver",
       "description": "",
       "is_mutable": false,
+      "is_payable": false,
       "arguments": [
         {
           "name": "token_id",
@@ -474,6 +485,7 @@
       "name": "set_resolver",
       "description": "",
       "is_mutable": true,
+      "is_payable": false,
       "arguments": [
         {
           "name": "token_id",
@@ -496,6 +508,7 @@
       "name": "assert_is_owner",
       "description": "",
       "is_mutable": false,
+      "is_payable": false,
       "arguments": [
         {
           "name": "token_id",
@@ -518,6 +531,7 @@
       "name": "is_token_valid",
       "description": "",
       "is_mutable": false,
+      "is_payable": false,
       "arguments": [
         {
           "name": "token_id",
@@ -534,6 +548,7 @@
       "name": "set_default_resolver",
       "description": "Only admin. Set the default resolver.",
       "is_mutable": true,
+      "is_payable": false,
       "arguments": [
         {
           "name": "resolver",
@@ -550,6 +565,7 @@
       "name": "get_default_resolver",
       "description": "Get the default resolver.",
       "is_mutable": false,
+      "is_payable": false,
       "arguments": [],
       "return_ty": "Key",
       "is_contract_context": true,
@@ -559,6 +575,7 @@
       "name": "whitelist",
       "description": "",
       "is_mutable": true,
+      "is_payable": false,
       "arguments": [
         {
           "name": "address",
@@ -575,6 +592,7 @@
       "name": "revoke_whitelist",
       "description": "",
       "is_mutable": true,
+      "is_payable": false,
       "arguments": [
         {
           "name": "address",
@@ -591,6 +609,7 @@
       "name": "name",
       "description": "Delegated. See `self.token.name()` for details.",
       "is_mutable": false,
+      "is_payable": false,
       "arguments": [],
       "return_ty": "String",
       "is_contract_context": true,
@@ -600,6 +619,7 @@
       "name": "symbol",
       "description": "Delegated. See `self.token.symbol()` for details.",
       "is_mutable": false,
+      "is_payable": false,
       "arguments": [],
       "return_ty": "String",
       "is_contract_context": true,
@@ -609,6 +629,7 @@
       "name": "balance_of",
       "description": "Delegated. See `self.token.balance_of()` for details.",
       "is_mutable": false,
+      "is_payable": false,
       "arguments": [
         {
           "name": "owner",
@@ -625,6 +646,7 @@
       "name": "owner_of",
       "description": "Delegated. See `self.token.owner_of()` for details.",
       "is_mutable": false,
+      "is_payable": false,
       "arguments": [
         {
           "name": "token_id",
@@ -643,6 +665,7 @@
       "name": "safe_transfer_from",
       "description": "Delegated. See `self.token.safe_transfer_from()` for details.",
       "is_mutable": true,
+      "is_payable": false,
       "arguments": [
         {
           "name": "from",
@@ -681,6 +704,7 @@
       "name": "approve",
       "description": "Delegated. See `self.token.approve()` for details.",
       "is_mutable": true,
+      "is_payable": false,
       "arguments": [
         {
           "name": "spender",
@@ -703,6 +727,7 @@
       "name": "revoke_approval",
       "description": "Delegated. See `self.token.revoke_approval()` for details.",
       "is_mutable": true,
+      "is_payable": false,
       "arguments": [
         {
           "name": "token_id",
@@ -719,6 +744,7 @@
       "name": "approved_for",
       "description": "Delegated. See `self.token.approved_for()` for details.",
       "is_mutable": false,
+      "is_payable": false,
       "arguments": [
         {
           "name": "token_id",
@@ -737,6 +763,7 @@
       "name": "approve_for_all",
       "description": "Delegated. See `self.token.approve_for_all()` for details.",
       "is_mutable": true,
+      "is_payable": false,
       "arguments": [
         {
           "name": "operator",
@@ -753,6 +780,7 @@
       "name": "revoke_approval_for_all",
       "description": "Delegated. See `self.token.revoke_approval_for_all()` for details.",
       "is_mutable": true,
+      "is_payable": false,
       "arguments": [
         {
           "name": "operator",
@@ -769,6 +797,7 @@
       "name": "is_approved_for_all",
       "description": "Delegated. See `self.token.is_approved_for_all()` for details.",
       "is_mutable": false,
+      "is_payable": false,
       "arguments": [
         {
           "name": "owner",
@@ -791,6 +820,7 @@
       "name": "token_metadata",
       "description": "Delegated. See `self.token.token_metadata()` for details.",
       "is_mutable": false,
+      "is_payable": false,
       "arguments": [
         {
           "name": "token_id",
@@ -812,8 +842,9 @@
     },
     {
       "name": "get_owner",
-      "description": "Delegated. See `self.ownable.get_owner()` for details.",
+      "description": "Returns the address of the current owner.",
       "is_mutable": false,
+      "is_payable": false,
       "arguments": [],
       "return_ty": "Key",
       "is_contract_context": true,
@@ -821,8 +852,9 @@
     },
     {
       "name": "get_pending_owner",
-      "description": "Delegated. See `self.ownable.get_pending_owner()` for details.",
+      "description": "Returns the address of the pending owner.",
       "is_mutable": false,
+      "is_payable": false,
       "arguments": [],
       "return_ty": {
         "Option": "Key"
@@ -832,8 +864,9 @@
     },
     {
       "name": "transfer_ownership",
-      "description": "Delegated. See `self.ownable.transfer_ownership()` for details.",
+      "description": "Starts the ownership transfer of the module to a `new_owner`. Replaces the `pending_owner`if there is one. This function can only be accessed by the current owner of the module.",
       "is_mutable": true,
+      "is_payable": false,
       "arguments": [
         {
           "name": "new_owner",
@@ -848,8 +881,9 @@
     },
     {
       "name": "accept_ownership",
-      "description": "Delegated. See `self.ownable.accept_ownership()` for details.",
+      "description": "The new owner accepts the ownership transfer. Replaces the current owner and clears the pending owner.",
       "is_mutable": true,
+      "is_payable": false,
       "arguments": [],
       "return_ty": "Unit",
       "is_contract_context": true,
@@ -857,8 +891,9 @@
     },
     {
       "name": "renounce_ownership",
-      "description": "Delegated. See `self.ownable.renounce_ownership()` for details.",
+      "description": "If the contract's owner chooses to renounce their ownership, the contract will no longer have an owner. This means that any functions that can only be accessed by the owner will no longer be available. The function can only be called by the current owner, and it will permanently remove the owner's privileges.",
       "is_mutable": true,
+      "is_payable": false,
       "arguments": [],
       "return_ty": "Unit",
       "is_contract_context": true,
@@ -952,6 +987,149 @@
         "description": null,
         "ty": "U64",
         "optional": false
+      }
+    ]
+  },
+  "storage": {
+    "kind": "module",
+    "fields": [
+      {
+        "name": "token",
+        "index": 1,
+        "kind": "module",
+        "fields": [
+          {
+            "name": "name",
+            "index": 1,
+            "kind": "named_key",
+            "named_key": "name",
+            "ty": "String"
+          },
+          {
+            "name": "symbol",
+            "index": 2,
+            "kind": "named_key",
+            "named_key": "symbol",
+            "ty": "String"
+          },
+          {
+            "name": "balances",
+            "index": 3,
+            "kind": "dictionary",
+            "dictionary": "balances",
+            "key": "Key",
+            "key_encoding": "base64",
+            "value": "U256"
+          },
+          {
+            "name": "owners",
+            "index": 4,
+            "kind": "dictionary",
+            "dictionary": "owners",
+            "key": "U256",
+            "key_encoding": "base64",
+            "value": {
+              "Option": "Key"
+            }
+          },
+          {
+            "name": "approvals",
+            "index": 5,
+            "kind": "dictionary",
+            "dictionary": "approvals",
+            "key": "U256",
+            "key_encoding": "base64",
+            "value": {
+              "Option": "Key"
+            }
+          },
+          {
+            "name": "operators",
+            "index": 6,
+            "kind": "dictionary",
+            "dictionary": "operators",
+            "key": {
+              "Tuple2": [
+                "Key",
+                "Key"
+              ]
+            },
+            "key_encoding": "hex_hash",
+            "value": "Bool"
+          },
+          {
+            "name": "metadata",
+            "index": 7,
+            "kind": "dictionary",
+            "dictionary": "token_metadata",
+            "key": "U256",
+            "key_encoding": "base64",
+            "value": {
+              "Map": {
+                "key": "String",
+                "value": "String"
+              }
+            }
+          }
+        ]
+      },
+      {
+        "name": "ownable",
+        "index": 2,
+        "kind": "module",
+        "fields": [
+          {
+            "name": "ownable",
+            "index": 1,
+            "kind": "module",
+            "fields": [
+              {
+                "name": "owner",
+                "index": 1,
+                "kind": "value",
+                "ty": {
+                  "Option": "Key"
+                }
+              }
+            ]
+          },
+          {
+            "name": "pending_owner",
+            "index": 2,
+            "kind": "value",
+            "ty": {
+              "Option": "Key"
+            }
+          }
+        ]
+      },
+      {
+        "name": "default_resolver",
+        "index": 3,
+        "kind": "value",
+        "ty": "Key"
+      },
+      {
+        "name": "max_supply",
+        "index": 4,
+        "kind": "value",
+        "ty": "U64"
+      },
+      {
+        "name": "minted_tokens_count",
+        "index": 5,
+        "kind": "value",
+        "ty": "U64"
+      },
+      {
+        "name": "whitelist",
+        "index": 6,
+        "kind": "mapping",
+        "key": "Key",
+        "value": {
+          "kind": "value",
+          "ty": "Bool"
+        }
       }
     ]
   }

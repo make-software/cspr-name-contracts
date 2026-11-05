@@ -22,7 +22,7 @@ use odra::{
 use odra_cli::{
     cspr, scenario::{Args, Error as ScenarioError, Scenario, ScenarioMetadata}, CommandArg, ContractProvider, DeployedContractsContainer
 };
-use odra_modules::access::DEFAULT_ADMIN_ROLE;
+use odra_modules::{access::DEFAULT_ADMIN_ROLE, dapp::DappMetadata};
 use std::io::Write;
 
 const ONE_DAY: u64 = 86400000;
@@ -240,6 +240,109 @@ impl Scenario for UpgradeReverseResolver {
                 allow_key_override: true,
             },
         );
+
+        Ok(())
+    }
+}
+
+pub struct UpgradeDefaultResolver;
+
+impl ScenarioMetadata for UpgradeDefaultResolver {
+    const NAME: &'static str = "upgrade-default-resolver";
+    const DESCRIPTION: &'static str = "Upgrade the DefaultResolver contract.";
+}
+
+impl Scenario for UpgradeDefaultResolver {
+    fn run(
+        &self,
+        env: &HostEnv,
+        container: &DeployedContractsContainer,
+        _args: Args,
+    ) -> Result<(), ScenarioError> {
+        let resolver_addr = container
+            .address_by_name(&DefaultResolver::ident())
+            .unwrap();
+
+        env.set_gas(cspr!(400));
+        DefaultResolver::try_upgrade_with_cfg(
+            env,
+            resolver_addr,
+            NoArgs,
+            UpgradeConfig {
+                package_named_key: DefaultResolver::ident(),
+                force_create_upgrade_group: true,
+                allow_key_override: true,
+            },
+        )?;
+
+        Ok(())
+    }
+}
+
+pub struct RegisterDapp;
+
+impl ScenarioMetadata for RegisterDapp {
+    const NAME: &'static str = "register-dapp";
+    const DESCRIPTION: &'static str =
+        "Sets the dapp metadata on the NameToken and registers the other contracts as dapp members.";
+}
+
+impl Scenario for RegisterDapp {
+    fn args(&self) -> Vec<CommandArg> {
+        vec![
+            CommandArg::new("name", "Name of the dapp", NamedCLType::String),
+            CommandArg::new(
+                "description",
+                "Description of the dapp",
+                NamedCLType::String,
+            ),
+            CommandArg::new(
+                "website_url",
+                "Website URL of the dapp",
+                NamedCLType::String,
+            ),
+            CommandArg::new("icon_url", "Icon URL of the dapp", NamedCLType::String),
+        ]
+    }
+
+    /// Idempotent: the metadata is set only when `name` is given, and a
+    /// contract that already belongs to the dapp is skipped. Every member must
+    /// run code that exposes `get_dapp_registry`, so run the upgrades first.
+    fn run(
+        &self,
+        env: &HostEnv,
+        container: &DeployedContractsContainer,
+        args: Args,
+    ) -> Result<(), ScenarioError> {
+        env.set_captures_events(false);
+        let mut name_token = container.contract_ref::<NameToken>(env)?;
+
+        if let Ok(name) = args.get_single::<String>("name") {
+            let metadata = DappMetadata {
+                name,
+                description: args.get_single::<String>("description").unwrap_or_default(),
+                website_url: args.get_single::<String>("website_url").unwrap_or_default(),
+                icon_url: args.get_single::<String>("icon_url").unwrap_or_default(),
+            };
+            env.set_gas(cspr!(10));
+            name_token.try_set_dapp_metadata(metadata)?;
+        }
+
+        let members = [
+            container.contract_ref::<DefaultResolver>(env)?.address(),
+            container.contract_ref::<Registrar>(env)?.address(),
+            container.contract_ref::<Controller>(env)?.address(),
+            container.contract_ref::<ReverseResolver>(env)?.address(),
+        ];
+        for member in members {
+            if name_token.is_dapp_contract(&member) {
+                prettycli::info(&format!("{:?} is already a dapp member", member));
+                continue;
+            }
+            env.set_gas(cspr!(20));
+            name_token.try_add_dapp_contract(&member, false)?;
+            prettycli::info(&format!("{:?} registered as a dapp member", member));
+        }
 
         Ok(())
     }

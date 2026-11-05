@@ -158,7 +158,7 @@
     },
     {
       "name": "unset_primary_name",
-      "description": "Clears the primary name of the caller. The forward resolution (name -> address) is left untouched, only the reverse record (address -> name) is removed. The stored primary name is cleared even if it no longer resolves to the caller (e.g. the name was burned), so a later re-mint of the same name does not revive it. Reverts with [`Error::PrimaryNameNotSet`] if the caller has no primary name stored.",
+      "description": "Clears the primary name of the caller. The forward resolution (name -> address) is left untouched, only the reverse record (address -> name) is removed. The stored primary name is cleared even if it no longer resolves to the caller (e.g. the name was burned), so a later re-mint of the same name does not revive it. Reverts with `PrimaryNameNotSet` if the caller has no primary name stored.",
       "is_mutable": true,
       "is_payable": false,
       "arguments": [],

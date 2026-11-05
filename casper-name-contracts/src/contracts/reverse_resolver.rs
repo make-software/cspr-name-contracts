@@ -93,7 +93,7 @@ impl ReverseResolver {
     /// cleared even if it no longer resolves to the caller (e.g. the name was
     /// burned), so a later re-mint of the same name does not revive it.
     ///
-    /// Reverts with [`Error::PrimaryNameNotSet`] if the caller has no primary
+    /// Reverts with `PrimaryNameNotSet` if the caller has no primary
     /// name stored.
     pub fn unset_primary_name(&mut self) {
         let caller = self.env().caller();

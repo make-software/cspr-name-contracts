@@ -11,3 +11,5 @@
 /.idea
 casper-name-contracts/wasm
 net-1
+*.env
+.node-keys/

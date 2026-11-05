@@ -245,40 +245,6 @@ impl Scenario for UpgradeReverseResolver {
     }
 }
 
-pub struct UpgradeDefaultResolver;
-
-impl ScenarioMetadata for UpgradeDefaultResolver {
-    const NAME: &'static str = "upgrade-default-resolver";
-    const DESCRIPTION: &'static str = "Upgrade the DefaultResolver contract.";
-}
-
-impl Scenario for UpgradeDefaultResolver {
-    fn run(
-        &self,
-        env: &HostEnv,
-        container: &DeployedContractsContainer,
-        _args: Args,
-    ) -> Result<(), ScenarioError> {
-        let resolver_addr = container
-            .address_by_name(&DefaultResolver::ident())
-            .unwrap();
-
-        env.set_gas(cspr!(400));
-        DefaultResolver::try_upgrade_with_cfg(
-            env,
-            resolver_addr,
-            NoArgs,
-            UpgradeConfig {
-                package_named_key: DefaultResolver::ident(),
-                force_create_upgrade_group: true,
-                allow_key_override: true,
-            },
-        )?;
-
-        Ok(())
-    }
-}
-
 pub struct RegisterDapp;
 
 impl ScenarioMetadata for RegisterDapp {

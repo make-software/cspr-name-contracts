@@ -85,15 +85,17 @@ members.
   untouched. `init` signatures and existing entry points do not change.
 - A new `register-dapp` CLI scenario sets the metadata and adds every
   deployed member that is not registered yet. It is safe to rerun.
+- New `just` recipes: `upgrade`, `register-dapp`, `upgrade-dapp-registry`
+  and `verify-dapp-registry`.
 
 ### Commands to run
 
 Run them as the account that installed the contracts, with the livenet
 configuration of the target network selected (`ODRA_CASPER_LIVENET_ENV=<name>`
-picks `<name>.env`). The whole sequence is in one script:
+picks `<name>.env`). The whole sequence is one `just` recipe:
 
 ```
-$ scripts/upgrade-dapp-registry.sh --name "CSPR.name" \
+$ just upgrade-dapp-registry --name "CSPR.name" \
     --description "Casper Name Service" \
     --website_url "https://cspr.name" --icon_url "https://cspr.name/icon.png"
 ```
@@ -104,33 +106,36 @@ Registrar during its upgrade, and `register-dapp` calls `get_dapp_registry` on
 each member, which only the upgraded code has. Step by step, it runs:
 
 ```
-$ cargo odra build
-$ cargo run -p casper-name-cli -- upgrade NameToken --gas 400cspr
-$ cargo run -p casper-name-cli -- upgrade Registrar --gas 400cspr --force-create-upgrade-group
-$ cargo run -p casper-name-cli -- upgrade Controller --gas 400cspr --force-create-upgrade-group
-$ cargo run -p casper-name-cli -- upgrade DefaultResolver --gas 400cspr --force-create-upgrade-group
-$ cargo run -p casper-name-cli -- upgrade ReverseResolver --gas 400cspr --force-create-upgrade-group \
+$ just build
+$ just upgrade NameToken
+$ just upgrade Registrar --force-create-upgrade-group
+$ just upgrade Controller --force-create-upgrade-group
+$ just upgrade DefaultResolver --force-create-upgrade-group
+$ just upgrade ReverseResolver --force-create-upgrade-group \
     --package-named-key ReverseResolver_contract_package
-$ cargo run -p casper-name-cli -- scenario register-dapp --name "CSPR.name" \
+$ just register-dapp --name "CSPR.name" \
     --description "Casper Name Service" --website_url "https://cspr.name"
 ```
+
+`just upgrade <Contract> [flags]` wraps
+`cargo run --bin casper-name-cli -- upgrade <Contract> --gas 400cspr [flags]`.
 
 `--force-create-upgrade-group` is for packages installed with Odra 2.2 or
 earlier that have never been upgraded, which is the state of the public
 deployment (the NameToken was upgraded before and already has the group). A
 package that already has the group fails with `Contract header error: 3`.
 For contracts installed with Odra 2.3 or newer, such as a fresh nctl
-deployment, run the script with `FRESH_INSTALL=1`, which drops the flag and
+deployment, run the recipe with `FRESH_INSTALL=1`, which drops the flag and
 the legacy named key. `SKIP_BUILD=1` reuses the wasm files in `./wasm`, and
 `GAS` overrides the 400 CSPR per upgrade.
 
 ### How to verify
 
 ```
-$ scripts/verify-dapp-registry.sh
+$ just verify-dapp-registry
 ```
 
-The script only reads. It checks that the NameToken reports itself as the
+The recipe only reads. It checks that the NameToken reports itself as the
 registry and first in `get_dapp_contracts`, that every deployed member
 reports the NameToken from `get_dapp_registry` and is listed as a member, and
 prints the metadata. It exits non-zero on the first failed check. By hand:

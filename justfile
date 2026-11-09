@@ -29,7 +29,14 @@ rebuild-docs:
 
 set positional-arguments
 
-cli_cmd := "cargo run -q --bin casper-name-cli --"
+# Alternative contracts file for the CLI (its `-c` option), relative to the
+# project root. Empty means the CLI default, `resources/<chain>-contracts.toml`.
+# Set it as an environment variable (`CONTRACTS_TOML=resources/foo.toml just ..`)
+# or as a just variable (`just CONTRACTS_TOML=resources/foo.toml <recipe> ..`).
+# It is exported, so the nested `just` calls in `upgrade-dapp-registry` see it.
+export CONTRACTS_TOML := env("CONTRACTS_TOML", "")
+cli_opts := if CONTRACTS_TOML == "" { "" } else { "-c " + CONTRACTS_TOML }
+cli_cmd := "cargo run -q --bin casper-name-cli -- " + cli_opts
 
 # Gas attached to every `upgrade` transaction.
 gas := env("GAS", "400cspr")
@@ -71,13 +78,15 @@ upgrade-dapp-registry *ARGS:
     # The Controller reads the registry from the Registrar during its upgrade,
     # and `register-dapp` calls `get_dapp_registry` on every member, which only
     # the upgraded code exposes.
+    # CONTRACTS_TOML, FRESH_INSTALL and GAS reach the nested calls through the
+    # environment.
     just upgrade NameToken
     just upgrade Registrar {{upgrade_group_flags}}
     just upgrade Controller {{upgrade_group_flags}}
     just upgrade DefaultResolver {{upgrade_group_flags}}
     just upgrade ReverseResolver {{upgrade_group_flags}} {{reverse_resolver_flags}}
     just register-dapp "$@"
-    echo "==> Done. Verify with: just verify-dapp-registry"
+    echo "==> Done. Verify with: CONTRACTS_TOML='{{CONTRACTS_TOML}}' just verify-dapp-registry"
 
 # Exits non-zero on the first failed check.
 

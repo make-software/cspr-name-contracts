@@ -119,6 +119,10 @@ $ just register-dapp --name "CSPR.name" \
 
 `just upgrade <Contract> [flags]` wraps
 `cargo run --bin casper-name-cli -- upgrade <Contract> --gas 400cspr [flags]`.
+The CLI reads `resources/<chain>-contracts.toml`; to use another contracts
+file, pass it to any of these recipes as a `just` variable, for example
+`just contracts_toml=resources/casper-test-contracts.toml upgrade-dapp-registry ..`
+(or set `CONTRACTS_TOML`). It becomes the CLI's `-c` option.
 
 `--force-create-upgrade-group` is for packages installed with Odra 2.2 or
 earlier that have never been upgraded, which is the state of the public

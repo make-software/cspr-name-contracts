@@ -29,7 +29,13 @@ rebuild-docs:
 
 set positional-arguments
 
-cli_cmd := "cargo run -q --bin casper-name-cli --"
+# Alternative contracts file for the CLI (its `-c` option), relative to the
+# project root. Empty means the CLI default, `resources/<chain>-contracts.toml`.
+# Set it per call with `just contracts_toml=resources/foo.toml <recipe> ..`
+# or through the CONTRACTS_TOML environment variable.
+contracts_toml := env("CONTRACTS_TOML", "")
+cli_opts := if contracts_toml == "" { "" } else { "-c " + contracts_toml }
+cli_cmd := "cargo run -q --bin casper-name-cli -- " + cli_opts
 
 # Gas attached to every `upgrade` transaction.
 gas := env("GAS", "400cspr")
@@ -71,13 +77,15 @@ upgrade-dapp-registry *ARGS:
     # The Controller reads the registry from the Registrar during its upgrade,
     # and `register-dapp` calls `get_dapp_registry` on every member, which only
     # the upgraded code exposes.
-    just upgrade NameToken
-    just upgrade Registrar {{upgrade_group_flags}}
-    just upgrade Controller {{upgrade_group_flags}}
-    just upgrade DefaultResolver {{upgrade_group_flags}}
-    just upgrade ReverseResolver {{upgrade_group_flags}} {{reverse_resolver_flags}}
-    just register-dapp "$@"
-    echo "==> Done. Verify with: just verify-dapp-registry"
+    # The nested calls get the contracts file explicitly, since a
+    # `just contracts_toml=..` override applies to this process only.
+    just contracts_toml={{contracts_toml}} upgrade NameToken
+    just contracts_toml={{contracts_toml}} upgrade Registrar {{upgrade_group_flags}}
+    just contracts_toml={{contracts_toml}} upgrade Controller {{upgrade_group_flags}}
+    just contracts_toml={{contracts_toml}} upgrade DefaultResolver {{upgrade_group_flags}}
+    just contracts_toml={{contracts_toml}} upgrade ReverseResolver {{upgrade_group_flags}} {{reverse_resolver_flags}}
+    just contracts_toml={{contracts_toml}} register-dapp "$@"
+    echo "==> Done. Verify with: just contracts_toml={{contracts_toml}} verify-dapp-registry"
 
 # Exits non-zero on the first failed check.
 

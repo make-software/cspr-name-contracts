@@ -1,5 +1,6 @@
-use odra::{casper_types::U256, prelude::*};
+use odra::{casper_types::U256, prelude::*, ContractRef};
 use odra_modules::access::{AccessControl, Role, DEFAULT_ADMIN_ROLE};
+use odra_modules::dapp::DappContractBase;
 
 use super::{name_token::NameTokenContractRef, token_id::ToTokenId, utils};
 
@@ -45,6 +46,8 @@ pub struct DefaultResolver {
     name_token: External<NameTokenContractRef>,
     nonces: Mapping<TokenId, Nonce>,
     resolutions: Mapping<(TokenId, String, Nonce), Option<Address>>,
+    /// Membership in the CSPR.name dapp. The NameToken is the registry.
+    dapp: SubModule<DappContractBase>,
 }
 
 #[odra::module]
@@ -55,6 +58,11 @@ impl DefaultResolver {
             fn grant_role(&mut self, role: &Role, address: &Address);
             fn revoke_role(&mut self, role: &Role, address: &Address);
         }
+
+        to self.dapp {
+            /// Returns the dapp registry the contract belongs to.
+            fn get_dapp_registry(&self) -> Address;
+        }
     }
 
     /// Initializes the default resolver with the name token contract address.
@@ -63,11 +71,27 @@ impl DefaultResolver {
         if !name_token.is_contract() {
             self.revert(ResolverError::InvalidTokenName);
         }
+        // The NameToken is also the dapp registry.
         self.name_token.set(name_token);
+        self.dapp.set_dapp_registry(&name_token);
 
         let admin = self.env().caller();
         self.access_control
             .unchecked_grant_role(&DEFAULT_ADMIN_ROLE, &admin);
+    }
+
+    /// Runs once during an upgrade. Points the contract at its dapp registry,
+    /// which is the NameToken contract.
+    pub fn upgrade(&mut self) {
+        let registry = *self.name_token.address();
+        self.dapp.set_dapp_registry(&registry);
+    }
+
+    /// Admin only. Changes the dapp registry the contract belongs to.
+    pub fn set_dapp_registry(&mut self, registry: &Address) {
+        self.access_control
+            .check_role(&DEFAULT_ADMIN_ROLE, &self.env().caller());
+        self.dapp.set_dapp_registry(registry);
     }
 
     /// Admin only. Sets the name token contract address.
@@ -469,5 +493,51 @@ mod tests {
     fn try_invalidate(ctx: &mut TestContext, token_name: &str) -> OdraResult<()> {
         ctx.default_resolver
             .try_invalidate_resolutions(generate_token_id(token_name))
+    }
+}
+
+#[cfg(test)]
+mod dapp_tests {
+    use super::*;
+    use crate::test_context::TestContext;
+    use odra::host::{Deployer, NoArgs};
+    use odra_modules::access::errors::Error as AccessControlError;
+
+    #[test]
+    fn test_dapp_registry_is_the_name_token() {
+        let mut ctx = TestContext::install_and_setup();
+        let token = ctx.token.address();
+        let other = ctx.registrar.address();
+        assert_eq!(ctx.default_resolver.get_dapp_registry(), token);
+
+        // Only the admin may re-point the contract.
+        ctx.set_caller(ctx.alice);
+        assert_eq!(
+            ctx.default_resolver
+                .try_set_dapp_registry(&other)
+                .unwrap_err(),
+            AccessControlError::MissingRole.into()
+        );
+        ctx.set_caller(ctx.admin);
+        ctx.default_resolver.set_dapp_registry(&other);
+        assert_eq!(ctx.default_resolver.get_dapp_registry(), other);
+    }
+
+    #[test]
+    fn test_upgrade_points_at_the_name_token() {
+        let mut ctx = TestContext::install_and_setup();
+        let (admin, alice) = (ctx.admin, ctx.alice);
+        let token = ctx.token.address();
+        ctx.with_name_registered(admin, alice, "odra");
+        ctx.set_caller(alice);
+        ctx.default_resolver
+            .set_resolution("odra.cspr".to_string(), Some(alice));
+
+        ctx.set_caller(admin);
+        let upgraded =
+            DefaultResolver::try_upgrade(&ctx.env, ctx.default_resolver.address(), NoArgs).unwrap();
+        assert_eq!(upgraded.get_dapp_registry(), token);
+        // Existing resolutions survived.
+        assert_eq!(upgraded.resolve("odra.cspr".to_string()), Some(alice));
     }
 }

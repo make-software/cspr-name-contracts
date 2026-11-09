@@ -6,10 +6,15 @@ use odra::module::Revertible;
 use odra::{prelude::*, ContractRef};
 use odra_modules::access::Ownable2Step;
 use odra_modules::cep95::{CEP95Interface, Cep95, Error as Cep95Error};
+use odra_modules::dapp::{DappMetadata, DappRegistryBase};
 
 use super::resolver::ResolverContractRef;
 
 /// NameToken contract. It is a CEP95 token with additional functionalities.
+///
+/// It is also the dapp registry of CSPR.name: it holds the dapp metadata and
+/// the list of the other contracts (registrar, resolvers, controllers) that
+/// belong to the dapp. Every member contract points back at the NameToken.
 #[odra::module(errors = NameTokenError)]
 pub struct NameToken {
     token: SubModule<Cep95>,
@@ -18,6 +23,9 @@ pub struct NameToken {
     max_supply: Var<u64>,
     minted_tokens_count: Var<u64>,
     whitelist: Mapping<Address, bool>,
+    /// Dapp registry. Appended after the original fields so an upgrade keeps
+    /// the existing storage layout.
+    dapp: SubModule<DappRegistryBase>,
 }
 
 #[odra::module]
@@ -45,6 +53,19 @@ impl NameToken {
             fn accept_ownership(&mut self);
             fn renounce_ownership(&mut self);
         }
+
+        to self.dapp {
+            /// Returns the dapp metadata.
+            fn get_dapp_metadata(&self) -> DappMetadata;
+            /// Returns the contracts of the dapp, the NameToken first.
+            fn get_dapp_contracts(&self) -> Vec<Address>;
+            /// Returns true if the contract belongs to the dapp.
+            fn is_dapp_contract(&self, dapp_contract: &Address) -> bool;
+            /// Returns true if the contract is a dapp registrar.
+            fn is_dapp_registrar(&self, dapp_contract: &Address) -> bool;
+            /// Returns the dapp registry, which is this contract.
+            fn get_dapp_registry(&self) -> Address;
+        }
     }
 
     /// Initializes CEP95 with the given name and symbol.
@@ -55,6 +76,32 @@ impl NameToken {
         self.token.name.set(name);
         self.max_supply.set(max_supply);
         self.ownable.init(caller);
+        self.dapp.init();
+    }
+
+    /// Runs once during an upgrade. Creates the dapp registry storage. The
+    /// metadata and the members are set afterwards by the owner.
+    pub fn upgrade(&mut self) {
+        self.dapp.init();
+    }
+
+    /// Owner only. Sets the dapp metadata.
+    pub fn set_dapp_metadata(&mut self, metadata: DappMetadata) {
+        self.ownable.assert_owner(&self.env().caller());
+        self.dapp.set_dapp_metadata(metadata);
+    }
+
+    /// Owner only. Adds a contract to the dapp. The contract must report this
+    /// NameToken from its `get_dapp_registry` entry point.
+    pub fn add_dapp_contract(&mut self, dapp_contract: &Address, is_registrar: bool) {
+        self.ownable.assert_owner(&self.env().caller());
+        self.dapp.add_dapp_contract(dapp_contract, is_registrar);
+    }
+
+    /// Owner only. Removes a contract from the dapp.
+    pub fn remove_dapp_contract(&mut self, dapp_contract: &Address) {
+        self.ownable.assert_owner(&self.env().caller());
+        self.dapp.remove_dapp_contract(dapp_contract);
     }
 
     pub fn token_exists(&self, token_id: U256) -> bool {
@@ -650,5 +697,175 @@ mod tests {
     fn try_burn(ctx: &mut TestContext, token_hash: &str) -> OdraResult<()> {
         let token_id = generate_token_id(token_hash);
         ctx.token.try_burn(token_id)
+    }
+}
+
+#[cfg(test)]
+mod dapp_tests {
+    use super::*;
+    use crate::contracts::reverse_resolver::{ReverseResolver, ReverseResolverInitArgs};
+    use crate::test_context::{generate_token_id, TestContext};
+    use odra::host::{Deployer, NoArgs};
+    use odra_modules::access::errors::Error as AccessError;
+    use odra_modules::dapp::errors::Error as DappError;
+
+    #[test]
+    fn test_name_token_is_the_dapp_registry() {
+        let mut ctx = TestContext::install_and_setup();
+        let token = ctx.token.address();
+        let registrar = ctx.registrar.address();
+        let resolver = ctx.default_resolver.address();
+        let controller = ctx.controller.address();
+
+        // The NameToken is its own registry and the only member so far.
+        assert_eq!(ctx.token.get_dapp_registry(), token);
+        assert_eq!(ctx.token.get_dapp_contracts(), vec![token]);
+        assert!(ctx.token.is_dapp_contract(&token));
+
+        // Every other contract points at the NameToken as its registry.
+        assert_eq!(ctx.registrar.get_dapp_registry(), token);
+        assert_eq!(ctx.default_resolver.get_dapp_registry(), token);
+        assert_eq!(ctx.controller.get_dapp_registry(), token);
+
+        // The owner registers them.
+        ctx.set_caller(ctx.admin);
+        ctx.token.add_dapp_contract(&registrar, false);
+        ctx.token.add_dapp_contract(&resolver, false);
+        ctx.token.add_dapp_contract(&controller, false);
+        assert_eq!(
+            ctx.token.get_dapp_contracts(),
+            vec![token, registrar, resolver, controller]
+        );
+        assert!(ctx.token.is_dapp_contract(&registrar));
+        assert!(!ctx.token.is_dapp_registrar(&registrar));
+
+        // Adding a member twice reverts.
+        assert_eq!(
+            ctx.token
+                .try_add_dapp_contract(&registrar, false)
+                .unwrap_err(),
+            DappError::DappContractAlreadyRegistered.into()
+        );
+
+        // Members can be removed, the registry itself cannot.
+        ctx.token.remove_dapp_contract(&controller);
+        assert!(!ctx.token.is_dapp_contract(&controller));
+        assert_eq!(
+            ctx.token.try_remove_dapp_contract(&token).unwrap_err(),
+            DappError::CannotRemoveDappRegistry.into()
+        );
+    }
+
+    #[test]
+    fn test_reverse_resolver_joins_the_dapp() {
+        let mut ctx = TestContext::install_and_setup();
+        let token = ctx.token.address();
+        let reverse_resolver =
+            ReverseResolver::deploy(&ctx.env, ReverseResolverInitArgs { name_token: token });
+        assert_eq!(reverse_resolver.get_dapp_registry(), token);
+
+        ctx.set_caller(ctx.admin);
+        ctx.token
+            .add_dapp_contract(&reverse_resolver.address(), false);
+        assert!(ctx.token.is_dapp_contract(&reverse_resolver.address()));
+    }
+
+    #[test]
+    fn test_dapp_registry_entry_points_are_owner_only() {
+        let mut ctx = TestContext::install_and_setup();
+        let registrar = ctx.registrar.address();
+
+        ctx.set_caller(ctx.alice);
+        assert_eq!(
+            ctx.token
+                .try_add_dapp_contract(&registrar, false)
+                .unwrap_err(),
+            AccessError::CallerNotTheOwner.into()
+        );
+        assert_eq!(
+            ctx.token
+                .try_set_dapp_metadata(DappMetadata::default())
+                .unwrap_err(),
+            AccessError::CallerNotTheOwner.into()
+        );
+
+        ctx.set_caller(ctx.admin);
+        ctx.token.add_dapp_contract(&registrar, false);
+
+        ctx.set_caller(ctx.alice);
+        assert_eq!(
+            ctx.token.try_remove_dapp_contract(&registrar).unwrap_err(),
+            AccessError::CallerNotTheOwner.into()
+        );
+        assert!(ctx.token.is_dapp_contract(&registrar));
+    }
+
+    #[test]
+    fn test_dapp_metadata() {
+        let mut ctx = TestContext::install_and_setup();
+        assert_eq!(ctx.token.get_dapp_metadata(), DappMetadata::default());
+
+        let metadata = DappMetadata {
+            name: "CSPR.name".to_string(),
+            description: "Casper Name Service".to_string(),
+            website_url: "https://cspr.name".to_string(),
+            icon_url: "https://cspr.name/icon.png".to_string(),
+        };
+        ctx.set_caller(ctx.admin);
+        ctx.token.set_dapp_metadata(metadata.clone());
+        assert_eq!(ctx.token.get_dapp_metadata(), metadata);
+    }
+
+    #[test]
+    fn test_dapp_registry_rejects_foreign_contracts_and_accounts() {
+        let mut ctx = TestContext::install_and_setup();
+        let registrar = ctx.registrar.address();
+
+        // A second NameToken is another dapp. The registrar points at the
+        // first one, so the second one refuses it.
+        ctx.set_caller(ctx.admin);
+        let mut other = NameToken::deploy(
+            &ctx.env,
+            NameTokenInitArgs {
+                name: "Other".to_string(),
+                symbol: "OTH".to_string(),
+                max_supply: 1,
+            },
+        );
+        assert_eq!(
+            other.try_add_dapp_contract(&registrar, false).unwrap_err(),
+            DappError::DappRegistryMismatch.into()
+        );
+        assert!(!other.is_dapp_contract(&registrar));
+
+        // An account is not a contract.
+        let alice = ctx.alice;
+        assert_eq!(
+            ctx.token.try_add_dapp_contract(&alice, false).unwrap_err(),
+            DappError::NotAContract.into()
+        );
+    }
+
+    #[test]
+    fn test_upgrade_keeps_tokens_and_dapp_members() {
+        let mut ctx = TestContext::install_and_setup();
+        let (admin, alice) = (ctx.admin, ctx.alice);
+        let token = ctx.token.address();
+        let registrar = ctx.registrar.address();
+
+        ctx.with_name_registered(admin, alice, "name");
+        ctx.set_caller(admin);
+        ctx.token.add_dapp_contract(&registrar, false);
+
+        // Upgrade the NameToken in place.
+        ctx.set_caller(admin);
+        let mut upgraded = NameToken::try_upgrade(&ctx.env, token, NoArgs).unwrap();
+
+        // Tokens and members survived, and the registry still works.
+        assert_eq!(upgraded.owner_of(generate_token_id("name")), Some(alice));
+        assert_eq!(upgraded.get_dapp_contracts(), vec![token, registrar]);
+        let resolver = ctx.default_resolver.address();
+        upgraded.add_dapp_contract(&resolver, false);
+        assert!(upgraded.is_dapp_contract(&resolver));
     }
 }

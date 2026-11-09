@@ -2,6 +2,7 @@ use crate::contracts::{
     name_token::NameTokenContractRef, resolver::ResolverContractRef, token_id::ToTokenId, utils,
 };
 use odra::{prelude::*, ContractRef};
+use odra_modules::dapp::DappContractBase;
 
 #[odra::odra_error]
 enum Error {
@@ -9,6 +10,7 @@ enum Error {
     ResolutionForPrimaryNameNotFound = 1501,
     InvalidResolutionAddress = 1502,
     PrimaryNameNotSet = 1503,
+    NotNameTokenOwner = 1504,
 }
 
 /// Reverse Resolver contract. It resolves primary names to addresses.
@@ -16,15 +18,41 @@ enum Error {
 pub struct ReverseResolver {
     primary_names: Mapping<Address, Option<String>>,
     name_token: External<NameTokenContractRef>,
+    /// Membership in the CSPR.name dapp. The NameToken is the registry.
+    dapp: SubModule<DappContractBase>,
 }
 
 #[odra::module]
 impl ReverseResolver {
+    delegate! {
+        to self.dapp {
+            /// Returns the dapp registry the contract belongs to.
+            fn get_dapp_registry(&self) -> Address;
+        }
+    }
+
     pub fn init(&mut self, name_token: Address) {
         if !name_token.is_contract() {
             self.revert(Error::InvalidTokenName);
         }
+        // The NameToken is also the dapp registry.
         self.name_token.set(name_token);
+        self.dapp.set_dapp_registry(&name_token);
+    }
+
+    /// Runs once during an upgrade. Points the contract at its dapp registry,
+    /// which is the NameToken contract.
+    pub fn upgrade(&mut self) {
+        let registry = *self.name_token.address();
+        self.dapp.set_dapp_registry(&registry);
+    }
+
+    /// NameToken owner only. Changes the dapp registry the contract belongs to.
+    pub fn set_dapp_registry(&mut self, registry: &Address) {
+        if self.name_token.get_owner() != self.env().caller() {
+            self.revert(Error::NotNameTokenOwner);
+        }
+        self.dapp.set_dapp_registry(registry);
     }
 
     /// Sets the primary preferred reverse resolution address for the caller.
@@ -65,7 +93,7 @@ impl ReverseResolver {
     /// cleared even if it no longer resolves to the caller (e.g. the name was
     /// burned), so a later re-mint of the same name does not revive it.
     ///
-    /// Reverts with [`Error::PrimaryNameNotSet`] if the caller has no primary
+    /// Reverts with `PrimaryNameNotSet` if the caller has no primary
     /// name stored.
     pub fn unset_primary_name(&mut self) {
         let caller = self.env().caller();
@@ -208,8 +236,8 @@ mod tests {
         ctx.set_caller(user);
         reverse_resolver.set_primary_name(DOMAIN_TEST2.to_string());
 
-        // The contract should not emit an event for the same primary name.
-        assert_eq!(ctx.events_count(&reverse_resolver), 3);
+        // `init` emits DappRegistryChanged, then one PrimaryNameChanged per call.
+        assert_eq!(ctx.events_count(&reverse_resolver), 4);
     }
 
     #[test]
@@ -385,8 +413,8 @@ mod tests {
             Some(user)
         );
 
-        // One event for set, one for unset.
-        assert_eq!(ctx.events_count(&reverse_resolver), 2);
+        // DappRegistryChanged from `init`, then one event for set, one for unset.
+        assert_eq!(ctx.events_count(&reverse_resolver), 3);
         assert_eq!(
             reverse_resolver.get_event::<PrimaryNameChanged>(-1),
             Ok(PrimaryNameChanged {
@@ -405,7 +433,8 @@ mod tests {
         ctx.set_caller(user);
         let result = reverse_resolver.try_unset_primary_name();
         assert_eq!(result.unwrap_err(), Error::PrimaryNameNotSet.into());
-        assert_eq!(ctx.events_count(&reverse_resolver), 0);
+        // Only the DappRegistryChanged event from `init`.
+        assert_eq!(ctx.events_count(&reverse_resolver), 1);
     }
 
     #[test]
@@ -534,5 +563,60 @@ mod tests {
             },
         );
         (ctx, reverse_resolver)
+    }
+}
+
+#[cfg(test)]
+mod dapp_tests {
+    use super::*;
+    use crate::test_context::TestContext;
+    use odra::host::{Deployer, InstallConfig, NoArgs};
+
+    #[test]
+    fn test_dapp_registry_is_the_name_token() {
+        let mut ctx = TestContext::install_and_setup();
+        let token = ctx.token.address();
+        let other = ctx.registrar.address();
+        let mut reverse_resolver =
+            ReverseResolver::deploy(&ctx.env, ReverseResolverInitArgs { name_token: token });
+        assert_eq!(reverse_resolver.get_dapp_registry(), token);
+
+        // Only the NameToken owner may re-point the contract.
+        ctx.set_caller(ctx.alice);
+        assert_eq!(
+            reverse_resolver.try_set_dapp_registry(&other).unwrap_err(),
+            Error::NotNameTokenOwner.into()
+        );
+        ctx.set_caller(ctx.admin);
+        reverse_resolver.set_dapp_registry(&other);
+        assert_eq!(reverse_resolver.get_dapp_registry(), other);
+    }
+
+    #[test]
+    fn test_upgrade_points_at_the_name_token() {
+        let mut ctx = TestContext::install_and_setup();
+        let (admin, alice) = (ctx.admin, ctx.alice);
+        let token = ctx.token.address();
+        let mut reverse_resolver = ReverseResolver::deploy_with_cfg(
+            &ctx.env,
+            ReverseResolverInitArgs { name_token: token },
+            InstallConfig::upgradable::<ReverseResolver>(),
+        );
+
+        ctx.with_name_registered(admin, alice, "name");
+        ctx.set_caller(alice);
+        ctx.default_resolver
+            .set_resolution("name.cspr".to_string(), Some(alice));
+        reverse_resolver.set_primary_name("name.cspr".to_string());
+
+        ctx.set_caller(admin);
+        let upgraded =
+            ReverseResolver::try_upgrade(&ctx.env, reverse_resolver.address(), NoArgs).unwrap();
+        assert_eq!(upgraded.get_dapp_registry(), token);
+        // Existing primary names survived.
+        assert_eq!(
+            upgraded.get_primary_name(&alice),
+            Some("name.cspr".to_string())
+        );
     }
 }

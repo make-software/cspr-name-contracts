@@ -25,76 +25,99 @@ rebuild-docs:
 
 # ---------------------------------------------------------------------------
 # Dapp registry upgrade (see README, "Versions")
+#
+# Every recipe takes the contracts file and the gas explicitly, and the
+# per-contract recipes pass any further flags straight to the CLI's `upgrade`
+# command, so the command line shows exactly what is sent. Nothing is read
+# from the environment.
+#
+#   CONTRACTS_TOML  contracts file of the target network, relative to the
+#                   project root, e.g. resources/casper-contracts.toml
+#   GAS             gas per transaction, in motes or as `400cspr`
+#   FLAGS           `--force-create-upgrade-group` for a package installed with
+#                   Odra 2.2 or earlier that has never been upgraded,
+#                   `--package-named-key <NAME>` for a package whose hash lives
+#                   under a non-default named key (see `upgrade <Contract> --help`)
 # ---------------------------------------------------------------------------
 
 set positional-arguments
+set shell := ["bash", "-c"]
 
-# Alternative contracts file for the CLI (its `-c` option), relative to the
-# project root. Empty means the CLI default, `resources/<chain>-contracts.toml`.
-# Set it as an environment variable (`CONTRACTS_TOML=resources/foo.toml just ..`)
-# or as a just variable (`just CONTRACTS_TOML=resources/foo.toml <recipe> ..`).
-# It is exported, so the nested `just` calls in `upgrade-dapp-registry` see it.
-export CONTRACTS_TOML := env("CONTRACTS_TOML", "")
-cli_opts := if CONTRACTS_TOML == "" { "" } else { "-c " + CONTRACTS_TOML }
-cli_cmd := "cargo run -q --bin casper-name-cli -- " + cli_opts
-
-# Gas attached to every `upgrade` transaction.
-gas := env("GAS", "400cspr")
-
-# FRESH_INSTALL=1: the packages were installed with Odra 2.3 or newer (for
-# example a fresh nctl deployment), so they already have an upgrade group and
-# use the default package named keys. Without it the flags match the public
-# deployment, whose packages were installed with an older Odra: the upgrade
-# group is created on this first upgrade (the NameToken already has one), and
-# the ReverseResolver package hash lives under a legacy named key.
-fresh_install := env("FRESH_INSTALL", "0")
-upgrade_group_flags := if fresh_install == "1" { "" } else { "--force-create-upgrade-group" }
-reverse_resolver_flags := if fresh_install == "1" { "" } else { "--package-named-key ReverseResolver_contract_package" }
+cli_cmd := "cargo run -q --bin casper-name-cli --"
 
 # Build the wasm files.
 build:
     cargo odra build
 
-# Upgrade one deployed contract with its wasm. Extra FLAGS go to `upgrade`.
-upgrade CONTRACT *FLAGS:
-    {{cli_cmd}} upgrade {{CONTRACT}} --gas {{gas}} {{FLAGS}}
+# Upgrade the NameToken with wasm/NameToken.wasm. FLAGS go to `upgrade`.
+upgrade-name-token CONTRACTS_TOML GAS *FLAGS:
+    {{cli_cmd}} -c {{CONTRACTS_TOML}} upgrade NameToken --gas {{GAS}} {{FLAGS}}
+
+# Upgrade the Registrar with wasm/Registrar.wasm. FLAGS go to `upgrade`.
+upgrade-registrar CONTRACTS_TOML GAS *FLAGS:
+    {{cli_cmd}} -c {{CONTRACTS_TOML}} upgrade Registrar --gas {{GAS}} {{FLAGS}}
+
+# Upgrade the Controller with wasm/Controller.wasm. FLAGS go to `upgrade`.
+upgrade-controller CONTRACTS_TOML GAS *FLAGS:
+    {{cli_cmd}} -c {{CONTRACTS_TOML}} upgrade Controller --gas {{GAS}} {{FLAGS}}
+
+# Upgrade the DefaultResolver with wasm/DefaultResolver.wasm. FLAGS go to `upgrade`.
+upgrade-default-resolver CONTRACTS_TOML GAS *FLAGS:
+    {{cli_cmd}} -c {{CONTRACTS_TOML}} upgrade DefaultResolver --gas {{GAS}} {{FLAGS}}
+
+# Upgrade the ReverseResolver with wasm/ReverseResolver.wasm. FLAGS go to `upgrade`.
+upgrade-reverse-resolver CONTRACTS_TOML GAS *FLAGS:
+    {{cli_cmd}} -c {{CONTRACTS_TOML}} upgrade ReverseResolver --gas {{GAS}} {{FLAGS}}
 
 # ARGS: --name, --description, --website_url, --icon_url.
 
 # Set the dapp metadata and register the deployed members (idempotent).
-register-dapp *ARGS:
-    {{cli_cmd}} scenario register-dapp "$@"
+register-dapp CONTRACTS_TOML *ARGS:
+    {{cli_cmd}} -c {{CONTRACTS_TOML}} scenario register-dapp "${@:2}"
 
-# ARGS go to `register-dapp`. Run once, as the account that installed the
-# contracts. SKIP_BUILD=1 reuses ./wasm.
+# MODE is `legacy` for the public deployment (packages installed with Odra 2.2
+# or earlier: the upgrade group is created now, except for the NameToken which
+# already has one, and the ReverseResolver uses its legacy named key) or
+# `fresh` for packages installed with Odra 2.3 or newer, such as a new nctl
+# deployment. ARGS go to `register-dapp`. Run `just build` first, and run this
+# once, as the account that installed the contracts.
 
-# Upgrade every contract to the dapp registry version, then register the members.
-upgrade-dapp-registry *ARGS:
+# Upgrade every contract in the required order, then register the members.
+upgrade-all CONTRACTS_TOML GAS MODE *ARGS:
     #!/usr/bin/env bash
     set -euo pipefail
-    if [ "${SKIP_BUILD:-0}" != "1" ]; then
-        just build
-    fi
+    case "{{MODE}}" in
+        legacy)
+            group="--force-create-upgrade-group"
+            key="--package-named-key ReverseResolver_contract_package"
+            ;;
+        fresh)
+            group=""
+            key=""
+            ;;
+        *)
+            echo "MODE must be 'legacy' or 'fresh', got '{{MODE}}'" >&2
+            exit 2
+            ;;
+    esac
     # The Controller reads the registry from the Registrar during its upgrade,
     # and `register-dapp` calls `get_dapp_registry` on every member, which only
     # the upgraded code exposes.
-    # CONTRACTS_TOML, FRESH_INSTALL and GAS reach the nested calls through the
-    # environment.
-    just upgrade NameToken
-    just upgrade Registrar {{upgrade_group_flags}}
-    just upgrade Controller {{upgrade_group_flags}}
-    just upgrade DefaultResolver {{upgrade_group_flags}}
-    just upgrade ReverseResolver {{upgrade_group_flags}} {{reverse_resolver_flags}}
-    just register-dapp "$@"
-    echo "==> Done. Verify with: CONTRACTS_TOML='{{CONTRACTS_TOML}}' just verify-dapp-registry"
+    just upgrade-name-token {{CONTRACTS_TOML}} {{GAS}}
+    just upgrade-registrar {{CONTRACTS_TOML}} {{GAS}} $group
+    just upgrade-controller {{CONTRACTS_TOML}} {{GAS}} $group
+    just upgrade-default-resolver {{CONTRACTS_TOML}} {{GAS}} $group
+    just upgrade-reverse-resolver {{CONTRACTS_TOML}} {{GAS}} $group $key
+    just register-dapp {{CONTRACTS_TOML}} "${@:4}"
+    echo "==> Done. Verify with: just verify-dapp-registry {{CONTRACTS_TOML}}"
 
 # Exits non-zero on the first failed check.
 
 # Verify (read-only) that the contracts are upgraded and registered in the dapp.
-verify-dapp-registry:
+verify-dapp-registry CONTRACTS_TOML:
     #!/usr/bin/env bash
     set -euo pipefail
-    cli() { {{cli_cmd}} --json "$@"; }
+    cli() { {{cli_cmd}} -c {{CONTRACTS_TOML}} --json "$@"; }
     # Prints the `result` field of a `contract` call, or the error text.
     call() {
         cli contract "$@" 2>&1 | python3 -c '
@@ -120,7 +143,7 @@ verify-dapp-registry:
     ok() { echo "  [ok]   $1"; }
     fail() { echo "  [FAIL] $1"; exit 1; }
 
-    echo "==> Deployed contracts"
+    echo "==> Deployed contracts ({{CONTRACTS_TOML}})"
     NAME_TOKEN=$(address_of NameToken)
     [ -n "$NAME_TOKEN" ] || fail "NameToken is not in the contracts file"
     echo "  NameToken: hash-$NAME_TOKEN"
@@ -142,7 +165,7 @@ verify-dapp-registry:
         fi
         registry=$(call "$member" get_dapp_registry)
         [[ "$registry" == *"$NAME_TOKEN"* ]] || fail "$member.get_dapp_registry returned: $registry (not upgraded?)"
-        [[ "$contracts" == *"$address"* ]] || fail "$member (hash-$address) is not in NameToken.get_dapp_contracts (run: just register-dapp)"
+        [[ "$contracts" == *"$address"* ]] || fail "$member (hash-$address) is not in NameToken.get_dapp_contracts (run: just register-dapp {{CONTRACTS_TOML}})"
         is_member=$(call NameToken is_dapp_contract --dapp_contract "hash-$address")
         [ "$is_member" = "true" ] || fail "NameToken.is_dapp_contract(hash-$address) returned: $is_member"
         ok "$member points at the NameToken and is a registered member"
@@ -152,6 +175,6 @@ verify-dapp-registry:
     metadata=$(call NameToken get_dapp_metadata)
     echo "$metadata" | sed 's/^/  /'
     if echo "$metadata" | grep -q '"name": ""'; then
-        echo "  [warn] the dapp name is empty; set it with: just register-dapp --name .."
+        echo "  [warn] the dapp name is empty; set it with: just register-dapp {{CONTRACTS_TOML}} --name .."
     fi
     echo "==> All checks passed"

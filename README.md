@@ -85,7 +85,7 @@ members.
   untouched. `init` signatures and existing entry points do not change.
 - A new `register-dapp` CLI scenario sets the metadata and adds every
   deployed member that is not registered yet. It is safe to rerun.
-- New `just` recipes: `upgrade`, `register-dapp`, `upgrade-dapp-registry`
+- New `just` recipes: `upgrade-<contract>`, `register-dapp`, `upgrade-all`
   and `verify-dapp-registry`.
 
 ### Commands to run

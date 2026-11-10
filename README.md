@@ -85,64 +85,57 @@ members.
   untouched. `init` signatures and existing entry points do not change.
 - A new `register-dapp` CLI scenario sets the metadata and adds every
   deployed member that is not registered yet. It is safe to rerun.
-- New `just` recipes: `upgrade`, `register-dapp`, `upgrade-dapp-registry`
+- New `just` recipes: `upgrade-<contract>`, `register-dapp`, `upgrade-all`
   and `verify-dapp-registry`.
 
 ### Commands to run
 
 Run them as the account that installed the contracts, with the livenet
 configuration of the target network selected (`ODRA_CASPER_LIVENET_ENV=<name>`
-picks `<name>.env`). The whole sequence is one `just` recipe:
-
-```
-$ just upgrade-dapp-registry --name "CSPR.name" \
-    --description "Casper Name Service" \
-    --website_url "https://cspr.name" --icon_url "https://cspr.name/icon.png"
-```
-
-It builds the wasm files, upgrades the five contracts and runs
-`register-dapp`. The order matters: the Controller reads the registry from the
-Registrar during its upgrade, and `register-dapp` calls `get_dapp_registry` on
-each member, which only the upgraded code has. Step by step, it runs:
+picks `<name>.env`). Every recipe takes the contracts file and the gas
+explicitly, and the per-contract recipes pass any further flags verbatim to
+the CLI's `upgrade` command, so the command line shows exactly what is sent.
+The contracts file is `resources/<chain>-contracts.toml`, for example
+`resources/casper-contracts.toml` on mainnet.
 
 ```
 $ just build
-$ just upgrade NameToken
-$ just upgrade Registrar --force-create-upgrade-group
-$ just upgrade Controller --force-create-upgrade-group
-$ just upgrade DefaultResolver --force-create-upgrade-group
-$ just upgrade ReverseResolver --force-create-upgrade-group \
+$ just upgrade-name-token resources/casper-contracts.toml 400cspr
+$ just upgrade-registrar resources/casper-contracts.toml 400cspr --force-create-upgrade-group
+$ just upgrade-controller resources/casper-contracts.toml 400cspr --force-create-upgrade-group
+$ just upgrade-default-resolver resources/casper-contracts.toml 400cspr --force-create-upgrade-group
+$ just upgrade-reverse-resolver resources/casper-contracts.toml 400cspr --force-create-upgrade-group \
     --package-named-key ReverseResolver_contract_package
-$ just register-dapp --name "CSPR.name" \
+$ just register-dapp resources/casper-contracts.toml --name "CSPR.name" \
     --description "Casper Name Service" --website_url "https://cspr.name"
 ```
 
-`just upgrade <Contract> [flags]` wraps
-`cargo run --bin casper-name-cli -- upgrade <Contract> --gas 400cspr [flags]`.
-The CLI reads `resources/<chain>-contracts.toml`; to use another contracts
-file, set `CONTRACTS_TOML` for any of these recipes, either as an environment
-variable or as a `just` variable:
-
-```
-$ CONTRACTS_TOML=resources/casper-test-contracts.toml just upgrade-dapp-registry --name "CSPR.name"
-$ just CONTRACTS_TOML=resources/casper-test-contracts.toml verify-dapp-registry
-```
-
-It becomes the CLI's `-c` option, relative to the project root.
+The order matters: the Controller reads the registry from the Registrar
+during its upgrade, and `register-dapp` calls `get_dapp_registry` on each
+member, which only the upgraded code has. `just upgrade-<contract> <file> <gas> [flags]`
+wraps `cargo run --bin casper-name-cli -- -c <file> upgrade <Contract> --gas <gas> [flags]`.
 
 `--force-create-upgrade-group` is for packages installed with Odra 2.2 or
 earlier that have never been upgraded, which is the state of the public
 deployment (the NameToken was upgraded before and already has the group). A
 package that already has the group fails with `Contract header error: 3`.
-For contracts installed with Odra 2.3 or newer, such as a fresh nctl
-deployment, run the recipe with `FRESH_INSTALL=1`, which drops the flag and
-the legacy named key. `SKIP_BUILD=1` reuses the wasm files in `./wasm`, and
-`GAS` overrides the 400 CSPR per upgrade.
+`--package-named-key` is needed where the package hash is stored under a
+non-default named key, which is the case for the public ReverseResolver.
+
+The same sequence is available as one recipe. `MODE` is `legacy` for the
+public deployment, which adds the flags above, or `fresh` for packages
+installed with Odra 2.3 or newer, such as a new nctl deployment, which adds
+none. Anything else is rejected. Run `just build` first.
+
+```
+$ just upgrade-all resources/casper-contracts.toml 400cspr legacy --name "CSPR.name" \
+    --description "Casper Name Service" --website_url "https://cspr.name"
+```
 
 ### How to verify
 
 ```
-$ just verify-dapp-registry
+$ just verify-dapp-registry resources/casper-contracts.toml
 ```
 
 The recipe only reads. It checks that the NameToken reports itself as the
